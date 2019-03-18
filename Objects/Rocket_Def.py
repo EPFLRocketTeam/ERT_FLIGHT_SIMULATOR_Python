@@ -3,6 +3,7 @@ from scipy.integrate import simps
 import numpy as np
 import bisect
 
+
 class Rocket:
 
     def inertia(self):
@@ -10,8 +11,8 @@ class Rocket:
 
     pass
 
-class Stage:
 
+class Stage:
     EMPTY_MASS = 0
     EMPTY_CG = 0
     EMPTY_INERTIA = 0
@@ -19,14 +20,14 @@ class Stage:
     def inertia(self):
         pass
 
-class Body:
 
+class Body:
     CONE_TYPE = 0
     DIAMETERS = []
     DIAMETERS_POS = []
 
-class Fins:
 
+class Fins:
     NUMBER = 0
     ROOT_CORD = 0
     TIP_CORD = 0
@@ -38,10 +39,11 @@ class Fins:
     def area(self):
         pass
 
+
 class Motor:
 
-    def __init__(self,motor_file_path):
-        with open(motor_file_path,"r") as motor_data:
+    def __init__(self, motor_file_path):
+        with open(motor_file_path, "r") as motor_data:
             motor_data.readline()
             general_data = motor_data.readline.split()
 
@@ -63,7 +65,7 @@ class Motor:
             self.thrust_force = [0, self.thrust_force]
 
         # Linear interpolation of the thrust force samples
-        self.thrust_function = interp1d(self.thrust_time,self.thrust_force)
+        self.thrust_function = interp1d(self.thrust_time, self.thrust_force)
 
         self.burn_time = self.thrust_time[-1]
 
@@ -74,10 +76,8 @@ class Motor:
 
         self.thrust_to_mass = self.propellant_mass / self.total_impulse
 
-
-    
     def get_thrust(self, t):
-        if(0 <= t <= self.burn_time):
+        if 0 <= t <= self.burn_time:
             return self.thrust_function(t)
         else:
             return 0
@@ -90,12 +90,14 @@ class Motor:
 
     def get_CG(self):
         pass
-    
+
     def get_inertia(self):
         pass
 
+
 def main():
     pass
+
 
 if __name__ == "__main__":
     main()

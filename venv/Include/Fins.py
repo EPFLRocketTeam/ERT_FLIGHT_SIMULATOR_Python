@@ -3,6 +3,7 @@
 # Date   : 10 March 2019
 # EPFL Rocket Team, 1015 Lausanne, Switzerland
 
+
 class Fin:
     """
         Fin set representation object. Is limited to flat trapezoidal fins.
@@ -11,34 +12,34 @@ class Fin:
          ----------
 
         number : int
-            number of fins per set
+            Number of fins per set.
 
-        rootCord : float
-            fin root chord length in meters
+        root_chord : float
+            Fin root chord length in meters.
 
-        tipChord : float
-            fin tip chord length in meters
+        tip_chord : float
+            Fin tip chord length in meters.
 
         span : float
-            fin span in meters
+            Fin span in meters.
 
         sweep : float
-            fin sweep in meters
+            Fin sweep in meters.
 
         thickness : float
-            fin thickness in meters
+            Fin thickness in meters.
 
         phase : float
-            fin angular phase around stage body in degrees
+            Fin angular phase around stage body in degrees.
 
-        bottomOffset : float
-            distance between bottom of stage and bottom of fin root chord
+        bottom_offset : float
+            Distance between bottom of stage and bottom of fin root chord.
 
         Constructor
         -----------
 
-        __init__(number, rootChord, tipChord, span, sweep, thickness, phase, bottomOffset)
-            initializes a Stage object with it's name, body geometry and mass characteristics.
+        __init__(number, root_chord, ti_chord, span, sweep, thickness, phase, bottom_offset)
+            Initializes a Stage object with it's name, body geometry and mass characteristics.
 
         Methods
         -------
@@ -48,9 +49,9 @@ class Fin:
 
     """
 
-    # ------------------
+    # --------------------
     # CONSTRUCTORS
-    # ------------------
+    # --------------------
 
     def __init__(self,
                  number: float, root_chord: float, tip_chord: float, span: float,
@@ -64,18 +65,14 @@ class Fin:
         self.phase = phase
         self.bottom_offset = bottom_offset
 
-    # ------------------
+    # --------------------
     # METHODS
-    # ------------------
+    # --------------------
 
-    def getFinArea(self):
+    def get_fin_area(self):
         """
-        Computes and returns the planar area of a single fin in the set
+        Computes and returns the planar area of a single fin in the set.
 
-        :return: area of a single fin in the set given in m^2
+        :return: area of a single fin in the set given in m^2.
         """
         return self.span * (self.root_chord + self.tip_chord) / 2
-
-    def __str__(self):
-        return ("n : {0}, Cr : {1}, Ct : {2}, S : {3}, sw : {4}, t : {5}".format(
-            self.number, self.root_chord, self.tip_chord, self.span, self.sweep, self.thickness))
