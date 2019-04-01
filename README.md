@@ -20,3 +20,17 @@ Nose cone software design : https://www.instructables.com/id/Design-a-Rocket-Nos
 Literature and volumes : https://aviation.stackexchange.com/questions/24414/why-when-is-the-blunt-nose-better
 
 Useful notes for OpenRocket : http://openrocket.sourceforge.net/techdoc.pdf
+
+# Tasks
+## Jules
+- Finish documenting the **_stdAtmosUS.py_** doc.
+- Check the drag.py class is implemented
+- Check the AB_drag.py class is implemented
+- Create the Rocket_Kinematic.py doc
+- Create the 1D simulator
+- Examiner la formule de l'amortissement
+## Paul
+- Choisir un moteur qui nous envoie en supersonique
+- Faire tourner le simulateur avec le modèle de drag supersonique et subsonique
+- Trouver le modèle transonique
+
