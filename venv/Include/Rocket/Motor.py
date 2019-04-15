@@ -20,10 +20,10 @@ class Motor:
     ----------
 
     diameter : float
-        Motor diameter (with casing) in meters.
+        Motor diameter (with casing), in [m].
 
     length : float
-        Motor length (with casing) in meters.
+        Motor length (with casing), in [m].
 
     delay_type : str
         Time after burnout when the ejection charge ignites.
@@ -35,15 +35,15 @@ class Motor:
             - N/A or not listed : not adjustable
 
     propellant_mass : float
-        Propellant mass in kg.
+        Propellant mass, in [kg].
         Value is constant.
         To get the actual mass of the motor, use the get_mass() method.
 
     total_mass : float
-        Total mass in kg.
+        Total mass, in [kg].
 
     casing_mass : float
-        Casing mass in kg.
+        Casing mass, in [kg].
         Value is constant.
         Equal to the difference between the total mass and the propellant mass.
 
@@ -59,17 +59,17 @@ class Motor:
         A 0 value is added at the beginning to provide a data set from ignition to burnout.
 
     thrust_function : interp1d function
-        Handle to calculate the thrust at a given time t between ignition at t=0 and burnout at t=burn_time.
+        Handle to calculate the thrust at a given time t [s] between ignition at t=0 and burnout at t=burn_time.
         Should be used as thrust_function(t).
 
     burn_time : float
-        Motor burn time given by the last sampling time of the motor data sheet.
+        Motor burn time given by the last sampling time of the motor data sheet, in [s].
 
     total_impulse : float64
-        Total impulse of the motor given by a Simpson interpolation of the samples.
+        Total impulse of the motor given by a Simpson interpolation of the samples, in [N.s].
 
     thrust_to_mass : float64
-        Thrust to mass ratio of the motor.
+        Thrust to mass ratio of the motor, in [m.s^-2].
         Used to calculate the mass during burn.
 
 
@@ -85,31 +85,33 @@ class Motor:
     -------
 
     get_thrust(t) : float
-        Returns the thrust of the motor at time t in N
+        Returns the thrust of the motor at time t [s], in [N].
 
     get_propellant_mass(t) : float
-        Returns the propellant mass at time t in kg
+        Returns the propellant mass at time t [s], in [kg].
 
     get_total_mass(t) : float
-        Returns the total mass of the motor, casing included, in kg.
+        Returns the total mass of the motor, casing included, in [kg].
+
+    TODO: Add get_dmass_dt description
 
     get_cg() : float
-        Returns the center of mass of the motor.
-        TODO : Rethink the output of the method.
+        Returns the center of mass of the motor, in [m].
+        TODO: Rethink the output of the method.
 
     get_propellant_inertia(t) : float
-        Returns the propellant's inertia at time t in kg.m^2.
+        Returns the propellant's inertia at time t [s], in [kg.m^2].
 
     get_casing_inertia() : float
-        Returns the casing's inertia in kg.m^2.
+        Returns the casing's inertia, in [kg.m^2].
 
     get_motor_inertia(t, d) : float
-        Returns the motor's inertia with respect to a point at a distance d, in kg.m^2.
-        d is in m.
+        Returns the motor's inertia with respect to a point at a distance d [m], in [kg.m^2].
+        d is in [m].
 
     get_total_inertia(t, d) : float
-        Returns the total inertia of the motor with respect to a point at a distance d at time t, in kg.m^2.
-        d is in m.
+        Returns the total inertia of the motor with respect to a point at a distance d at time t [s], in [kg.m^2].
+        d is in [m].
 
     """
 
@@ -118,7 +120,7 @@ class Motor:
     # --------------------
 
     def __init__(self, motor_file_path: str):
-        with open(motor_file_path, "r") as motor_data:
+        with open(motor_file_path, 'r') as motor_data:
             motor_data.readline()
             general_data = motor_data.readline().split()
 
@@ -157,11 +159,11 @@ class Motor:
 
     def get_thrust(self, t: float) -> float:
         """
-        Computes the current thrust.
+        Computes the current thrust, in [N].
         It is 0 if outside of burn time.
 
-        :param t: time
-        :return: current thrust force
+        :param t: time, in [s]
+        :return: current thrust force, in [N]
         """
         if 0 <= t <= self.burn_time:
             return self.thrust_function(t)
@@ -170,10 +172,10 @@ class Motor:
 
     def get_propellant_mass(self, t: float) -> float:
         """
-        Computes the current propellant mass.
+        Computes the current propellant mass, in [kg].
 
-        :param t: time
-        :return: current propellant mass
+        :param t: time, in [s]
+        :return: current propellant mass, in [kg]
         """
         if t >= 0:
             thrust_t = self.thrust_time[:bisect.bisect_right(self.thrust_time, t)]
@@ -185,28 +187,37 @@ class Motor:
 
     def get_total_mass(self, t: float) -> float:
         """
-        Computes the current mass of the motor (casing included).
+        Computes the current mass of the motor (casing included), in [kg].
 
-        :param t: time
-        :return: current motor mass
+        :param t: time, in [s]
+        :return: current motor mass, in [kg]
         """
         return self.total_mass - self.get_propellant_mass(t)
+
+    def get_dmass_dt(self, t: float) -> float:
+        """
+        Computes the current change in mass of the motor over time, in [kg.s^-1].
+
+        :param t: time, in [s]
+        :return: current mass change over time, in [kg.s^-1]
+        """
+        return self.thrust_to_mass * self.get_thrust(t)
 
     @property
     def get_cg(self) -> float:
         """
-        Computes the motor's center of mass (CG).
+        Computes the motor's center of mass (CG), in [m].
 
-        :return: distance of the CG to the top of the motor
+        :return: distance of the CG to the top of the motor, in [m]
         """
         return self.length / 2
 
     def get_propellant_inertia(self, t: float) -> float:
         """
-        Computes the propellant's inertia.
+        Computes the propellant's inertia, in [kg.m^2].
 
-        :param t: time
-        :return: propellant inertia
+        :param t: time, in [s]
+        :return: propellant inertia, in [kg.m^2]
         """
         # Internal grain radius (stays constant)
         r_i = 0.005
@@ -220,9 +231,9 @@ class Motor:
 
     def get_casing_inertia(self) -> float:
         """
-        Computes the casing's inertia.
+        Computes the casing's inertia, in [kg.m^2].
 
-        :return: casing inertia
+        :return: casing inertia, in [kg.m^2]
         """
         # External grain radius
         r_e = self.diameter / 2
@@ -233,28 +244,30 @@ class Motor:
 
     def get_motor_inertia(self, t: float, d: float) -> float:
         """
-        Computes the motor's inertia with respect to a point at a distance d (e.g. rocket center of mass).
+        Computes the motor's inertia with respect to a point at a distance d [m] (e.g. rocket center of mass),
+        in [kg.m^2].
 
-        :param t: time
-        :param d: distance in m
-        :return: motor inertia from the distant point
+        :param t: time, in [s]
+        :param d: distance, in [m]
+        :return: motor inertia from the distant point, in [kg.m^2]
         """
         return self.get_total_mass(t) * d
 
     def get_total_inertia(self, t: float, d: float) -> float:
         """
-        Computes the total motor inertia with respect to a point at a distance d (e.g. rocket center of mass).
+        Computes the total motor inertia with respect to a point at a distance d [m] (e.g. rocket center of mass),
+        in [kg.m^2].
 
-        :param t: time
-        :param d: distance in m
-        :return: motor total inertia
+        :param t: time, in [s]
+        :param d: distance, in [m]
+        :return: motor total inertia, in [kg.m^2]
         """
         return self.get_propellant_inertia(t) + self.get_casing_inertia() + self.get_motor_inertia(t, d)
 
 
 if __name__ == '__main__':
     # Location of current motor test file
-    CS_M1800 = Motor('Motors/Cesaroni_M1800.eng')
+    CS_M1800 = Motor('../Motors/Cesaroni_M1800.eng')
     # get_thrust method test
     print(CS_M1800.get_thrust(5))
     # get_mass method tests
