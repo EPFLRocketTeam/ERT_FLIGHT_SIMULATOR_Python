@@ -23,7 +23,7 @@ class Rocket:
     -----------
 
     __init__(*stages)
-        initializes a Rocket object with the Stages included in the stage list.
+        Initializes a Rocket object with the Stages included in the stage list.
 
     Methods
     -------
@@ -61,7 +61,23 @@ class Rocket:
         """
         self.stages.append(stage)
 
+    def get_cg(self):
+        pass
+
     # TODO : Add get_cg, get_length, get_inertia, get_mass, etc.
+
+    def get_mass(self, t: float):
+        return sum([stage.get_mass(t) for stage in self.stages])
+
+    def get_dmass_dt(self, t: float):
+        return sum([stage.get_dmass_dt(t) for stage in self.stages])
+
+    def get_thrust(self, t: float):
+        return sum([stage.get_thrust(t) for stage in self.stages])
+
+    @property
+    def get_d_max(self):
+        return max([stage.body.d_max for stage in self.stages])
 
     def __str__(self):
         return self.stages.__str__()
