@@ -3,6 +3,7 @@
 # Date : 22 March 2019
 # EPFL Rocket Team, 1015 Lausanne, Switzerland
 
+import numpy as np
 
 class Body:
     """
@@ -37,3 +38,5 @@ class Body:
         self.cone_type = cone_type
         self.diameters = diameters
         self.diameters_pos = diameters_pos
+        self.d_max = np.pi / 4 * max(self.diameters) ** 2
+
