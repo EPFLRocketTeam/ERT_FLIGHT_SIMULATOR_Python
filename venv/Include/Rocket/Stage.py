@@ -58,14 +58,15 @@ class Stage:
     # CONSTRUCTOR
     # ------------------
 
-    def __init__(self, id: str, body: Body, empty_mass: float, empty_cg: float, empty_inertia: float):
-        self.id = id
+    def __init__(self, name: str, body: Body, empty_mass: float, empty_cg: float, empty_inertia: float):
+        self.name = name
         self.body = body
         self.empty_mass = empty_mass
         self.empty_cg = empty_cg
         self.empty_inertia = empty_inertia
 
         self.fins = []
+        self.motor_paths = []
         self.motors = []
 
     # ------------------
@@ -85,13 +86,28 @@ class Stage:
         """
         Adds a motor representation object to the stage.
 
-        :param: motor: set of fins to be added to this stage
+        :param: motor: motor path to be added to this stage
         :return: None
         """
-        self.motors.append(motor)
+        self.motor_paths.append(motor)
+        self.motors.append(Motor(motor))
+
+    def get_mass(self, t: float):
+        tmp_mass = 0
+        if not self.fins:
+            tmp_mass += sum([fin_set.total_mass for fin_set in self.fins])
+        if not self.motors:
+            tmp_mass += sum([motor.get_total_mass(t) for motor in self.motors])
+        return self.empty_mass + tmp_mass
+
+    def get_dmass_dt(self, t: float):
+        return sum([motor.get_dmass_dt(t) for motor in self.motors])
+
+    def get_thrust(self, t: float):
+        return sum([motor.get_thrust(t) for motor in self.motors])
 
     def __str__(self):
-        return self.id
+        return self.name
 
     def __repr__(self):
-        return self.id
+        return self.name
