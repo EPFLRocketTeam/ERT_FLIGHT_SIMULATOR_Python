@@ -24,7 +24,7 @@ class Body:
             Diameters at beginning and end of section changes.
             Diameters in m.
 
-        diameters_pos : list of float
+        diameters_position : list of float
             Position of the self.diameters in m.
             Measured from the top of the body.
 
@@ -34,9 +34,10 @@ class Body:
     # CONSTRUCTOR
     # --------------------
 
-    def __init__(self, cone_type: str, diameters: "np array", diameters_pos: "np array"):
+    def __init__(self, cone_type: str, diameters: "np array", diameters_position: "np array"):
         self.cone_type = cone_type
         self.diameters = diameters
-        self.diameters_pos = diameters_pos
-        self.d_max = np.pi / 4 * max(self.diameters) ** 2
+        self.diameters_position = diameters_position
+        self.max_diameter = max(self.diameters)
+        self.max_cross_section_surface = np.pi / 4 * max(self.diameters) ** 2
 

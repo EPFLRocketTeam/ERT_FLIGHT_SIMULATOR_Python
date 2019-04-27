@@ -26,17 +26,17 @@ if __name__ == "__main__":
     M3_body = Stage('Matterhorn III body', tubes_francais, 9.9, 0.930, np.array([[2.72, 0, 0], [0, 2.72, 0], [0, 0, 0]]))
 
     finDefData = {'number': 3,
-                  'root_chord': 0.24,
-                  'tip_chord': 0.12,
-                  'span': 0.11,
+                  'root_chord': 0.236,
+                  'tip_chord': 0.118,
+                  'span': 0.128,
                   'sweep': 0.06,
                   'thickness': 0.003,
                   'phase': 0,
-                  'bottom_offset': 0}
+                  'body_top_offset': 1.54}
 
     M3_body.add_fins(finDefData)
 
-    M3_body.add_motor('Motor/Cesaroni_M1800.eng')
+    M3_body.add_motor('Motors/Cesaroni_M1800.eng')
 
     Matterhorn_III = Rocket()
 
@@ -69,3 +69,5 @@ if __name__ == "__main__":
     print(isinstance(Rocket1, Rocket))
     print(Rocket1)
     print(stage1)"""
+
+    print(max(tubes_francais.diameters))

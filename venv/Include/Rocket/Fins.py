@@ -58,7 +58,7 @@ class Fins:
 
     def __init__(self,
                  number: int, root_chord: float, tip_chord: float, span: float,
-                 sweep: float, thickness: float, phase: float, bottom_offset: float, total_mass: float):
+                 sweep: float, thickness: float, phase: float, body_top_offset: float, total_mass: float):
         self.number = number
         self.root_chord = root_chord
         self.tip_chord = tip_chord
@@ -66,7 +66,7 @@ class Fins:
         self.sweep = sweep
         self.thickness = thickness
         self.phase = phase
-        self.bottom_offset = bottom_offset
+        self.body_top_offset = body_top_offset
         self.total_mass = total_mass
     # --------------------
     # METHODS

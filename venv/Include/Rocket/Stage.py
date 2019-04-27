@@ -69,6 +69,9 @@ class Stage:
         self.motor_paths = []
         self.motors = []
 
+        #self.diameters = self.body.diameters
+        #self.diameters_position = self.body.diameters_position
+
     # ------------------
     # METHODS
     # ------------------
