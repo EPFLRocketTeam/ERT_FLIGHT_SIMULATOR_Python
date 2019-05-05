@@ -1,6 +1,6 @@
 # Motor class file
 # Author : Jules Triomphe
-# Date : 21 March 2019
+# Date : 5 May 2019
 # EPFL Rocket Team, 1015 Lausanne, Switzerland
 
 from scipy.interpolate import interp1d
@@ -147,9 +147,10 @@ class Motor:
         self.burn_time = self.thrust_time[-1]
 
         # Simpson integration of the thrust curve
-        sample_time = np.linspace(0, self.burn_time, num=2000)
+        sample_time = np.linspace(0, self.burn_time, num=20000)
         sample_thrust = self.thrust_function(sample_time)
-        self.total_impulse = simps(sample_thrust, sample_time, even='avg')
+        self.total_impulse = np.trapz(sample_thrust, sample_time)
+        # self.total_impulse = simps(sample_thrust, sample_time, even='avg')
 
         self.thrust_to_mass = self.propellant_mass / self.total_impulse
 
@@ -170,6 +171,27 @@ class Motor:
         else:
             return 0
 
+    def get_burnt_propellant_mass(self, t: float) -> float:
+        """
+        Computes the current burnt propellant mass, in [kg].
+
+        :param t: time, in [s]
+        :return: current burnt propellant mass, in [kg]
+        """
+        if t < 0:
+            return 0
+        elif 0 <= t <= self.burn_time:
+            thrust_t = self.thrust_time[:bisect.bisect_right(self.thrust_time, t)]
+            thrust_f = self.thrust_force[:len(thrust_t)]
+            if 0:  # t not in self.thrust_time: gives higher altitude
+                thrust_t.append(t)
+                thrust_f.append(self.thrust_function(t).tolist())
+            current_impulse = np.trapz(thrust_f, thrust_t)
+            # current_impulse = simps(thrust_f, thrust_t, even='avg')
+            return self.thrust_to_mass * current_impulse
+        else:
+            return self.propellant_mass
+
     def get_propellant_mass(self, t: float) -> float:
         """
         Computes the current propellant mass, in [kg].
@@ -177,13 +199,19 @@ class Motor:
         :param t: time, in [s]
         :return: current propellant mass, in [kg]
         """
-        if t >= 0:
+        if t < 0:
+            return self.propellant_mass
+        elif 0 <= t <= self.burn_time:
             thrust_t = self.thrust_time[:bisect.bisect_right(self.thrust_time, t)]
             thrust_f = self.thrust_force[:len(thrust_t)]
-            current_impulse = simps(thrust_f, thrust_t, even='avg')
-            return self.thrust_to_mass * current_impulse
+            if 0:  # t not in self.thrust_time: gives higher altitude
+                thrust_t.append(t)
+                thrust_f.append(self.thrust_function(t).tolist())
+            current_impulse = np.trapz(thrust_f, thrust_t)
+            # current_impulse = simps(thrust_f, thrust_t, even='avg')
+            return self.propellant_mass - self.thrust_to_mass * current_impulse
         else:
-            return self.propellant_mass
+            return 0
 
     def get_total_mass(self, t: float) -> float:
         """
@@ -192,7 +220,7 @@ class Motor:
         :param t: time, in [s]
         :return: current motor mass, in [kg]
         """
-        return self.total_mass - self.get_propellant_mass(t)
+        return self.total_mass - self.get_burnt_propellant_mass(t)
 
     def get_dmass_dt(self, t: float) -> float:
         """
@@ -222,7 +250,7 @@ class Motor:
         # Internal grain radius (stays constant)
         r_i = 0.005
         # External grain radius
-        r_e = self.diameter/2
+        r_e = self.diameter / 2
 
         # Ix inertia : inertia along yaw/pitch axis.
         # We call it "longitudinal" but it is a misuse of the term.
@@ -239,7 +267,7 @@ class Motor:
         r_e = self.diameter / 2
         # We consider an infinitesimal thickness for the casing.
         # Hence r_e == r_i and (r_e**2 + r_i**2)/4 becomes r_e**2/2.
-        i_l_casing = self.casing_mass*(self.length**2/12 + r_e**2/2)
+        i_l_casing = self.casing_mass * (self.length ** 2 / 12 + r_e ** 2 / 2)
         return i_l_casing
 
     def get_motor_inertia(self, t: float, d: float) -> float:
@@ -267,9 +295,13 @@ class Motor:
 
 if __name__ == '__main__':
     # Location of current motor test file
-    CS_M1800 = Motor('../Motors/Cesaroni_M1800.eng')
+    CS_M1800 = Motor('../Motors/AT_L850.eng')
     # get_thrust method test
-    print(CS_M1800.get_thrust(5))
+    print(CS_M1800.get_thrust(4.5))
     # get_mass method tests
-    print(CS_M1800.get_total_mass(-3))
+    print(CS_M1800.get_total_mass(CS_M1800.burn_time))
     print(CS_M1800.get_total_mass(10))
+    print(CS_M1800.total_impulse)
+    print(CS_M1800.thrust_to_mass**-1*CS_M1800.get_burnt_propellant_mass(CS_M1800.burn_time))
+    print(CS_M1800.get_burnt_propellant_mass(CS_M1800.burn_time))
+    print(CS_M1800.propellant_mass)

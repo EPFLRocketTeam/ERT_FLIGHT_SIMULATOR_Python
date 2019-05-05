@@ -1,5 +1,5 @@
-# Author : Henri Faure
-# Date : 28 March 2019
+# Author : Jules Triomphe
+# Date : 5 May 2019
 # EPFL Rocket Team, 1015 Lausanne, Switzerland
 
 # DRAG - Rocket drag calculation function based on Mandell's book "Topics
@@ -10,7 +10,6 @@
 
 
 def drag(Rocket, alpha, Uinf, nu, a):
-
     # INPUTS:
     # - Rocket  : Rocket object
     # - alpha   : angle of attack [rad]
@@ -97,9 +96,14 @@ def drag(Rocket, alpha, Uinf, nu, a):
     # 4.1.1 ogive cone (eq 171c, p 439)
     # 4.1.2 boattail cone (eq 172a, p 441)
     SsSm = 2 / dm ** 2 * sum(
+        [(a + b) * (c - d) * np.sqrt(1 + ((a - b) / 2 / (c - d)) ** 2) if c != d else 0 for a, b, c, d in
+         zip(Rocket.diameters[1:-1], Rocket.diameters[2:], Rocket.diameters_position[2:],
+             Rocket.diameters_position[1:-1])])
+
+    """sum(
         (Rocket.diameters[1:-1] + Rocket.diameters[2:]) * (Rocket.diameters_position[2:] - Rocket.diameters_position[1:-1]) * np.sqrt(
             1 + ((Rocket.diameters[1:-1] - Rocket.diameters[2:]) / 2 / (
-                    Rocket.diameters_position[2:] - Rocket.diameters_position[1:-1])) ** 2))
+                    Rocket.diameters_position[2:] - Rocket.diameters_position[1:-1])) ** 2))"""
     if Rocket.cone_mode == 'on':
         SsSm = SsSm + 2.67 * Rocket.diameters_position[1] / dm
 
@@ -159,7 +163,7 @@ def drag(Rocket, alpha, Uinf, nu, a):
 
     # 5.1.2 Compute body drag at angle of attack alpha
     # 5.1.2.1 x1 as defined by explanations of (eq 140, p 404)
-    x1 = Rocket.diameters_position(np.where(diff(Rocket.diameters) == 0)[0][0])
+    x1 = Rocket.diameters_position[np.where(np.diff(Rocket.diameters) == 0)[0][0]]
 
     # 5.1.2.2 x0 as in (eq 140, p404)
     x0 = 0.55 * x1 + 0.36 * Rocket.diameters_position[-1]
@@ -169,13 +173,17 @@ def drag(Rocket, alpha, Uinf, nu, a):
 
     # 5.1.2.4 Body drag at low AoA (eq 139, p. 404)
     CDB_alpha = 2 * deltak * S0 / Sm * alpha * math.sin(alpha)
-    tmp_stages = [x0, Rocket.diameters_position(Rocket.diameters_position > x0)]
-    tmp_diameters = [interp1d(Rocket.diameters_position, Rocket.diameters)(x0), Rocket.diameters(Rocket.diameters_position > x0)]
+    tmp_stages = [x0, Rocket.diameters_position[np.where(np.diff(Rocket.diameters_position) == 0)[0][0]]]
+    tmp_diameters = [interp1d(Rocket.diameters_position, Rocket.diameters)(x0),
+                     Rocket.diameters[np.where(np.diff(Rocket.diameters_position) == 0)[0][0]]]
 
     # 5.1.2.4 Body drag at high AoA (eq 142, p. 406)
     CDB_alpha = CDB_alpha + 2 * alpha ** 2 * math.sin(alpha) / Sm * etak * 1.2 * sum(
+        [(a + b) / 2 * (c - d) for a, b, c, d
+         in zip(tmp_diameters[:-1], tmp_diameters[1:], tmp_stages[1:], tmp_stages[:-1])])
+    """sum(
         (tmp_diameters[:-1] + tmp_diameters[1:]) / 2 *
-        (tmp_stages[1:] - tmp_stages[:-1]))
+        (tmp_stages[1:] - tmp_stages[:-1]))"""
 
     # 5.2 Fin drag at AoA
     # 5.2.1 Fin Exposed Surface Coefficient
@@ -186,7 +194,7 @@ def drag(Rocket, alpha, Uinf, nu, a):
     CDi = 1.2 * alpha ** 2 * SF / Sm * FESC
 
     # 5.2.3 Interference coefficients as estimated by Hassan (eq 34 and 35, p12) based on Mandell Fig. 40 p 416.
-    Rs = df / (2 * Rocket.fin_s + df)  # Total fin span ratio
+    Rs = df / (2 * Rocket.get_fin_span + df)  # Total fin span ratio
     KFB = 0.8065 * Rs ** 2 + 1.1553 * Rs  # Interference of body on fin lift
     KBF = 0.1935 * Rs ** 2 + 0.8174 * Rs + 1  # Interference of fins on body lift
 
@@ -201,7 +209,7 @@ def drag(Rocket, alpha, Uinf, nu, a):
     # 7. Drag of tumbeling body (c.f. OpenRocket Documentation section 3.5)
     # -------------------------------------------------------------------------
     fin_efficiency = np.array([0.5, 1, 1.5, 1.41, 1.81, 1.73, 1.9, 1.85])
-    CD_t_fin = 1.42 * fin_efficiency(Rocket.get_fin_number)
+    CD_t_fin = 1.42 * fin_efficiency[Rocket.get_fin_number]
     CD_t_body = 0.56
 
     CD_t = (SE * CD_t_fin + CD_t_body * dm * (Rocket.diameters_position[-1] - Rocket.diameters_position[1])) / Sm

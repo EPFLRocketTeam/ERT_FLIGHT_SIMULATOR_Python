@@ -1,6 +1,6 @@
 # Body class file
 # Author : Jules Triomphe
-# Date : 22 March 2019
+# Date : 5 May 2019
 # EPFL Rocket Team, 1015 Lausanne, Switzerland
 
 import numpy as np

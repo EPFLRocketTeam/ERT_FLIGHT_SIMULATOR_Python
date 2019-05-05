@@ -1,6 +1,6 @@
 # Rocket class file
-# Author : Eric Brunner
-# Date   : 10 March 2019
+# Author : Jules Triomphe
+# Date   : 5 May 2019
 # EPFL Rocket Team, 1015 Lausanne, Switzerland
 
 from Rocket.Stage import Stage
@@ -64,8 +64,8 @@ class Rocket:
         self.ab_n = 3 # TODO: Create an airbrake section in Body or find another way to implement them
         self.ab_x = 1.390
         self.lug_n = 2
-        self.lug_S = 1.61e-4
-        # Arbitrary, based on M2 launch lugs
+        self.lug_S = 1.32e-4
+        # Arbitrary, based on M3 launch lugs in Cernier 23/03/2019; 1.61e-4 for M2
         # TODO: Implement this parameter in the definition of the body and then for the rocket as a whole
 
 
@@ -124,22 +124,27 @@ class Rocket:
     def get_fin_chord(self):
         for stage in self.stages:
             if stage.fins:
-                print(stage.fins[0]['root_chord'])
-                return (stage.fins[0]['root_chord'] + stage.fins[0]['tip_chord']) / 2
+                return (stage.fins[0].root_chord + stage.fins[0].tip_chord) / 2
             # TODO: Implement a way to have the fin chord for each fin set. Modify drag function in accordance.
+
+    @property
+    def get_fin_span(self):
+        for stage in self.stages:
+            if stage.fins:
+                return stage.fins[0].span
 
     @property
     def get_fin_exposed_planform_area(self):
         for stage in self.stages:
             if stage.fins:
-                return (stage.fins[0]['root_chord'] + stage.fins[0]['tip_chord']) / 2 * stage.fins[0]['span']
+                return (stage.fins[0].root_chord + stage.fins[0].tip_chord) / 2 * stage.fins[0].span
 
     @property
     def get_mid_fin_diameter(self):
         for stage in self.stages:
             if stage.fins:
                 diameter_at_position_function = interp1d(stage.body.diameters_position, stage.body.diameters)
-                return diameter_at_position_function(stage.fins[0]['body_top_offset'] + stage.fins[0]['root_chord'] / 2)
+                return diameter_at_position_function(stage.fins[0].body_top_offset + stage.fins[0].root_chord / 2)
             # TODO: Find a way to organize this when multiple fin sets per body are involved or when the diameter...
             #  is changing and fins are offsetted (e.g. Hydra)
 
@@ -147,19 +152,19 @@ class Rocket:
     def get_fin_virtual_planform_area(self):
         for stage in self.stages:
             if stage.fins:
-                return self.get_fin_exposed_planform_area + 0.5 * self.get_mid_fin_diameter * stage.fins[0]['root_chord']
+                return self.get_fin_exposed_planform_area + 0.5 * self.get_mid_fin_diameter * stage.fins[0].root_chord
 
     @property
     def get_fin_thickness(self):
         for stage in self.stages:
             if stage.fins:
-                return stage.fins[0]['thickness']
+                return stage.fins[0].thickness
 
     @property
     def get_fin_number(self):
         for stage in self.stages:
             if stage.fins:
-                return stage.fins[0]['number']
+                return stage.fins[0].number
 
     def __str__(self):
         return self.stages.__str__()

@@ -1,6 +1,6 @@
 # Rocket class file
-# Author : Eric Brunner
-# Date   : 10 March 2019
+# Author : Eric Brunner and Jules Triomphe
+# Date   : May 5 2019
 # EPFL Rocket Team, 1015 Lausanne, Switzerland
 
 
@@ -87,11 +87,11 @@ class Fins:
         The formula is x = [sum from 0 to i-1](x_i+x_{i+1})*(x_i*y_{i+1}-y_i*x_{i+1}) /
             [3*[sum from 0 to i-1](x_i*y_{i+1)-y_i*x_{i+1}})]
 
-        The 4 points' coordinates (counter-clockwise) are (0,0), (self.root_chord,0), (self.sweep,self.span) and
-            (self.sweep + self.tip_chord,self.span).
+        The 4 points' coordinates (counter-clockwise) are (0,0), (self.root_chord,0), (self.sweep + self.tip_chord,
+        self.span) and (self.sweep,self.span).
 
         :return:
         """
         i1 = self.root_chord * self.span
         i2 = self.tip_chord * self.span
-        return ((self.root_chord + self.sweep + self.tip_chord) * i0 + self.tip_chord * i2) / (3 * (i1 + i2))
+        return ((self.root_chord + self.sweep + self.tip_chord) * i1 + self.tip_chord * i2) / (3 * (i1 + i2))

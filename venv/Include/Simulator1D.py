@@ -1,10 +1,10 @@
 # Motor class file
 # Author : Jules Triomphe
-# Date : 23 March 2019
+# Date : 5 May 2019
 # EPFL Rocket Team, 1015 Lausanne, Switzerland
 
 import numpy as np
-from scipy.integrate import ode
+from scipy.integrate import ode, solve_ivp
 
 from Rocket.Body import Body
 from Rocket.Rocket import Rocket
@@ -20,43 +20,80 @@ class Simulator1D:
 
     def __init__(self, rocket: Rocket, atmosphere: stdAtmosUS):
         self.x_0 = np.array([0, 0])
-        self.t0, self.t1 = 0, 28
+        self.t0 = 0
+        self.state = [self.x_0]
+        self.time = [self.t0]
 
         self.Rocket = rocket
-        self.time_span = np.linspace(self.t0, self.t1, 100)
         self.Atmosphere = atmosphere
 
     def xdot(self, t, x):
         T = self.Rocket.get_thrust(t)
         M = self.Rocket.get_mass(t)
         dMdt = self.Rocket.get_dmass_dt(t)
-        rho = self.Atmosphere.get_density(t)
-        nu = self.Atmosphere.get_viscosity(x[0] + US_Atmos.ground_altitude + 5)
-        a = self.Atmosphere.get_speed_of_sound(x[0] + US_Atmos.ground_altitude + 5)
-        # TODO: Add drag influences
+        rho = self.Atmosphere.get_density(x[0] + self.Atmosphere.ground_altitude)
+        nu = self.Atmosphere.get_viscosity(x[0] + self.Atmosphere.ground_altitude)
+        a = self.Atmosphere.get_speed_of_sound(x[0] + self.Atmosphere.ground_altitude)
+        # TODO: Add drag influences (done?)
         CD = drag(self.Rocket, 0, x[1], nu, a)
         CD_AB = 0  # TODO: Insert reference to drag_shuriken or other
         g = self.Atmosphere.G0
-        d = self.Rocket.get_d_max
-        return [x[1], T / M - g - x[1] * dMdt / M - 0.5 * rho * d * x[1] ** 2 * (CD + CD_AB) / M]
+        Sm = self.Rocket.get_max_cross_section_surface
+        return [x[1], T / M - g - x[1] * dMdt / M - 0.5 * rho * Sm * x[1] ** 2 * (CD + CD_AB) / M]
 
-    def get_integration(self):
-        integration = ode(self.xdot).set_integrator('dopri5').set_initial_value(self.x_0, self.t0)
-        while integration.successful(): # and integration.y[1] > 0:
-            print(1)
-            print(integration.t+0.01, integration.integrate(integration.t+0.01))
+    def get_integration(self, number_of_steps: float, max_time: float):
+        """self.time_span = np.linspace(self.t0, max_time, number_of_steps)
+        self.time_step = self.time_span[1] - self.time_span[0]
+        self.integration = ode(self.xdot).set_integrator('dopri5').set_initial_value(self.x_0, self.t0)"""
+
+        def off_rail(t, y): return y[0] - 5
+
+        off_rail.terminal = True
+        off_rail.direction = 1
+
+        def apogee(t, y): return y[1]
+
+        apogee.terminal = True
+        apogee.direction = -1
+
+        import matplotlib.pyplot as plt
+
+        self.integration_ivp = solve_ivp(self.xdot, [self.t0, max_time], self.x_0, method='RK45', events=off_rail)
+        print('Solve_ivp rail')
+        print(self.integration_ivp.t)
+        print(self.integration_ivp.y)
+
+        plt.plot(self.integration_ivp.t, self.integration_ivp.y[0])
+        plt.show()
+
+        self.integration_ivp = solve_ivp(self.xdot, [self.integration_ivp.t[-1], max_time],
+                                         self.integration_ivp.y[:, -1], method='RK45', events=apogee)
+        print('Solve_ivp ascent')
+        print(self.integration_ivp.t)
+        print(self.integration_ivp.y)
+
+        plt.plot(self.integration_ivp.t, self.integration_ivp.y[0])
+        plt.show()
+
+        """self.integration.integrate(self.integration.t + self.time_step)
+        self.time.append(self.integration.t)
+        self.state.append(self.integration.y)
+        while self.integration.successful() and self.integration.y[1] > 0:
+            print(self.integration.t + self.time_step, self.integration.integrate(self.integration.t + self.time_step))
+            self.time.append(self.integration.t)
+            self.state.append(self.integration.y)"""
         return
 
 
 if __name__ == '__main__':
     # Rocket definition
-    gland = Body("tangent ogive", [0, 0.123], [0, 0.428])
+    gland = Body("tangent ogive", [0, 0.125], [0, 0.505])
 
-    tubes_francais = Body("cylinder", [0.123, 0.123, 0.103], [0, 1.815, 1.863])
+    tubes_francais = Body("cylinder", [0.125, 0.125, 0.102], [0, 1.85, 1.9])
 
-    M3_cone = Stage('Matterhorn III nosecone', gland, 1.5, 0.338, np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]]))
+    M3_cone = Stage('Matterhorn III nosecone', gland, 1.26, 0.338, np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]]))
 
-    M3_body = Stage('Matterhorn III body', tubes_francais, 9.9, 0.930,
+    M3_body = Stage('Matterhorn III body', tubes_francais, 9.6, 0.930,
                     np.array([[2.72, 0, 0], [0, 2.72, 0], [0, 0, 0]]))
 
     finDefData = {'number': 3,
@@ -66,11 +103,12 @@ if __name__ == '__main__':
                   'sweep': 0.06,
                   'thickness': 0.003,
                   'phase': 0,
-                  'body_top_offset': 1.54}
+                  'body_top_offset': 1.585,
+                  'total_mass': 0.3}
 
     M3_body.add_fins(finDefData)
 
-    M3_body.add_motor('Motors/Cesaroni_M1800.eng')
+    M3_body.add_motor('Motors/AT_L850.eng')
 
     Matterhorn_III = Rocket()
 
@@ -78,13 +116,16 @@ if __name__ == '__main__':
     Matterhorn_III.add_stage(M3_body)
 
     # Bla
-    US_Atmos = stdAtmosUS(1382, 308, 86000, 0.15)
+    US_Atmos = stdAtmosUS(1382, 308, 85600, 0.15)
 
     # Check Rocket parameters
     print(Matterhorn_III.get_mass(0))
-
+    print(M3_body.motors[0].thrust_to_mass)
+    print(M3_body.motors[0].get_propellant_mass(5))
     print(Matterhorn_III.get_max_diameter)
 
     # Sim
-    Simulator1D(Matterhorn_III, US_Atmos).xdot(0, [0, 0])
-    Simulator1D(Matterhorn_III, US_Atmos).get_integration()
+    print(Simulator1D(Matterhorn_III, US_Atmos).xdot(0, [0, 0]))
+    Simulator1D(Matterhorn_III, US_Atmos).get_integration(101, 30)
+
+    # Current simulation yields an apogee of 2031.86 m whereas Matlab 1D yields 2022.99 m

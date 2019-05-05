@@ -2,7 +2,7 @@
 
 Repository for the EPFL Rocket Team's flight simulator translated to Python.
 
-The aim is to create a GUI from the existing Matlab code.
+The aim is to create a GUI from the existing Matlab code, created by Hassan and then imporved by Eric and Emilien.
 
 Initial steps are
 1. Create a rocket from objects as below

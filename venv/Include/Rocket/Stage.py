@@ -1,6 +1,6 @@
 # Rocket class file
-# Author : Eric Brunner
-# Date   : 10 March 2019
+# Author : Eric Brunner and Jules Triomphe
+# Date   : 5 May 2019
 # EPFL Rocket Team, 1015 Lausanne, Switzerland
 
 from Rocket.Body import Body
@@ -69,21 +69,21 @@ class Stage:
         self.motor_paths = []
         self.motors = []
 
-        #self.diameters = self.body.diameters
-        #self.diameters_position = self.body.diameters_position
+        # self.diameters = self.body.diameters
+        # self.diameters_position = self.body.diameters_position
 
     # ------------------
     # METHODS
     # ------------------
 
-    def add_fins(self, fin_set: Fins):
+    def add_fins(self, fin_set_data: dict):
         """
         Adds a fin representation object to the stage.
 
-        :param: fin_set: set of fins to be added to this stage
+        :param: fin_set: fin set data to be added to this stage
         :return: None
         """
-        self.fins.append(fin_set)
+        self.fins.append(Fins(**fin_set_data))
 
     def add_motor(self, motor: Motor):
         """
@@ -97,9 +97,9 @@ class Stage:
 
     def get_mass(self, t: float):
         tmp_mass = 0
-        if not self.fins:
+        if self.fins is not []:
             tmp_mass += sum([fin_set.total_mass for fin_set in self.fins])
-        if not self.motors:
+        if self.motors is not []:
             tmp_mass += sum([motor.get_total_mass(t) for motor in self.motors])
         return self.empty_mass + tmp_mass
 
