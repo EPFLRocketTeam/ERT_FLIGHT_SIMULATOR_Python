@@ -4,8 +4,6 @@
 # EPFL Rocket Team, 1015 Lausanne, Switzerland
 
 from tkinter import *
-from math import *
-from PIL import Image, ImageTk
 import numpy as np
 from Simulator1D import Simulator1D
 from Functions.stdAtmosUS import stdAtmosUS
@@ -67,8 +65,8 @@ def SaveNose():
     DisplayNose(VALUES_N)
 
 # Display geometrical nosecone in drawing
-Len_Nose = 0
-Dia_Nose = 0
+LENGTH = [0, 0, 0, 0, 0, 0, 0]
+DIAMETER = [0, 0, 0, 0, 0, 0, 0]
 def DisplayNose(VALUES_N):
     canvas1.delete('all')
 
@@ -78,8 +76,10 @@ def DisplayNose(VALUES_N):
     NoseCone_Text.close()
 
     Len_Nose = VALUES_N[0]
+    LENGTH[0] = Len_Nose
     Dia_Nose = VALUES_N[1]
-    DispData(Len_Nose, Len_Tube, Len_Fins, Len_BoatTail, Dia_Nose, Dia_Tube, Dia_Fins, Dia_BoatTail)
+    DIAMETER[0] = Dia_Nose
+    DispData()
 
     canvas1.configure(width=VALUES_N[0]/3, height=VALUES_N[1]/3, bg='white', highlightthickness=0, bd=0,
                      relief='ridge')  # 300 mm + 350 mm
@@ -117,8 +117,6 @@ def SaveTube():
     DisplayTube(VALUES_T)
 
 # Display geometrical tube in drawing
-Len_Tube = 0
-Dia_Tube = 0
 def DisplayTube(VALUES_T):
     canvas2.delete('all')
 
@@ -128,8 +126,10 @@ def DisplayTube(VALUES_T):
     Tube_Text.close()
 
     Len_Tube = VALUES_T[0]
+    LENGTH[1] = Len_Tube
     Dia_Tube = VALUES_T[1]
-    DispData(Len_Nose, Len_Tube, Len_Fins, Len_BoatTail, Dia_Nose, Dia_Tube, Dia_Fins, Dia_BoatTail)
+    DIAMETER[1] = Dia_Tube
+    DispData()
 
     canvas2.configure(width=VALUES_T[0]/3, height=VALUES_T[1]/3, bg='white', highlightthickness=0, bd=0, relief='ridge')  # 2010 mm
     canvas2.create_rectangle(1, 0, VALUES_T[0]/3-1, VALUES_T[1]/3-1, width=1, outline='blue')
@@ -160,8 +160,6 @@ def SaveFins():
     DisplayFins(VALUES_F)
 
 # Display geometrical fins in drawing
-Len_Fins = 0
-Dia_Fins = 0
 def DisplayFins(VALUES_F):
     canvas3.delete('all')
 
@@ -170,17 +168,19 @@ def DisplayFins(VALUES_F):
         Fins_Text.write("%2.f\n" % (VALUES_F[i]))
     Fins_Text.close()
 
-    Len_Fins = (VALUES_F[1]+VALUES_F[7])
-    Dia_Fins = VALUES_F[8]
-    DispData(Len_Nose, Len_Tube, Len_Fins, Len_BoatTail, Dia_Nose, Dia_Tube, Dia_Fins, Dia_BoatTail)
+    Len_Fins = VALUES_F[9]
+    LENGTH[2] = Len_Fins
+    Dia_Fins = VALUES_F[10]
+    DIAMETER[2] = Dia_Fins
+    DispData()
 
     if VALUES_F[0] == 3:
-        canvas3.configure(width=VALUES_F[1]/3+VALUES_F[7]/3, height=VALUES_F[8]/3+2*VALUES_F[3]/3, bg='white', highlightthickness=0,
+        canvas3.configure(width=VALUES_F[9]/3, height=VALUES_F[10]/3+2*VALUES_F[3]/3, bg='white', highlightthickness=0,
                            bd=0, relief='ridge')  # 350 mm
-        canvas3.create_rectangle(1, VALUES_F[3]/3, VALUES_F[1]/3+VALUES_F[7]/3-1, VALUES_F[3]/3+VALUES_F[8]/3-1, width=1, outline='blue')
-        canvas3.create_polygon(VALUES_F[7]/3, VALUES_F[3]/3+2/3*VALUES_F[8]/3, VALUES_F[1]/3+VALUES_F[7]/3-1,
-                               VALUES_F[3]/3+2/3*VALUES_F[8]/3, VALUES_F[2]/3+VALUES_F[4]/3+VALUES_F[7]/3, 2/3*VALUES_F[8]/3+5/3*VALUES_F[3]/3-1,
-                               VALUES_F[4]/3+VALUES_F[7]/3, 2/3*VALUES_F[8]/3+5/3*VALUES_F[3]/3-1, width=1, outline='blue', fill='')
+        canvas3.create_rectangle(1, VALUES_F[3]/3, VALUES_F[9]/3-1, VALUES_F[3]/3+VALUES_F[10]/3-1, width=1, outline='blue')
+        canvas3.create_polygon(VALUES_F[7]/3, VALUES_F[3]/3+2/3*VALUES_F[10]/3, VALUES_F[1]/3+VALUES_F[7]/3-1,
+                               VALUES_F[3]/3+2/3*VALUES_F[10]/3, VALUES_F[2]/3+VALUES_F[4]/3+VALUES_F[7]/3, 2/3*VALUES_F[10]/3+5/3*VALUES_F[3]/3-1,
+                               VALUES_F[4]/3+VALUES_F[7]/3, 2/3*VALUES_F[10]/3+5/3*VALUES_F[3]/3-1, width=1, outline='blue', fill='')
         canvas3.create_polygon(VALUES_F[7]/3, VALUES_F[3]/3-3, VALUES_F[1]/3+VALUES_F[7]/3-1, VALUES_F[3]/3-3,
                                VALUES_F[2]/3+VALUES_F[4]/3+VALUES_F[7]/3, 0, VALUES_F[4]/3+VALUES_F[7]/3, 0, width=1, outline='blue', fill='')
         canvas3.grid(row=3, column=4, in_=canvas0)
@@ -210,8 +210,6 @@ def SaveBoatTail():
     DisplayBoatTail(VALUES_BT)
 
 # Display geometrical boat-tail in drawing
-Len_BoatTail = 0
-Dia_BoatTail = 0
 def DisplayBoatTail(VALUES_BT):
     canvas4.delete('all')
 
@@ -221,8 +219,10 @@ def DisplayBoatTail(VALUES_BT):
     BoatTail_Text.close()
 
     Len_BoatTail = VALUES_BT[0]
+    LENGTH[3] = Len_BoatTail
     Dia_BoatTail = VALUES_BT[1]
-    DispData(Len_Nose, Len_Tube, Len_Fins, Len_BoatTail, Dia_Nose, Dia_Tube, Dia_Fins, Dia_BoatTail)
+    DIAMETER[3] = Dia_BoatTail
+    DispData()
 
     canvas4.configure(width=VALUES_BT[0]/3, height=VALUES_BT[1]/3, bg='white', highlightthickness=0, bd=0,
                        relief='ridge')  # 50 mm
@@ -267,25 +267,25 @@ def SaveEnvironment():
 
 # Save environment parameters
 def GetEnvironment(VALUES_E):
-    DispData(Len_Nose, Len_Tube, Len_Fins, Len_BoatTail, Dia_Nose, Dia_Tube, Dia_Fins, Dia_BoatTail)
+    DispData()
     Env_Text = open("Parameters\\param_env\\Env.txt", "w")
     for i in range(len(VALUES_E)):
         Env_Text.write("%2.f\n" % (VALUES_E[i]))
     Env_Text.close()
 
 # Displays Data
-def DispData(Len_Nose, Len_Tube, Len_Fins, Len_BoatTail, Dia_Nose, Dia_Tube, Dia_Fins, Dia_BoatTail):
+def DispData():
 
     # Name, Mass, Length, Max Diameter
     Name = 'Eiger'
     Mass = 3832
-    Length = Len_Nose + Len_Tube + Len_Fins + Len_BoatTail
-    Max_Diameter = max(Dia_Nose, Dia_Tube, Dia_Fins, Dia_BoatTail)
+    Length = sum(LENGTH)
+    Max_Diameter = max(DIAMETER)
 
     canvas6.delete('all')
     canvas6.configure(width=250, height=40, bg='white', highlightthickness=0, bd=0, relief='ridge')
     canvas6.create_text(125, 20, text='%s \nLength %.2f mm, max.diameter %.2f mm \nMass with motors %.2f g' % (Name,
-                             Length, Max_Diameter, Mass), fill='black', font='Arial 8 italic',justify='left')
+                             Length, Max_Diameter, Mass), fill='black', font='Arial 8 italic', justify='left')
     canvas6.grid(row=0, column=0, columnspan=5, padx=10, pady=10, sticky='nw', in_=canvas0)
 
     # Stability, Centre de masse, Centre de pression, nombre de Mach
@@ -356,12 +356,15 @@ def Launch_Simulator1D():
         gland = Body('tangent ogive', [0, VAL_N[1]*10**(-3)], [0, (VAL_N[0])*10**(-3)])
 
         tubes_francais = Body("cylinder", [VAL_N[1]*10**(-3), VAL_BT[1]*10**(-3), VAL_BT[2]*10**(-3)],
-                              [0, (VAL_N[0]+VAL_T[0]+VAL_F[1]+VAL_F[7])*10**(-3), (VAL_N[0]+VAL_T[0]+VAL_F[1]+VAL_F[7]+VAL_BT[0])*10**(-3)])
+                                          [0, (VAL_T[0]+VAL_F[9])*10**(-3), (VAL_T[0]+VAL_F[9]+VAL_BT[0])*10**(-3)])
 
-        M3_cone = Stage('Matterhorn III nosecone', gland, 1.26, VAL_N[0]*10**(-3), np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]]))
+        M3_cone = Stage('Matterhorn III nosecone', gland, 1.26, 0.338, np.array([[VAL_N[2], VAL_N[3], VAL_N[4]],
+                                                                                 [VAL_N[5], VAL_N[6], VAL_N[7]],
+                                                                                 [VAL_N[8], VAL_N[9], VAL_N[10]]]))
 
-        M3_body = Stage('Matterhorn III body', tubes_francais, 9.6, VAL_T[0]*10**(-3),
-                        np.array([[2.72, 0, 0], [0, 2.72, 0], [0, 0, 0]]))
+        M3_body = Stage('Matterhorn III body', tubes_francais, 9.6, 0.930, np.array([[VAL_T[2], VAL_T[3], VAL_T[4]],
+                                                                                     [VAL_T[5], VAL_T[6], VAL_T[7]],
+                                                                                     [VAL_T[8], VAL_T[9], VAL_T[10]]]))
 
         finDefData = {'number': VAL_F[0],
                       'root_chord': VAL_F[1]*10**(-3),
@@ -370,8 +373,8 @@ def Launch_Simulator1D():
                       'sweep': VAL_F[4]*10**(-3),
                       'thickness': VAL_F[5]*10**(-3),
                       'phase': VAL_F[6],
-                      'body_top_offset': VAL_F[7]*10**(-3),
-                      'total_mass': 0.3}
+                      'body_top_offset': (VAL_T[0]+VAL_F[7])*10**(-3),
+                      'total_mass': VAL_F[8]*10**(-3)}
 
         M3_body.add_fins(finDefData)
 
@@ -384,6 +387,7 @@ def Launch_Simulator1D():
 
         # Bla
         US_Atmos = stdAtmosUS(VAL_E[0], VAL_E[1], VAL_E[2], VAL_E[3])
+        print(VAL_E[0], VAL_E[1], VAL_E[2], VAL_E[3])
 
         # Sim
         Simulator1D(Matterhorn_III, US_Atmos).get_integration(101, 30)
@@ -545,7 +549,9 @@ EntryButton(canvasAC3, 'Sweep', 2, 1, entries3)
 EntryButton(canvasAC3, 'Thickness', 2, 2, entries3)
 EntryButton(canvasAC3, 'Phase', 4, 0, entries3)
 EntryButton(canvasAC3, 'Body top offset', 4, 1, entries3)
-EntryButton(canvasAC3, 'Diameter', 6, 0, entries3)
+EntryButton(canvasAC3, 'Total mass', 4, 2, entries3)
+EntryButton(canvasAC3, 'Lengtgh', 6, 0, entries3)
+EntryButton(canvasAC3, 'Diameter', 6, 1, entries3)
 
 DispF = Button(fenetre, text='Displays', command=lambda: SaveFins())
 DispF.grid(row=8, column=2, sticky='se', padx=10, pady=10, in_=canvasAC3)
