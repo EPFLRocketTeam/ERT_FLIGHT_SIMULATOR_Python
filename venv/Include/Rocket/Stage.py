@@ -85,15 +85,15 @@ class Stage:
         """
         self.fins.append(Fins(**fin_set_data))
 
-    def add_motor(self, motor: Motor):
+    def add_motor(self, motor_path: Motor):
         """
         Adds a motor representation object to the stage.
 
         :param: motor: motor path to be added to this stage
         :return: None
         """
-        self.motor_paths.append(motor)
-        self.motors.append(Motor(motor))
+        self.motor_paths.append(motor_path)
+        self.motors.append(Motor(motor_path))
 
     def get_mass(self, t: float):
         tmp_mass = 0

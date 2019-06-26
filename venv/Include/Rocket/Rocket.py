@@ -153,6 +153,7 @@ class Rocket:
         for stage in self.stages:
             if stage.fins:
                 return self.get_fin_exposed_planform_area + 0.5 * self.get_mid_fin_diameter * stage.fins[0].root_chord
+        # TODO: implement the alternative and define whether 0 or exception
 
     @property
     def get_fin_thickness(self):

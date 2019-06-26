@@ -147,9 +147,7 @@ class Motor:
         self.burn_time = self.thrust_time[-1]
 
         # Simpson integration of the thrust curve
-        sample_time = np.linspace(0, self.burn_time, num=20000)
-        sample_thrust = self.thrust_function(sample_time)
-        self.total_impulse = np.trapz(sample_thrust, sample_time)
+        self.total_impulse = np.trapz(self.thrust_force, self.thrust_time)
         # self.total_impulse = simps(sample_thrust, sample_time, even='avg')
 
         self.thrust_to_mass = self.propellant_mass / self.total_impulse
@@ -183,10 +181,14 @@ class Motor:
         elif 0 <= t <= self.burn_time:
             thrust_t = self.thrust_time[:bisect.bisect_right(self.thrust_time, t)]
             thrust_f = self.thrust_force[:len(thrust_t)]
-            if 0:  # t not in self.thrust_time: gives higher altitude
+            if t not in self.thrust_time:
                 thrust_t.append(t)
                 thrust_f.append(self.thrust_function(t).tolist())
             current_impulse = np.trapz(thrust_f, thrust_t)
+            # Test to simulate exact Matlab code in 1D
+            # Yields higher results
+            time = np.linspace(0, t, 500)
+            current_impulse = np.trapz(self.thrust_function(time), time)
             # current_impulse = simps(thrust_f, thrust_t, even='avg')
             return self.thrust_to_mass * current_impulse
         else:
@@ -204,7 +206,7 @@ class Motor:
         elif 0 <= t <= self.burn_time:
             thrust_t = self.thrust_time[:bisect.bisect_right(self.thrust_time, t)]
             thrust_f = self.thrust_force[:len(thrust_t)]
-            if 0:  # t not in self.thrust_time: gives higher altitude
+            if 0:  # t not in self.thrust_time: # Yields a higher altitude than 0
                 thrust_t.append(t)
                 thrust_f.append(self.thrust_function(t).tolist())
             current_impulse = np.trapz(thrust_f, thrust_t)
@@ -302,6 +304,6 @@ if __name__ == '__main__':
     print(CS_M1800.get_total_mass(CS_M1800.burn_time))
     print(CS_M1800.get_total_mass(10))
     print(CS_M1800.total_impulse)
-    print(CS_M1800.thrust_to_mass**-1*CS_M1800.get_burnt_propellant_mass(CS_M1800.burn_time))
+    print(CS_M1800.thrust_to_mass ** -1 * CS_M1800.get_burnt_propellant_mass(CS_M1800.burn_time))
     print(CS_M1800.get_burnt_propellant_mass(CS_M1800.burn_time))
     print(CS_M1800.propellant_mass)

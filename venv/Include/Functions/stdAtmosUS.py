@@ -37,6 +37,9 @@ class stdAtmosUS:
     G0 : float
         Mean sea level gravitational constant, in [m.s^-2].
 
+    VISCOSITY : list of float
+        Table of temperatures with their corresponding VISCOSITY, in [K] and [Pa].
+
     ground_altitude : float
         Ground altitude AMSL, in [m].
 
@@ -52,10 +55,7 @@ class stdAtmosUS:
     dTdH : float
         Variation of temperature as a function of altitude, in [K.m^-1].
 
-    tmp_viscosity : list of float
-        Table of temperatures with their corresponding viscosity, in [K] and [Pa].
-
-    t_nu : float
+    temperature_nu : float
         Temperatures for the corresponding viscosities, in [K].
 
     viscosity_nu : float
@@ -109,11 +109,25 @@ class stdAtmosUS:
     A0 = 340.294
     G0 = 9.80665
 
+    VISCOSITY = ([200, 7.5400e-06],
+                 [250, 1.1370e-05],
+                 [260, 1.2410e-05],
+                 [270, 1.2990e-05],
+                 [280, 1.3850e-05],
+                 [290, 1.3850e-05],
+                 [300, 1.5780e-05],
+                 [310, 1.6590e-05],
+                 [320, 1.7540e-05],
+                 [330, 1.8510e-05],
+                 [340, 1.9510e-05],
+                 [350, 2.0730e-05])
+
     # --------------------
     # CONSTRUCTOR
     # --------------------
 
-    def __init__(self, ground_altitude: float, ground_temperature: float, ground_pressure: float, ground_humidity: float):
+    def __init__(self, ground_altitude: float, ground_temperature: float, ground_pressure: float,
+                 ground_humidity: float):
         self.ground_altitude = ground_altitude
         self.ground_temperature = ground_temperature
         self.ground_pressure = ground_pressure
@@ -121,22 +135,9 @@ class stdAtmosUS:
 
         self.dTdH = -9.5
 
-        self.tmp_viscosity = ([200, 7.5400e-06],
-                              [250, 1.1370e-05],
-                              [260, 1.2410e-05],
-                              [270, 1.2990e-05],
-                              [280, 1.3850e-05],
-                              [290, 1.3850e-05],
-                              [300, 1.5780e-05],
-                              [310, 1.6590e-05],
-                              [320, 1.7540e-05],
-                              [330, 1.8510e-05],
-                              [340, 1.9510e-05],
-                              [350, 2.0730e-05])
-
-        self.t_nu = [float(line[0]) for line in self.tmp_viscosity]
-        self.viscosity_nu = [float(line[1]) for line in self.tmp_viscosity]
-        self.viscosity_function = interp1d(self.t_nu, self.viscosity_nu)
+        self.temperature_nu = [float(line[0]) for line in self.VISCOSITY]
+        self.viscosity_nu = [float(line[1]) for line in self.VISCOSITY]
+        self.viscosity_function = interp1d(self.temperature_nu, self.viscosity_nu)
 
         self.p_ws = exp(77.345 + 0.0057 * self.ground_temperature \
                         - 7235 / self.ground_temperature) / self.ground_temperature ** 8.2
@@ -191,7 +192,7 @@ class stdAtmosUS:
 
 if __name__ == '__main__':
     US_Atmos = stdAtmosUS(1382, 308, 86000, 0.15)
-    #US_Atmos.dTdH = -6.5
+    # US_Atmos.dTdH = -6.5
     alt = 1000
     print(US_Atmos.get_temperature(alt))
     print(US_Atmos.get_pressure(alt))

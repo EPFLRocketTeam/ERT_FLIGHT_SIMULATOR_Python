@@ -24,21 +24,21 @@ class Simulator1D:
         self.state = [self.x_0]
         self.time = [self.t0]
 
-        self.Rocket = rocket
-        self.Atmosphere = atmosphere
+        self.rocket = rocket
+        self.atmosphere = atmosphere
 
     def xdot(self, t, x):
-        T = self.Rocket.get_thrust(t)
-        M = self.Rocket.get_mass(t)
-        dMdt = self.Rocket.get_dmass_dt(t)
-        rho = self.Atmosphere.get_density(x[0] + self.Atmosphere.ground_altitude)
-        nu = self.Atmosphere.get_viscosity(x[0] + self.Atmosphere.ground_altitude)
-        a = self.Atmosphere.get_speed_of_sound(x[0] + self.Atmosphere.ground_altitude)
+        T = self.rocket.get_thrust(t)
+        M = self.rocket.get_mass(t)
+        dMdt = self.rocket.get_dmass_dt(t)
+        rho = self.atmosphere.get_density(x[0] + self.atmosphere.ground_altitude)
+        nu = self.atmosphere.get_viscosity(x[0] + self.atmosphere.ground_altitude)
+        a = self.atmosphere.get_speed_of_sound(x[0] + self.atmosphere.ground_altitude)
         # TODO: Add drag influences (done?)
-        CD = drag(self.Rocket, 0, x[1], nu, a)
+        CD = drag(self.rocket, 0, x[1], nu, a)
         CD_AB = 0  # TODO: Insert reference to drag_shuriken or other
-        g = self.Atmosphere.G0
-        Sm = self.Rocket.get_max_cross_section_surface
+        g = self.atmosphere.G0
+        Sm = self.rocket.get_max_cross_section_surface
         return [x[1], T / M - g - x[1] * dMdt / M - 0.5 * rho * Sm * x[1] ** 2 * (CD + CD_AB) / M]
 
     def get_integration(self, number_of_steps: float, max_time: float):
@@ -75,13 +75,16 @@ class Simulator1D:
         plt.plot(self.integration_ivp.t, self.integration_ivp.y[0])
         plt.show()
 
-        """self.integration.integrate(self.integration.t + self.time_step)
+        self.time_span = np.linspace(self.t0, max_time, number_of_steps)
+        self.time_step = self.time_span[1] - self.time_span[0]
+        self.integration = ode(self.xdot).set_integrator('dopri5').set_initial_value(self.x_0, self.t0)
+        self.integration.integrate(self.integration.t + self.time_step)
         self.time.append(self.integration.t)
         self.state.append(self.integration.y)
         while self.integration.successful() and self.integration.y[1] > 0:
             print(self.integration.t + self.time_step, self.integration.integrate(self.integration.t + self.time_step))
             self.time.append(self.integration.t)
-            self.state.append(self.integration.y)"""
+            self.state.append(self.integration.y)
         return
 
 
@@ -119,13 +122,15 @@ if __name__ == '__main__':
     US_Atmos = stdAtmosUS(1382, 308, 85600, 0.15)
 
     # Check Rocket parameters
-    print(Matterhorn_III.get_mass(0))
+    print(Matterhorn_III.get_mass(3))
+    print(Matterhorn_III.get_dmass_dt(3))
     print(M3_body.motors[0].thrust_to_mass)
-    print(M3_body.motors[0].get_propellant_mass(5))
+    print(M3_body.motors[0].get_propellant_mass(3))
     print(Matterhorn_III.get_max_diameter)
 
     # Sim
     print(Simulator1D(Matterhorn_III, US_Atmos).xdot(0, [0, 0]))
-    Simulator1D(Matterhorn_III, US_Atmos).get_integration(101, 30)
+    Simulator1D(Matterhorn_III, US_Atmos).get_integration(1001, 30)
+    print(Simulator1D(Matterhorn_III, US_Atmos).xdot(1.47532025558889, [65.2079537378150,	94.4316557469021]))
 
-    # Current simulation yields an apogee of 2031.86 m whereas Matlab 1D yields 2022.99 m
+    # Current simulation yields an apogee of 2031.86129 m whereas Matlab 1D yields 2022.9871 m

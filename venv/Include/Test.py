@@ -51,8 +51,6 @@ if __name__ == "__main__":
     print(max(tubes_francais.diameters))
     print(Matterhorn_III.get_mass(0))
 
-
-
     from Functions.stdAtmosUS import stdAtmosUS
 
     US_Atmos = stdAtmosUS(1382, 308, 85600, 0.15)
@@ -60,7 +58,7 @@ if __name__ == "__main__":
     from Functions.drag import drag
 
     t = 6.11840823842032
-    x = [853.848962337705,	166.003984138695]
+    x = [853.848962337705, 166.003984138695]
     T = Matterhorn_III.get_thrust(t)
     M = Matterhorn_III.get_mass(t)
     dMdt = Matterhorn_III.get_dmass_dt(t)
@@ -78,3 +76,33 @@ if __name__ == "__main__":
     print('Air viscosity = ', nu)
     print('Speed of sound = ', a)
     print('CD = ', CD)
+
+    from scipy.integrate import solve_ivp
+    import matplotlib.pyplot as plt
+
+
+    def xdot(t, x):
+        dir = -1
+        return [dir * mu * (x[0] - 1 / 3 * x[0] ** 3 - x[1]), dir * 1 / mu * x[0]]
+
+
+    x_0 = [-2, 0]
+    t0 = 0
+    max_time = 10000
+
+    nTps = [101, 1001, 10001, 100001]
+    fig = plt.figure(figsize=(6, 4))
+    for i in range(4):
+        ntps = nTps[i]
+        tspan = np.linspace(max_time, t0, ntps)
+        plt.subplot(2, 2, i+1)
+
+        for mu in [1, 2, 3, 4, 5]:
+            integration_ivp = solve_ivp(xdot, [max_time, t0], x_0, method='RK45')
+
+            print('mu = ')
+            print(mu)
+
+            plt.plot(integration_ivp.y[0], integration_ivp.y[1])
+        plt.title("".join(['t0 = ', str(max_time), ', tf = ', str(t0), ', n = ', str(ntps)]))
+    plt.show()

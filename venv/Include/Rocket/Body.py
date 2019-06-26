@@ -14,7 +14,7 @@ class Body:
         Attributes
         ----------
 
-        cone_type : str
+        body_type : str
             "cylinder","tangent ogive"
             TODO : Implement "conic", "spherically blunted conic", "bi-conic", "spherically blunted tangent ogive",
                 "secant ogive", "elliptical", "parabola", "3/4 parabola", "1/2 parabola", "1/2 power", "3/4 power",
@@ -34,10 +34,9 @@ class Body:
     # CONSTRUCTOR
     # --------------------
 
-    def __init__(self, cone_type: str, diameters: "np array", diameters_position: "np array"):
-        self.cone_type = cone_type
+    def __init__(self, body_type: str, diameters: "np array", diameters_position: "np array"):
+        self.cone_type = body_type
         self.diameters = diameters
         self.diameters_position = diameters_position
         self.max_diameter = max(self.diameters)
         self.max_cross_section_surface = np.pi / 4 * max(self.diameters) ** 2
-
