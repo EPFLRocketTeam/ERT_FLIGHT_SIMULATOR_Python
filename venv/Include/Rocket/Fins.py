@@ -68,6 +68,7 @@ class Fins:
         self.phase = phase
         self.body_top_offset = body_top_offset
         self.total_mass = total_mass
+
     # --------------------
     # METHODS
     # --------------------

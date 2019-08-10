@@ -143,6 +143,10 @@ class stdAtmosUS:
                         - 7235 / self.ground_temperature) / self.ground_temperature ** 8.2
         self.saturation_vapor_ratio = 0.62198 * self.p_ws / (self.ground_pressure - self.p_ws)
 
+    # --------------------
+    # METHODS
+    # --------------------
+
     def get_temperature(self, altitude: float) -> float:
         """
         Computes the temperature at a given altitude AMSL in [m], in [K].
