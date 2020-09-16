@@ -15,15 +15,15 @@ from Rocket.Stage import Stage
 
 # Ouvre une fenetre with title and icon
 fenetre = Tk()
+fenetre.geometry("640x480")
 fenetre.grid()
 fenetre.title('Simulator EPFL Rocket')
-fenetre.call('wm', 'iconphoto', fenetre._w, PhotoImage(file='Parameters\ERT_logo.png'))
+fenetre.call('wm', 'iconphoto', fenetre._w, PhotoImage(file="Parameters/ERT_logo.png"))
 fenetre.configure(bg="light goldenrod yellow")
 
 fenetre.rowconfigure(0, weight=1)  # first row is used to module the rocket, saving chosen parameters
 fenetre.rowconfigure(1, weight=3)  # give a weight 3 times more important to the second row, used to draw rocket
 fenetre.columnconfigure(0, weight=1)
-
 # Add scrollbar to frame
 def Add_Scrollbar(frameL, canvas, vbar, frameN):
     frameL.grid()
@@ -377,7 +377,7 @@ def EigerNoseCone():
     frameACA.grid_remove()
 
     # a file EigerNose.txt is already created with parameters pre-selected
-    EP = open('Parameters\\param_rocket\\EigerNose.txt', 'r')
+    EP = open('Parameters/param_rocket/EigerNose.txt', 'r')
     EP1 = EP.readlines()
     VALUES_N = []
     for line in EP1:  # taking each line
@@ -412,7 +412,7 @@ def DisplayNose(VALUES_N):
     canvas1 = CanvasGeometry[Stg][itemB]
 
     # Write folder Parameters a file NoseCone.txt which parameters selected by the user
-    NoseCone_Text = open('Parameters\\param_rocket\\NoseCone.txt', "w")
+    NoseCone_Text = open('Parameters/param_rocket/NoseCone.txt', "w")
     for i in range(len(VALUES_N)):
         NoseCone_Text.write("%s\n" % (VALUES_N[i]))
     NoseCone_Text.close()
@@ -450,7 +450,7 @@ def DispTube():
 def EigerTube():
     frameACB.grid_remove()
 
-    EP = open('Parameters\\param_rocket\\EigerTube.txt', 'r')
+    EP = open('Parameters/param_rocket/EigerTube.txt', 'r')
     EP1 = EP.readlines()
     VALUES_T = []
     for line in EP1:  # taking each line
@@ -484,7 +484,7 @@ def DisplayTube(VALUES_T):
     itemB = ITEMB[Stg]
     canvas2 = CanvasGeometry[Stg][itemB]
 
-    Tube_Text = open("Parameters\\param_rocket\\Tube.txt", "w")
+    Tube_Text = open("Parameters/param_rocket/Tube.txt", "w")
     for i in range(len(VALUES_T)):
         Tube_Text.write("%s\n" % (VALUES_T[i]))
     Tube_Text.close()
@@ -516,7 +516,7 @@ def DispFins():
 def EigerFins():
     frameACC.grid_remove()
 
-    EP = open('Parameters\\param_rocket\\EigerFins.txt', 'r')
+    EP = open('Parameters/param_rocket/EigerFins.txt', 'r')
     EP1 = EP.readlines()
     VALUES_F = []
     for i, line in enumerate(EP1):  # taking each line
@@ -555,7 +555,7 @@ def DisplayFins(VALUES_F):
     itemB = ITEMB[Stg]
     canvas3 = CanvasGeometry[Stg][itemB]
 
-    Fins_Text = open("Parameters\\param_rocket\\Fins.txt", "w")
+    Fins_Text = open("Parameters/param_rocket/Fins.txt", "w")
     for i in range(len(VALUES_F)):
         Fins_Text.write("%s\n" % (VALUES_F[i]))
     Fins_Text.close()
@@ -598,7 +598,7 @@ def DispBoatTail():
 def EigerBoatTail():
     frameACD.grid_remove()
 
-    EP = open('Parameters\\param_rocket\\EigerBoatTail.txt', 'r')
+    EP = open('Parameters/param_rocket/EigerBoatTail.txt', 'r')
     EP1 = EP.readlines()
     VALUES_BT = []
     for line in EP1:  # taking each line
@@ -632,7 +632,7 @@ def DisplayBoatTail(VALUES_BT):
     itemB = ITEMB[Stg]
     canvas4 = CanvasGeometry[Stg][itemB]
 
-    BoatTail_Text = open("Parameters\\param_rocket\\BoatTail.txt", "w")
+    BoatTail_Text = open("Parameters/param_rocket/BoatTail.txt", "w")
     for i in range(len(VALUES_BT)):
         BoatTail_Text.write("%s\n" % (VALUES_BT[i]))
     BoatTail_Text.close()
@@ -659,13 +659,13 @@ def DisplayBoatTail(VALUES_BT):
 ## MOTOR
 # Get motor type
 def AT_L850():
-    AT_L850_Text = open("Parameters\\param_motor\\Motor.txt", "w")
+    AT_L850_Text = open("Parameters/param_motor/Motor.txt", "w")
     AT_L850_Text.write("AT_L850")
     AT_L850_Text.close()
 
 
 def Cesaroni_M1800():
-    Cesaroni_M1800_Text = open("Parameters\\param_motor\\Motor.txt", "w")
+    Cesaroni_M1800_Text = open("Parameters/param_motor/Motor.txt", "w")
     Cesaroni_M1800_Text.write("Cesaroni_M1800")
     Cesaroni_M1800_Text.close()
 
@@ -684,7 +684,7 @@ def DispEnvironment():
 # Get values from entries then run GetEnvironment()
 def MexicoEnv():
     frameACE.grid_remove()
-    EP = open('Parameters\\param_env\\Mexico.txt', 'r')
+    EP = open('Parameters/param_env/Mexico.txt', 'r')
     EP1 = EP.readlines()
     VALUES_E = []
     for line in EP1:  # taking each line
@@ -702,7 +702,7 @@ def SaveEnvironment():
 # Save environment parameters
 def GetEnvironment(VALUES_E):
     DispData()
-    Env_Text = open("Parameters\\param_env\\Env.txt", "w")
+    Env_Text = open("Parameters/param_env/Env.txt", "w")
     for i in range(len(VALUES_E)):
         Env_Text.write("%s\n" % (VALUES_E[i]))
     Env_Text.close()
@@ -755,21 +755,21 @@ def DispData():
 ## Launch Simulator1D.py
 def Launch_Simulator1D():
     if __name__ == '__main__':
-        NoseCone = open('Parameters\\param_rocket\\NoseCone.txt', 'r')  # Read text file
+        NoseCone = open('Parameters/param_rocket/NoseCone.txt', 'r')  # Read text file
         NoseCone1 = NoseCone.readlines()
         VAL_N = []
         for line in NoseCone1:  # taking each line
             conv_float = float(line)
             VAL_N.append(conv_float)
 
-        Tube = open('Parameters\\param_rocket\\Tube.txt', 'r')
+        Tube = open('Parameters/param_rocket/Tube.txt', 'r')
         Tube1 = Tube.readlines()
         VAL_T = []
         for line in Tube1:  # taking each line
             conv_float = float(line)
             VAL_T.append(conv_float)
 
-        Fins = open('Parameters\\param_rocket\\Fins.txt', 'r')
+        Fins = open('Parameters/param_rocket/Fins.txt', 'r')
         Fins1 = Fins.readlines()
         VAL_F = []
         for i, line in enumerate(Fins1):  # taking each line
@@ -780,17 +780,17 @@ def Launch_Simulator1D():
                 conv_float = float(line)
                 VAL_F.append(conv_float)
 
-        BoatTail = open('Parameters\\param_rocket\\BoatTail.txt', 'r')
+        BoatTail = open('Parameters/param_rocket/BoatTail.txt', 'r')
         BoatTail1 = BoatTail.readlines()
         VAL_BT = []
         for line in BoatTail1:  # taking each line
             conv_float = float(line)
             VAL_BT.append(conv_float)
 
-        Motor = open('Parameters\\param_motor\\Motor.txt', 'r')
+        Motor = open('Parameters/param_motor/Motor.txt', 'r')
         Motor1 = Motor.readlines()
 
-        Env = open('Parameters\\param_env\\Env.txt', 'r')
+        Env = open('Parameters/param_env/Env.txt', 'r')
         Env1 = Env.readlines()
         VAL_E = []
         for line in Env1:  # taking each line
