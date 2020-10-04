@@ -13,9 +13,10 @@ from Rocket.Body import Body
 from Rocket.Rocket import Rocket
 from Rocket.Stage import Stage
 
+
 # Ouvre une fenetre with title and icon
 fenetre = Tk()
-fenetre.geometry("640x480")
+fenetre.geometry("1280x980")
 fenetre.grid()
 fenetre.title('Simulator EPFL Rocket')
 fenetre.call('wm', 'iconphoto', fenetre._w, PhotoImage(file="Parameters/ERT_logo.png"))
@@ -52,8 +53,46 @@ def UpdateScale():
 
 # TODO: Modify the tree's branch selected to change parameters
 def change():
-    return
+    selected = tree.focus()
 
+    #case ogive selected
+    if selected[1] == "t":
+        if selected[2] == 'n':
+            NoseCone = open('Parameters/param_rocket/NoseCone.txt', 'r')  # Read text file
+            NoseCone1 = NoseCone.readlines()
+            VAL_N = []
+            for line in NoseCone1:  # taking each line
+                VAL_N.append(float(line))
+            OpenNoseParams(fenetre, VAL_N, disp=0)
+
+        # case tube selected
+
+        if selected[2] == 't':
+            Tube = open('Parameters/param_rocket/Tube.txt', 'r')  # Read text file
+            Tube1 = Tube.readlines()
+            VAL_N = []
+            for line in Tube1:  # taking each line
+                VAL_N.append(float(line))
+            OpenTubeParams(fenetre, VAL_N, disp=0)
+
+        # case fins selected
+
+        if selected[2] == 'f':
+            Fins = open('Parameters/param_rocket/Fins.txt', 'r')  # Read text file
+            Fins1 = Fins.readlines()
+            VAL_N = []
+            for line in Fins1:  # taking each line
+                VAL_N.append(float(line))
+            OpenFinsParams(fenetre, VAL_N, disp=0)
+
+        # case BT selected
+        if selected[2] == 'b':
+            BT = open('Parameters/param_rocket/BoatTail.txt', 'r')  # Read text file
+            BT1 = BT.readlines()
+            VAL_N = []
+            for line in BT1:  # taking each line
+                VAL_N.append(float(line))
+            OpenBoatTailParams(fenetre, VAL_N, disp=0)
 
 ## Add a stage
 # Make an array of Frame Geometry to memorize each stage's frame
@@ -69,6 +108,8 @@ incF = -1
 
 # Array of items B
 ITEMB=[]
+
+bodyParts=[]
 
 # MATRIX of position canvas
 PosC = []
@@ -95,6 +136,8 @@ def Add_Stage():
 
         itemBN = -1
         ITEMB.append(itemBN)
+
+        bodyParts.append([])
 
         inc0 += 1
 
@@ -137,7 +180,7 @@ alpha = list(string.ascii_lowercase)
 inc = -1
 
 # Add a subbranch in treeview
-def Add_Substage(StageSelected, subpart, canvasN, Stg, frame_idx):
+def Add_Substage(StageSelected, subpart, canvasN, Stg, frame_idx, name):
     # Add a canvasN (N as Number) to draw Nosecone for N=1, Tube N=2, Fins N=3, Boat-Tail N=4
     def CanvasSubstage(canvasN, Stg, frame_idx):
         global CanvasGeometry, inc, ITEMB
@@ -152,8 +195,9 @@ def Add_Substage(StageSelected, subpart, canvasN, Stg, frame_idx):
     posC = IncC[Stg]
     PosC[Stg].append(posC)
     ITEMB[Stg] += 1
+    bodyParts[Stg].append(name)
     inc += 1
-    tree.insert(StageSelected, 'end', 'it%s%d%d' % (alpha[inc], ITEMB[Stg], Stg), text=subpart)
+    tree.insert(StageSelected, 'end', 'it%s%s%d%d' % (name, alpha[inc], ITEMB[Stg], Stg), text=subpart)
     CanvasSubstage(canvasN, Stg, frame_idx)
 
 ## Remodulate treeview and rocket (remove, move up, move down, change)
@@ -161,16 +205,18 @@ def Add_Substage(StageSelected, subpart, canvasN, Stg, frame_idx):
 def do_remove():
     global FrameGeometry, CanvasGeometry, ITEMB, PosF, incF, PosC, IncC
     sel = tree.selection()
+
     if sel:
         tree.delete(sel)
 
     id = str(sel[0])
+
     Val1 = []
     for val1 in id:
         Val1.append(val1)
     value1 = int(Val1[-1])  # Stage number
-    prefix1 = str(Val1[-3])  # 'd' -> frame
-    prefix2 = str(Val1[-4])  # 't' -> canvas
+    prefix1 = str(Val1[1])  # 'd' -> frame / 't' -> canvas
+    prefix2 = str(Val1[2])  # 'n' -> nose / 't' -> tube / 'f' -> Fins / 'b' -> Boat Tail
     prefix3 = str(Val1[-2])  # letter which makes each frame unique
     prefix4 = str(Val1[-3])  # letter which makes each canvas unique
 
@@ -203,7 +249,7 @@ def do_remove():
 
 
     # if prefix1 == 't' indicates that the selected tree's item is a substage
-    if prefix2 == 't':
+    if prefix1 == 't':
         for j, canvas in enumerate(CanvasGeometry[value1]):
             Val3 = []
             for val3 in str(canvas):
@@ -239,8 +285,7 @@ def do_move_up():
     for val1 in id:
         Val1.append(val1)
     value1 = int(Val1[-1])  # Stage number
-    prefix1 = str(Val1[-3])  # 'd' -> frame
-    prefix2 = str(Val1[-4])  # 't' -> canvas
+    prefix1 = str(Val1[1])  # 'd' -> frame / 't' -> canvas
     prefix3 = str(Val1[-2])  # letter which makes each frame unique
     prefix4 = str(Val1[-3])  # letter which makes each canvas unique
 
@@ -259,21 +304,51 @@ def do_move_up():
                 PosF[np.where(np.array(PosF) == PosF[value1]-1)[0][0]] += 1
                 PosF[value1] -= 1
 
-    elif prefix2 == 't':
+    elif prefix1 == 't':
         for j, canvas in enumerate(CanvasGeometry[value1]):
             Val3 = []
             for val3 in str(canvas):
                 Val3.append(val3)
-            value2 = int(Val3[-1])
-            value3 = int(Val3[-2])
+
+            value2 = int(Val3[-1]) # stage num
+            value3 = int(Val3[-2]) # itemB
             letter3 = str(Val3[-3])
 
             if (value2 == value1) and (letter3 == prefix4):
-                CanvasGeometry[value1][value3].grid(row=0, column=PosC[value1][value3]-1)
-                CanvasGeometry[value1][np.where(np.array(PosC[value1]) == PosC[value1][value3]-1)[0][0]].grid(row=0, column=PosC[value1][value3])
+                #CanvasGeometry[value1][tree.index(sel)].grid(row=0, column=PosC[value1][value3]-1)
+                #CanvasGeometry[value1][np.where(np.array(PosC[value1]) == PosC[value1][value3] - 1)[0][0]].grid(row=0, column=PosC[value1][value3])
+                #CanvasGeometry[value1][tree.index(sel)-1].grid(row=0, column=PosC[value1][tree.index(sel)])
 
-                PosC[value1][np.where(np.array(PosC[value1]) == PosC[value1][value3]-1)[0][0]] += 1
+                tmp = bodyParts[value1][tree.index(sel)+1]
+                bodyParts[value1][tree.index(sel)+1] = bodyParts[value1][tree.index(sel)]
+                bodyParts[value1][tree.index(sel)] = tmp
+
+                for i in range(len(bodyParts[value1])):
+                    tmp2 = []
+                    for l in str(CanvasGeometry[value1][i]):
+                        tmp2.append(l)
+
+                    letter = ''
+                    piece = tmp2[-4]
+                    if int(piece) == 1:
+                        letter = 'n'
+                    if int(piece) == 2:
+                        letter = 't'
+                    if int(piece) == 3:
+                        letter = 'f'
+                    if int(piece) == 4:
+                        letter = 'b'
+
+                    CanvasGeometry[value1][i].grid(row=0, column=bodyParts[value1].index(letter))
+
+
+
+                PosC[value1][value3-1] += 1
+                #PosC[value1][np.where(np.array(PosC[value1]) == PosC[value1][value3] - 1)[0][0]] += 1
                 PosC[value1][value3] -= 1
+
+
+
 
 
 # Move the tree's branch down
@@ -291,8 +366,7 @@ def do_move_down():
     for val1 in id:
         Val1.append(val1)
     value1 = int(Val1[-1])  # Stage number
-    prefix1 = str(Val1[-3])  # 'd' -> frame
-    prefix2 = str(Val1[-4])  # 't' -> canvas
+    prefix1 = str(Val1[1])  # 'd' -> frame
     prefix3 = str(Val1[-2])  # letter which makes each frame unique
     prefix4 = str(Val1[-3])  # letter which makes each canvas unique
 
@@ -311,7 +385,7 @@ def do_move_down():
                 PosF[np.where(np.array(PosF) == PosF[value2]+1)[0][0]] -= 1
                 PosF[value1] += 1
 
-    elif prefix2 == 't':
+    elif prefix1 == 't':
         for j, canvas in enumerate(CanvasGeometry[value1]):
             Val3 = []
             for val3 in str(canvas):
@@ -321,11 +395,32 @@ def do_move_down():
             letter3 = str(Val3[-3])
 
             if (value2 == value1) and (letter3 == prefix4):
-                CanvasGeometry[value1][value3].grid(row=0, column=PosC[value1][value3]+1)
-                CanvasGeometry[value1][np.where(np.array(PosC[value1]) == PosC[value1][value3]+1)[0][0]].grid(row=0, column=PosC[value1][value3])
 
-                PosC[value1][np.where(np.array(PosC[value1]) == PosC[value1][value3]+1)[0][0]] -= 1
-                PosC[value1][value3] += 1
+                tmp = bodyParts[value1][tree.index(sel)]
+                bodyParts[value1][tree.index(sel)] = bodyParts[value1][tree.index(sel)-1]
+                bodyParts[value1][tree.index(sel)-1] = tmp
+
+                for i in range(len(bodyParts[value1])):
+                    tmp2 = []
+                    for l in str(CanvasGeometry[value1][i]):
+                        tmp2.append(l)
+
+                    letter = ''
+                    piece = tmp2[-4]
+                    if int(piece) == 1:
+                        letter = 'n'
+                    if int(piece) == 2:
+                        letter = 't'
+                    if int(piece) == 3:
+                        letter = 'f'
+                    if int(piece) == 4:
+                        letter = 'b'
+
+                    CanvasGeometry[value1][i].grid(row=0, column=bodyParts[value1].index(letter))
+
+                PosC[value1][value3 - 1] += 1
+                # PosC[value1][np.where(np.array(PosC[value1]) == PosC[value1][value3] - 1)[0][0]] += 1
+                PosC[value1][value3] -= 1
 
 
 # Function which permits to entry rocket's parameters manually
@@ -407,7 +502,7 @@ def DisplayNose(VALUES_N):
     frame02idx = FrameGeometry[Stg]
 
     # Get Canvas in frame02idx
-    Add_Substage(StageSelected, 'Ogive', 'canvas1', Stg, frame02idx)
+    Add_Substage(StageSelected, 'Ogive', 'canvas1', Stg, frame02idx, 'n')
     itemB = ITEMB[Stg]
     canvas1 = CanvasGeometry[Stg][itemB]
 
@@ -480,7 +575,7 @@ def DisplayTube(VALUES_T):
     frame02idx = FrameGeometry[Stg]
 
     # Get Canvas in frame02idx
-    Add_Substage(StageSelected, 'Tube', 'canvas2', Stg, frame02idx)
+    Add_Substage(StageSelected, 'Tube', 'canvas2', Stg, frame02idx, 't')
     itemB = ITEMB[Stg]
     canvas2 = CanvasGeometry[Stg][itemB]
 
@@ -551,7 +646,7 @@ def DisplayFins(VALUES_F):
     frame02idx = FrameGeometry[Stg]
 
     # Get Canvas in frame02idx
-    Add_Substage(StageSelected, 'Fins', 'canvas3', Stg, frame02idx)
+    Add_Substage(StageSelected, 'Fins', 'canvas3', Stg, frame02idx, 'f')
     itemB = ITEMB[Stg]
     canvas3 = CanvasGeometry[Stg][itemB]
 
@@ -628,7 +723,7 @@ def DisplayBoatTail(VALUES_BT):
     frame02idx = FrameGeometry[Stg]
 
     # Get Canvas in frame02idx
-    Add_Substage(StageSelected, 'Boat-Tail', 'canvas4', Stg, frame02idx)
+    Add_Substage(StageSelected, 'Boat-Tail', 'canvas4', Stg, frame02idx, 'b')
     itemB = ITEMB[Stg]
     canvas4 = CanvasGeometry[Stg][itemB]
 
@@ -841,6 +936,670 @@ def Launch_Simulator1D():
     # Current simulation yields an apogee of 2031.86 m whereas Matlab 1D yields 2022.99 m
     return
 
+def DrawNose(VALUES_N):
+    # Get the index 'stg' of stage : example, first stage has an index stg = 0
+    StageSelected = Selected_Stage()
+    Slc = '%s' % (StageSelected[0])
+    Val = []
+    for val in str(Slc):
+        Val.append(val)
+    Stg = int(Val[-1])
+
+    idx = 0
+    for i in range(len(bodyParts[Stg])):
+        tmp2 = []
+        for l in str(CanvasGeometry[Stg][i]):
+            tmp2.append(l)
+        if int(tmp2[-4]) == 1:
+            idx = i
+
+    canvas1 = CanvasGeometry[Stg][idx]
+    canvas1.delete("all")
+
+    canvas1.configure(width=VALUES_N[0] / 3, height=VALUES_N[1] / 3, bg='white', highlightthickness=0, bd=0,
+                      relief='ridge')  # 300 mm + 350 mm
+    canvas1.create_arc(2 / 3 * (1 - VALUES_N[1] / 3), 3.3 * VALUES_N[1] / 3, 4.1 * VALUES_N[1] / 3, -1, width=1,
+                       outline='blue', style=ARC, start=90, extent=90)
+    canvas1.create_arc(2 / 3 * (1 - VALUES_N[1] / 3), VALUES_N[1] / 3, 4.1 * VALUES_N[1] / 3 + 3,
+                       -2.3 * VALUES_N[1] / 3, width=1, outline='blue', style=ARC, start=-90, extent=-90)
+    canvas1.create_line(7 / 5 * VALUES_N[1] / 3, 0, VALUES_N[0] / 3 - 1, 0, width=1, fill='blue')
+    canvas1.create_line(7 / 5 * VALUES_N[1] / 3, VALUES_N[1] / 3 - 1, VALUES_N[0] / 3 - 1, VALUES_N[1] / 3 - 1, width=1,
+                        fill='blue')
+    canvas1.create_line(VALUES_N[0] / 3 - 1, 0, VALUES_N[0] / 3 - 1, VALUES_N[1] / 3 - 1, width=1, fill='blue')
+
+    tmp=bodyParts[Stg].index('n')
+    canvas1.grid(row=0, column=tmp)
+
+
+def OpenNoseParams(fenetre, values=[600, 155, 0,0,0,0,0,0,0,0,0], disp=1):
+
+    noseParam = Toplevel(fenetre)
+    noseParam.title("NoseCone Parameters")
+    noseParam.geometry("400x200")
+    Title = Label(noseParam, text = "Change params")
+    Title.pack()
+
+    notebook = ttk.Notebook(noseParam)
+    tab1 = ttk.Frame(notebook)
+    notebook.add(tab1, text="Dimensions")
+    notebook.pack(expand=1, fill="both")
+
+    tab2 = ttk.Frame(notebook)
+    notebook.add(tab2, text="Inertia")
+    notebook.pack(expand=1, fill="both")
+
+
+
+    def slide(var):
+        lengthEntry.delete(0, "end")
+        lengthEntry.insert(0,str(lengthScale.get()))
+        DrawNose([lengthScale.get(), DiaScale.get()])
+
+    def insertVal(var):
+        lengthScale.set(lengthEntry.get())
+
+    def slide1(var):
+        DiaEntry.delete(0, "end")
+        DiaEntry.insert(0,str(DiaScale.get()))
+        DrawNose([lengthScale.get(), DiaScale.get()])
+
+    def insertVal1(var):
+        DiaScale.set(DiaEntry.get())
+
+
+    lengthLabel = Label(tab1, text="Length: ")
+    lengthLabel.grid(row=1, column=0)
+    lengthEntry = Entry(tab1)
+    lengthEntry.grid(row=1, column=1, pady=5)
+    lengthEntry.insert(0, values[0])
+    lengthEntry.bind("<Return>", insertVal)
+    lengthScale = Scale(tab1, from_=0, to=1000, orient=HORIZONTAL, command=slide, showvalue=0)
+    lengthScale.grid(row=1, column=2)
+    lengthScale.set(values[0])
+
+    DiaLabel = Label(tab1, text="Diameter: ")
+    DiaLabel.grid(row=2, column=0)
+    DiaEntry = Entry(tab1)
+    DiaEntry.grid(row=2, column=1, pady=10)
+    DiaEntry.insert(0, values[1])
+    DiaEntry.bind("<Return>", insertVal1)
+    DiaScale = Scale(tab1, from_=0, to=300, orient=HORIZONTAL, command=slide1, showvalue=0)
+    DiaScale.grid(row=2, column=2)
+    DiaScale.set(values[1])
+
+    inertia0 = Label(tab2, text="Inertial Matrix: ");
+    inertia0.grid(row=1, column=0)
+
+    inertia1 = Entry(tab2, width=4, justify=CENTER); inertia1.grid(row=0, column=1, pady = 2, padx=2); inertia1.insert(0,values[2])
+    inertia2 = Entry(tab2, width=4, justify=CENTER); inertia2.grid(row=0, column=2, pady = 2, padx=2); inertia2.insert(0,values[3])
+    inertia3 = Entry(tab2, width=4, justify=CENTER); inertia3.grid(row=0, column=3, pady = 2, padx=2); inertia3.insert(0,values[4])
+    inertia4 = Entry(tab2, width=4, justify=CENTER); inertia4.grid(row=1, column=1, pady = 2, padx=2); inertia4.insert(0,values[5])
+    inertia5 = Entry(tab2, width=4, justify=CENTER); inertia5.grid(row=1, column=2, pady = 2, padx=2); inertia5.insert(0,values[6])
+    inertia6 = Entry(tab2, width=4, justify=CENTER); inertia6.grid(row=1, column=3, pady = 2, padx=2); inertia6.insert(0,values[7])
+    inertia7 = Entry(tab2, width=4, justify=CENTER); inertia7.grid(row=2, column=1, pady = 2, padx=2); inertia7.insert(0,values[8])
+    inertia8 = Entry(tab2, width=4, justify=CENTER); inertia8.grid(row=2, column=2, pady = 2, padx=2); inertia8.insert(0,values[9])
+    inertia9 = Entry(tab2, width=4, justify=CENTER); inertia9.grid(row=2, column=3, pady = 2, padx=2); inertia9.insert(0,values[10])
+
+    if disp:
+        DisplayNose([lengthScale.get(), DiaScale.get(),inertia1.get(),inertia2.get(),inertia3.get(),inertia4.get(),
+                 inertia5.get(),inertia6.get(),inertia7.get(),inertia8.get(),inertia9.get()])
+
+    def validCB():
+        NoseCone_Text = open('Parameters/param_rocket/NoseCone.txt', "w")
+        vals = [lengthScale.get(), DiaScale.get(),inertia1.get(),inertia2.get(),inertia3.get(),inertia4.get(),
+                 inertia5.get(),inertia6.get(),inertia7.get(),inertia8.get(),inertia9.get()]
+        for val in vals:
+            NoseCone_Text.write("%s\n" % (val))
+        NoseCone_Text.close()
+        noseParam.destroy()
+        noseParam.update()
+
+    validateButton = Button(noseParam, text="OK", command=validCB)
+    validateButton.pack(anchor="e", padx=10, pady=5)
+    #validateButton.grid(row=3, column=2)
+    noseParam.mainloop()
+
+
+# Display geometrical tube in drawing
+def DrawTube(VALUES_T):
+    global ITEMB, PosF, PosC
+
+    # Get the index 'stg' of stage : example, first stage has an index stg = 0
+    StageSelected = Selected_Stage()
+    Slc = '%s' % (StageSelected[0])
+    Val = []
+    for val in str(Slc):
+        Val.append(val)
+    Stg = int(Val[-1])
+
+    idx = 0
+    for i in range(len(bodyParts[Stg])):
+        tmp2 = []
+        for l in str(CanvasGeometry[Stg][i]):
+            tmp2.append(l)
+        if int(tmp2[-4]) == 2:
+            idx = i
+
+    canvas2 = CanvasGeometry[Stg][idx]
+    canvas2.delete("all")
+
+    Len_Tube = VALUES_T[0]
+    LENGTH[1] = Len_Tube
+    Dia_Tube = VALUES_T[1]
+    DIAMETER[1] = Dia_Tube
+    DispData()
+
+    canvas2.configure(width=VALUES_T[0] / 3, height=VALUES_T[1] / 3, bg='white', highlightthickness=0, bd=0,
+                      relief='ridge')  # 2010 mm
+    canvas2.create_rectangle(1, 0, VALUES_T[0] / 3 - 1, VALUES_T[1] / 3 - 1, width=1, outline='blue')
+
+    tmp = bodyParts[Stg].index('t')
+    canvas2.grid(row=0, column=tmp)
+
+def OpenTubeParams(fenetre, values=[2038, 155, 0,0,0,0,0,0,0,0,0], disp=1):
+
+    tubeParam = Toplevel(fenetre)
+    tubeParam.title("Tube Parameters")
+    tubeParam.geometry("400x200")
+    Title = Label(tubeParam, text = "Change tube params")
+    Title.pack()
+
+    notebook = ttk.Notebook(tubeParam)
+    tab1 = ttk.Frame(notebook)
+    notebook.add(tab1, text="Dimensions")
+    notebook.pack(expand=1, fill="both")
+
+    tab2 = ttk.Frame(notebook)
+    notebook.add(tab2, text="Inertia")
+    notebook.pack(expand=1, fill="both")
+
+
+    def slide(var):
+        lengthEntry.delete(0, "end")
+        lengthEntry.insert(0,str(lengthScale.get()))
+        DrawTube([lengthScale.get(), DiaScale.get()])
+
+    def insertVal(var):
+        lengthScale.set(lengthEntry.get())
+
+    def slide1(var):
+        DiaEntry.delete(0, "end")
+        DiaEntry.insert(0,str(DiaScale.get()))
+        DrawTube([lengthScale.get(), DiaScale.get()])
+
+    def insertVal1(var):
+        DiaScale.set(DiaEntry.get())
+
+
+    lengthLabel = Label(tab1, text="Length: ")
+    lengthLabel.grid(row=1, column=0)
+    lengthEntry = Entry(tab1)
+    lengthEntry.grid(row=1, column=1)
+    lengthEntry.insert(0, values[0])
+    lengthEntry.bind("<Return>", insertVal)
+    lengthScale = Scale(tab1, from_=0, to=3000, orient=HORIZONTAL, command=slide)
+    lengthScale.grid(row=1, column=2)
+    lengthScale.set(values[0])
+
+    DiaLabel = Label(tab1, text="Diameter: ")
+    DiaLabel.grid(row=2, column=0)
+    DiaEntry = Entry(tab1)
+    DiaEntry.grid(row=2, column=1)
+    DiaEntry.insert(0, values[1])
+    DiaEntry.bind("<Return>", insertVal1)
+    DiaScale = Scale(tab1, from_=0, to=300, orient=HORIZONTAL, command=slide1)
+    DiaScale.grid(row=2, column=2)
+    DiaScale.set(values[1])
+
+    inertia1 = Entry(tab2, width=4, justify=CENTER);inertia1.grid(row=0, column=1, pady=2, padx=2);
+    inertia1.insert(0, values[2])
+    inertia2 = Entry(tab2, width=4, justify=CENTER);inertia2.grid(row=0, column=2, pady=2, padx=2);
+    inertia2.insert(0, values[3])
+    inertia3 = Entry(tab2, width=4, justify=CENTER);inertia3.grid(row=0, column=3, pady=2, padx=2);
+    inertia3.insert(0, values[4])
+    inertia4 = Entry(tab2, width=4, justify=CENTER);inertia4.grid(row=1, column=1, pady=2, padx=2);
+    inertia4.insert(0, values[5])
+    inertia5 = Entry(tab2, width=4, justify=CENTER);inertia5.grid(row=1, column=2, pady=2, padx=2);
+    inertia5.insert(0, values[6])
+    inertia6 = Entry(tab2, width=4, justify=CENTER);inertia6.grid(row=1, column=3, pady=2, padx=2);
+    inertia6.insert(0, values[7])
+    inertia7 = Entry(tab2, width=4, justify=CENTER);inertia7.grid(row=2, column=1, pady=2, padx=2);
+    inertia7.insert(0, values[8])
+    inertia8 = Entry(tab2, width=4, justify=CENTER);inertia8.grid(row=2, column=2, pady=2, padx=2);
+    inertia8.insert(0, values[9])
+    inertia9 = Entry(tab2, width=4, justify=CENTER);inertia9.grid(row=2, column=3, pady=2, padx=2);
+    inertia9.insert(0, values[10])
+
+    if disp:
+        DisplayTube([lengthScale.get(), DiaScale.get(), inertia1.get(), inertia2.get(), inertia3.get(), inertia4.get()
+                        , inertia5.get(), inertia6.get(), inertia7.get(), inertia8.get(), inertia9.get()])
+
+    def validCB():
+        Tube_Text = open('Parameters/param_rocket/Tube.txt', "w")
+        vals = [lengthScale.get(), DiaScale.get(),0,0,0,0,0,0,0,0,0]
+        for val in vals:
+            Tube_Text.write("%s\n" % (val))
+        Tube_Text.close()
+        tubeParam.destroy()
+        tubeParam.update()
+
+    validateButton = Button(tubeParam, text="OK", command=validCB)
+    validateButton.pack(anchor="e", padx=10, pady=5)
+    tubeParam.mainloop()
+
+# Display geometrical fins in drawing
+def DrawFins(VALUES_F):
+    global itemB, PosF, PosC
+
+    # Get the index 'stg' of stage : example, first stage has an index stg = 0
+    StageSelected = Selected_Stage()
+    Slc = '%s' % (StageSelected[0])
+    Val = []
+    for val in str(Slc):
+        Val.append(val)
+    Stg = int(Val[-1])
+
+    idx = 0
+    for i in range(len(bodyParts[Stg])):
+        tmp2 = []
+        for l in str(CanvasGeometry[Stg][i]):
+            tmp2.append(l)
+        if int(tmp2[-4]) == 3:
+            idx = i
+
+    canvas3 = CanvasGeometry[Stg][idx]
+    canvas3.delete("all")
+
+    Len_Fins = VALUES_F[9]
+    LENGTH[2] = Len_Fins
+    Dia_Fins = VALUES_F[10]
+    DIAMETER[2] = Dia_Fins
+    DispData()
+
+    if VALUES_F[0] == 3:
+        canvas3.configure(width=VALUES_F[9] / 3, height=VALUES_F[10] / 3 + 2 * VALUES_F[3] / 3, bg='white',
+                          highlightthickness=0, bd=0, relief='ridge')  # 350 mm
+        canvas3.create_rectangle(1, VALUES_F[3] / 3, VALUES_F[9] / 3 - 1, VALUES_F[3] / 3 + VALUES_F[10] / 3 - 1,
+                                 width=1, outline='blue')
+        canvas3.create_polygon(VALUES_F[7] / 3, VALUES_F[3] / 3 + 2 / 3 * VALUES_F[10] / 3,
+                               VALUES_F[1] / 3 + VALUES_F[7] / 3 - 1, VALUES_F[3] / 3 + 2 / 3 * VALUES_F[10] / 3,
+                               VALUES_F[2] / 3 + VALUES_F[4] / 3 + VALUES_F[7] / 3,
+                               2 / 3 * VALUES_F[10] / 3 + 5 / 3 * VALUES_F[3] / 3 - 1,
+                               VALUES_F[4] / 3 + VALUES_F[7] / 3,
+                               2 / 3 * VALUES_F[10] / 3 + 5 / 3 * VALUES_F[3] / 3 - 1, width=1, outline='blue', fill='')
+        canvas3.create_polygon(VALUES_F[7] / 3, VALUES_F[3] / 3 - 3, VALUES_F[1] / 3 + VALUES_F[7] / 3 - 1,
+                               VALUES_F[3] / 3 - 3, VALUES_F[2] / 3 + VALUES_F[4] / 3 + VALUES_F[7] / 3, 0,
+                               VALUES_F[4] / 3 + VALUES_F[7] / 3, 0, width=1, outline='blue', fill='')
+        tmp = bodyParts[Stg].index('f')
+        canvas3.grid(row=0, column=tmp)
+
+def OpenFinsParams(fenetre, values=[30, 282, 123, 216, 115, 3, 0, 40, 300, 350, 155], disp=1):
+
+    FinParam = Toplevel(fenetre)
+    FinParam.title("Fin Parameters")
+    FinParam.geometry("400x600")
+    Label(FinParam, text = "Change Fin params").grid(row=0, column=1)
+
+
+    def slideLength(var):
+        lengthEntry.delete(0, "end")
+        lengthEntry.insert(0,str(lengthScale.get()))
+        DrawFins([nbScale.get(),rcScale.get(),tcScale.get(),spanScale.get(),sweepScale.get(),ThScale.get(),
+                 PhScale.get(),BTOScale.get(),MassScale.get(),lengthScale.get(),DiaScale.get()])
+
+    def insertValLength(var):
+        lengthScale.set(lengthEntry.get())
+
+    def slideDia(var):
+        DiaEntry.delete(0, "end")
+        DiaEntry.insert(0,str(DiaScale.get()))
+        DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+
+    def insertValDia(var):
+        DiaScale.set(DiaEntry.get())
+
+    def slideNum(var):
+        nbEntry.delete(0, "end")
+        nbEntry.insert(0,str(nbScale.get()))
+        DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+
+    def insertValNum(var):
+        nbScale.set(nbEntry.get())
+
+    def slideRC(var):
+        rcEntry.delete(0, "end")
+        rcEntry.insert(0, str(rcScale.get()))
+        DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+
+    def insertValRC(var):
+        rcScale.set(rcEntry.get())
+
+    def slideTC(var):
+        tcEntry.delete(0, "end")
+        tcEntry.insert(0,str(tcScale.get()))
+        DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+
+    def insertValTC(var):
+        tcScale.set(tcEntry.get())
+
+    def slideSpan(var):
+        spanEntry.delete(0, "end")
+        spanEntry.insert(0,str(spanScale.get()))
+        DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+
+    def insertValSpan(var):
+        spanScale.set(spanEntry.get())
+
+    def slideSwp(var):
+        sweepEntry.delete(0, "end")
+        sweepEntry.insert(0,str(sweepScale.get()))
+        DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+
+    def insertValSwp(var):
+        sweepScale.set(sweepEntry.get())
+
+    def slideTh(var):
+        ThEntry.delete(0, "end")
+        ThEntry.insert(0,str(ThScale.get()))
+        DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+
+    def insertValTh(var):
+        ThScale.set(ThEntry.get())
+
+    def slideMass(var):
+        MassEntry.delete(0, "end")
+        MassEntry.insert(0,str(MassScale.get()))
+        DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+
+    def insertValMass(var):
+        MassScale.set(MassEntry.get())
+
+    def slideBTO(var):
+        BTOEntry.delete(0, "end")
+        BTOEntry.insert(0,str(BTOScale.get()))
+        DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+
+    def insertValBTO(var):
+        BTOScale.set(BTOEntry.get())
+
+    def slidePh(var):
+        PhEntry.delete(0, "end")
+        PhEntry.insert(0,str(PhScale.get()))
+        DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+
+    def insertValPh(var):
+        PhScale.set(PhEntry.get())
+
+    nbLabel = Label(FinParam, text="Num: ")
+    nbLabel.grid(row=1, column=0)
+    nbEntry = Entry(FinParam)
+    nbEntry.grid(row=1, column=1)
+    nbEntry.insert(0, values[5])
+    nbEntry.bind("<Return>", insertValNum)
+    nbScale = Scale(FinParam, from_=0, to=10, orient=HORIZONTAL, command=slideNum)
+    nbScale.grid(row=1, column=2)
+    nbScale.set(values[5])
+
+    rcLabel = Label(FinParam, text="Root coord: ")
+    rcLabel.grid(row=2, column=0)
+    rcEntry = Entry(FinParam)
+    rcEntry.grid(row=2, column=1)
+    rcEntry.insert(0, values[1])
+    rcEntry.bind("<Return>", insertValRC)
+    rcScale = Scale(FinParam, from_=0, to=500, orient=HORIZONTAL, command=slideRC)
+    rcScale.grid(row=2, column=2)
+    rcScale.set(values[1])
+
+    tcLabel = Label(FinParam, text="Tip coord: ")
+    tcLabel.grid(row=3, column=0)
+    tcEntry = Entry(FinParam)
+    tcEntry.grid(row=3, column=1)
+    tcEntry.insert(0, values[2])
+    tcEntry.bind("<Return>", insertValTC)
+    tcScale = Scale(FinParam, from_=0, to=300, orient=HORIZONTAL, command=slideTC)
+    tcScale.grid(row=3, column=2)
+    tcScale.set(values[2])
+
+    spanLabel = Label(FinParam, text="Span: ")
+    spanLabel.grid(row=4, column=0)
+    spanEntry = Entry(FinParam)
+    spanEntry.grid(row=4, column=1)
+    spanEntry.insert(0, values[3])
+    spanEntry.bind("<Return>", insertValSpan)
+    spanScale = Scale(FinParam, from_=0, to=500, orient=HORIZONTAL, command=slideSpan)
+    spanScale.grid(row=4, column=2)
+    spanScale.set(values[3])
+
+    sweepLabel = Label(FinParam, text="Sweep: ")
+    sweepLabel.grid(row=5, column=0)
+    sweepEntry = Entry(FinParam)
+    sweepEntry.grid(row=5, column=1)
+    sweepEntry.insert(0, values[4])
+    sweepEntry.bind("<Return>", insertValSwp)
+    sweepScale = Scale(FinParam, from_=0, to=300, orient=HORIZONTAL, command=slideSwp)
+    sweepScale.grid(row=5, column=2)
+    sweepScale.set(values[4])
+
+    ThLabel = Label(FinParam, text="Thickness: ")
+    ThLabel.grid(row=6, column=0)
+    ThEntry = Entry(FinParam)
+    ThEntry.grid(row=6, column=1)
+    ThEntry.insert(0, values[0])
+    ThEntry.bind("<Return>", insertValTh)
+    ThScale = Scale(FinParam, from_=0, to=50, orient=HORIZONTAL, command=slideTh)
+    ThScale.grid(row=6, column=2)
+    ThScale.set(values[0])
+
+    PhLabel = Label(FinParam, text="Phase: ")
+    PhLabel.grid(row=7, column=0)
+    PhEntry = Entry(FinParam)
+    PhEntry.grid(row=7, column=1)
+    PhEntry.insert(0, values[6])
+    PhEntry.bind("<Return>", insertValPh)
+    PhScale = Scale(FinParam, from_=0, to=360, orient=HORIZONTAL, command=slidePh)
+    PhScale.grid(row=7, column=2)
+    PhScale.set(values[6])
+
+    BTOLabel = Label(FinParam, text="Body Top Offset: ")
+    BTOLabel.grid(row=8, column=0)
+    BTOEntry = Entry(FinParam)
+    BTOEntry.grid(row=8, column=1)
+    BTOEntry.insert(0, values[7])
+    BTOEntry.bind("<Return>", insertValBTO)
+    BTOScale = Scale(FinParam, from_=0, to=200, orient=HORIZONTAL, command=slideBTO)
+    BTOScale.grid(row=8, column=2)
+    BTOScale.set(values[7])
+
+    MassLabel = Label(FinParam, text="Mass: ")
+    MassLabel.grid(row=9, column=0)
+    MassEntry = Entry(FinParam)
+    MassEntry.grid(row=9, column=1)
+    MassEntry.insert(0, values[8])
+    MassEntry.bind("<Return>", insertValMass)
+    MassScale = Scale(FinParam, from_=0, to=1000, orient=HORIZONTAL, command=slideMass)
+    MassScale.grid(row=9, column=2)
+    MassScale.set(values[8])
+
+    lengthLabel = Label(FinParam, text="Length: ")
+    lengthLabel.grid(row=10, column=0)
+    lengthEntry = Entry(FinParam)
+    lengthEntry.grid(row=10, column=1)
+    lengthEntry.insert(0, values[9])
+    lengthEntry.bind("<Return>", insertValLength)
+    lengthScale = Scale(FinParam, from_=0, to=1000, orient=HORIZONTAL, command=slideLength)
+    lengthScale.grid(row=10, column=2)
+    lengthScale.set(values[9])
+
+    DiaLabel = Label(FinParam, text="Diameter: ")
+    DiaLabel.grid(row=11, column=0)
+    DiaEntry = Entry(FinParam)
+    DiaEntry.grid(row=11, column=1)
+    DiaEntry.insert(0, values[10])
+    DiaEntry.bind("<Return>", insertValDia)
+    DiaScale = Scale(FinParam, from_=0, to=300, orient=HORIZONTAL, command=slideDia)
+    DiaScale.grid(row=11, column=2)
+    DiaScale.set(values[10])
+
+    if disp:
+        DisplayFins([nbScale.get(),rcScale.get(),tcScale.get(),spanScale.get(),sweepScale.get(),ThScale.get(),
+                 PhScale.get(),BTOScale.get(),MassScale.get(),lengthScale.get(),DiaScale.get()])
+
+    def validCB():
+        Fins_Text = open('Parameters/param_rocket/Fins.txt', "w")
+        vals = [ThScale.get(),rcScale.get(),tcScale.get(),spanScale.get(),sweepScale.get(),nbScale.get(),
+                 PhScale.get(),BTOScale.get(),MassScale.get(),lengthScale.get(),DiaScale.get()]
+        for val in vals:
+            Fins_Text.write("%s\n" % (val))
+        Fins_Text.close()
+        FinParam.destroy()
+        FinParam.update()
+
+    validateButton = Button(FinParam, text="OK", command=validCB)
+    validateButton.grid(row=12, column=2)
+
+    FinParam.mainloop()
+
+# Display geometrical tube in drawing
+def DrawBoatTail(VALUES_BT):
+    global ITEMB, PosF, PosC
+
+    # Get the index 'stg' of stage : example, first stage has an index stg = 0
+    StageSelected = Selected_Stage()
+    Slc = '%s' % (StageSelected[0])
+    Val = []
+    for val in str(Slc):
+        Val.append(val)
+    Stg = int(Val[-1])
+
+    idx = 0
+    for i in range(len(bodyParts[Stg])):
+        tmp2 = []
+        for l in str(CanvasGeometry[Stg][i]):
+            tmp2.append(l)
+        if int(tmp2[-4]) == 4:
+            idx = i
+
+    canvas4 = CanvasGeometry[Stg][idx]
+    canvas4.delete("all")
+
+    """Len_BoatTail = VALUES_BT[0]
+    LENGTH[3] = Len_BoatTail
+    Dia_BoatTail = max(VALUES_BT[1], VALUES_BT[2])
+    DIAMETER[3] = Dia_BoatTail
+    DispData()"""
+
+    canvas4.configure(width=VALUES_BT[0] / 3, height=max(VALUES_BT[1], VALUES_BT[2]) / 3, bg='white',
+                      highlightthickness=0, bd=0, relief='ridge')  # 50 mm
+    if VALUES_BT[1] > VALUES_BT[2]:
+        canvas4.create_polygon(1, 0, VALUES_BT[0] / 3 - 1, (VALUES_BT[1] / 3 - VALUES_BT[2] / 3) / 2,
+                               VALUES_BT[0] / 3 - 1, (VALUES_BT[1] / 3 + VALUES_BT[2] / 3) / 2 - 1, 1,
+                               VALUES_BT[1] / 3 - 1, width=1, outline='blue', fill='')
+    else:
+        canvas4.create_polygon(1, (VALUES_BT[2] / 3 - VALUES_BT[1] / 3) / 2, VALUES_BT[0] / 3 - 1, 0,
+                               VALUES_BT[0] / 3 - 1, VALUES_BT[2] / 3 - 1, 1,
+                               (VALUES_BT[2] / 3 + VALUES_BT[1] / 3) / 2 - 1, width=1, outline='blue', fill='')
+    tmp = bodyParts[Stg].index('b')
+    canvas4.grid(row=0, column=tmp)
+
+def OpenBoatTailParams(fenetre, values=[41, 155, 133], disp=1):
+
+    BoatTailParam = Toplevel(fenetre)
+    BoatTailParam.title("Boat Tail Parameters")
+    BoatTailParam.geometry("400x200")
+    Title = Label(BoatTailParam, text = "Change boat tail params")
+    Title.pack()
+
+    notebook = ttk.Notebook(BoatTailParam)
+    tab1 = ttk.Frame(notebook)
+    notebook.add(tab1, text="Dimensions")
+    notebook.pack(expand=1, fill="both")
+
+    tab2 = ttk.Frame(notebook)
+    notebook.add(tab2, text="...")
+    notebook.pack(expand=1, fill="both")
+
+
+    def slide(var):
+        lengthEntry.delete(0, "end")
+        lengthEntry.insert(0,str(lengthScale.get()))
+        DrawBoatTail([lengthScale.get(), Dia1Scale.get(), Dia2Scale.get()])
+
+    def insertVal(var):
+        lengthScale.set(lengthEntry.get())
+
+    def slide1(var):
+        Dia1Entry.delete(0, "end")
+        Dia1Entry.insert(0,str(Dia1Scale.get()))
+        DrawBoatTail([lengthScale.get(), Dia1Scale.get(), Dia2Scale.get()])
+
+    def insertVal1(var):
+        Dia1Scale.set(Dia1Entry.get())
+
+    def slide2(var):
+        Dia2Entry.delete(0, "end")
+        Dia2Entry.insert(0, str(Dia2Scale.get()))
+        DrawBoatTail([lengthScale.get(), Dia1Scale.get(), Dia2Scale.get()])
+
+    def insertVal2(var):
+        Dia2Scale.set(Dia2Entry.get())
+
+
+    lengthLabel = Label(tab1, text="Length: ")
+    lengthLabel.grid(row=1, column=0)
+    lengthEntry = Entry(tab1)
+    lengthEntry.grid(row=1, column=1)
+    lengthEntry.insert(0, values[0])
+    lengthEntry.bind("<Return>", insertVal)
+    lengthScale = Scale(tab1, from_=0, to=100, orient=HORIZONTAL, command=slide)
+    lengthScale.grid(row=1, column=2)
+    lengthScale.set(values[0])
+
+    Dia1Label = Label(tab1, text="1st Diameter: ")
+    Dia1Label.grid(row=2, column=0)
+    Dia1Entry = Entry(tab1)
+    Dia1Entry.grid(row=2, column=1)
+    Dia1Entry.insert(0, values[1])
+    Dia1Entry.bind("<Return>", insertVal1)
+    Dia1Scale = Scale(tab1, from_=0, to=300, orient=HORIZONTAL, command=slide1)
+    Dia1Scale.grid(row=2, column=2)
+    Dia1Scale.set(values[1])
+
+    Dia2Label = Label(tab1, text="2nd Diameter: ")
+    Dia2Label.grid(row=3, column=0)
+    Dia2Entry = Entry(tab1)
+    Dia2Entry.grid(row=3, column=1)
+    Dia2Entry.insert(0, values[2])
+    Dia2Entry.bind("<Return>", insertVal2)
+    Dia2Scale = Scale(tab1, from_=0, to=300, orient=HORIZONTAL, command=slide2)
+    Dia2Scale.grid(row=3, column=2)
+    Dia2Scale.set(values[2])
+
+
+    if disp:
+        DisplayBoatTail([lengthScale.get(), Dia1Scale.get(), Dia1Scale.get()])
+
+    def validCB():
+        BT_Text = open('Parameters/param_rocket/BoatTail.txt', "w")
+        vals = [lengthScale.get(), Dia1Scale.get(), Dia2Scale.get()]
+        for val in vals:
+            BT_Text.write("%s\n" % (val))
+        BT_Text.close()
+        BoatTailParam.destroy()
+        BoatTailParam.update()
+
+    validateButton = Button(BoatTailParam, text="OK", command=validCB)
+    validateButton.pack(anchor="e", padx=10, pady=5)
+    BoatTailParam.mainloop()
 
 ## Menu
 # TODO: Assign command to menu
@@ -934,7 +1693,7 @@ MoveDown = Button(frameAAB, text='Move down', bg='gray80', fg='black', cursor='h
                   command=lambda: do_move_down())
 MoveDown.grid(row=1, column=0, padx=3, pady=1, sticky='we')
 Change = Button(frameAAB, text='Change', bg='gray80', fg='black', cursor='hand2', relief=RAISED,
-                command=lambda: Change())
+                command=lambda: change())
 Change.grid(row=2, column=0, padx=3, pady=1, sticky='we')
 
 # Button New Stage
@@ -1039,7 +1798,7 @@ nose = StringVar()
 NoseCone_choice.menu.add_radiobutton(label='Eiger', variable=nose, value='Eiger NoseCone',
                                      command=lambda: EigerNoseCone())
 NoseCone_choice.menu.add_separator()
-NoseCone_choice.menu.add_radiobutton(label='Personalize', variable=nose, command=lambda: DispNoseCone())
+NoseCone_choice.menu.add_radiobutton(label='Personalize', variable=nose, command=lambda: OpenNoseParams(fenetre))
 NoseCone_choice.grid(row=0, column=0, padx=10, pady=10, ipadx=10, ipady=10, sticky='nswe')
 
 # Choose Tube
@@ -1071,7 +1830,7 @@ tube = StringVar()
 Tube_choice.menu.add_radiobutton(label='Eiger', variable=tube, value='Eiger Tube',
                                  command=lambda: EigerTube())
 Tube_choice.menu.add_separator()
-Tube_choice.menu.add_radiobutton(label='Personalize', variable=tube, command=lambda: DispTube())
+Tube_choice.menu.add_radiobutton(label='Personalize', variable=tube, command=lambda: OpenTubeParams(fenetre))
 Tube_choice.grid(row=0, column=1, padx=10, pady=10, ipadx=25, ipady=10, sticky='nswe')
 
 # Choose Fins
@@ -1100,7 +1859,7 @@ fins = StringVar()
 Fins_choice.menu.add_radiobutton(label='Eiger', variable=fins, value='Eiger Fins',
                                  command=lambda: EigerFins())
 Fins_choice.menu.add_separator()
-Fins_choice.menu.add_radiobutton(label='Personalize', variable=fins, command=lambda: DispFins())
+Fins_choice.menu.add_radiobutton(label='Personalize', variable=fins, command=lambda: OpenFinsParams(fenetre))
 Fins_choice.grid(row=0, column=2, padx=10, pady=10, ipadx=27, ipady=10, sticky='nswe')
 
 # Choose BoatTail
@@ -1121,7 +1880,7 @@ bt = StringVar()
 BoatTail_choice.menu.add_radiobutton(label='Eiger', variable=bt, value='Eiger BoatTail',
                                      command=lambda: EigerBoatTail())
 BoatTail_choice.menu.add_separator()
-BoatTail_choice.menu.add_radiobutton(label='Personalize', variable=bt, command=lambda: DispBoatTail())
+BoatTail_choice.menu.add_radiobutton(label='Personalize', variable=bt, command=lambda: OpenBoatTailParams(fenetre))
 BoatTail_choice.grid(row=1, column=0, padx=10, pady=10, ipadx=15, ipady=10, sticky='nswe')
 
 # Choose motor
@@ -1134,6 +1893,8 @@ mtr = StringVar()
 motor_choice.menu.add_radiobutton(label='AT_L850', value='AT_L850', variable=mtr, command=lambda: AT_L850())
 motor_choice.menu.add_radiobutton(label='Cesaroni_M1800', value='Cesaroni_M1800', variable=mtr, command=lambda:
 Cesaroni_M1800())
+motor_choice.menu.add_separator()
+motor_choice.menu.add_radiobutton(label='Personalize', variable=bt, command=lambda: DispBoatTail())
 
 motor_choice.grid(row=1, column=1, padx=10, pady=10, ipadx=20, ipady=10, sticky='nswe')
 
@@ -1163,6 +1924,8 @@ EntryButton(frameAC5, 'Humidity [%]', 2, 0, entries5)
 
 DispE = Button(frameAC5, text='Save', command=lambda: SaveEnvironment())
 DispE.grid(row=4, column=2, sticky='se', padx=10, pady=10)
+
+
 
 ### Launch Simulation, Update datas (Right of first row)
 frameAD = Frame(frameA, bg='gray85', highlightthickness=3, bd=1, relief='sunken')
@@ -1207,6 +1970,11 @@ simu_button.grid(row=0, column=0, padx=10, pady=10, sticky='nswe')
 # Bouton de sortie
 # stop = Button(fenetre, text="x", bg='RED', fg='white', command=fenetre.quit)
 # stop.grid(row=1, column=1, sticky='nswe', in_=canvasB)
+
+#Double click binding for tree
+def binding(b):
+    change()
+tree.bind("<Double-1>", binding)
 
 # Disp window
 fenetre.mainloop()
