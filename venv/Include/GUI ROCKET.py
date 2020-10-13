@@ -5,6 +5,7 @@
 
 from tkinter import *
 from tkinter import ttk
+from tkinter import filedialog
 import numpy as np
 import string
 from Simulator1D import Simulator1D
@@ -12,6 +13,7 @@ from Functions.stdAtmosUS import stdAtmosUS
 from Rocket.Body import Body
 from Rocket.Rocket import Rocket
 from Rocket.Stage import Stage
+import os
 
 
 # Ouvre une fenetre with title and icon
@@ -149,20 +151,36 @@ def Add_Stage():
         FrameGeometry.append(frame02idx)
         FrameStage(frame02idx)
 
+
     def FrameStage(frame02idx):
         global item, FrameGeometry, alpha0, inc0
         branch = tree.insert(NameRocket, 'end', 'id%s%d' % (alpha0[inc0], item), text='%s' % (StageName.get()))
         tree.focus(branch)
         tree.selection_set(branch)
+        tree.see(branch)
+        UpdateButtonState()
+        elem = tree.focus()
+        if elem[1] == 'd' or elem[1] == 't':
+            stage = elem[-1]
+        UpdateBodyPartState(int(stage))
         StageName.destroy()
         Save.destroy()
 
         frame02idx.grid(row=0, column=item)
         frame02idx.rowconfigure(0, weight=1)
 
+    def UpdateSaveButton(entry):
+        if entry.get():
+            addstage()
+
+    def enter(b):
+        Save.invoke()
+
     StageName = Entry(frameAAAB, validate='key')  # Enter the name of the new stage
     StageName.grid(row=1, column=0, sticky='nswe')
-    Save = Button(frameAAAB, text='Save', command=lambda: addstage())  # Button 'Save' launches addstage()
+    StageName.focus()
+    StageName.bind('<Return>', enter)
+    Save = Button(frameAAAB, text='Save', command=lambda: UpdateSaveButton(StageName))  # Button 'Save' launches addstage()
     Save.grid(row=1, column=1, sticky='nswe')
 
     CanvasGeometry.append([])
@@ -197,7 +215,8 @@ def Add_Substage(StageSelected, subpart, canvasN, Stg, frame_idx, name):
     ITEMB[Stg] += 1
     bodyParts[Stg].append(name)
     inc += 1
-    tree.insert(StageSelected, 'end', 'it%s%s%d%d' % (name, alpha[inc], ITEMB[Stg], Stg), text=subpart)
+    br = tree.insert(StageSelected, 'end', 'it%s%s%d%d' % (name, alpha[inc], ITEMB[Stg], Stg), text=subpart)
+    tree.see(br)
     CanvasSubstage(canvasN, Stg, frame_idx)
 
 ## Remodulate treeview and rocket (remove, move up, move down, change)
@@ -207,7 +226,11 @@ def do_remove():
     sel = tree.selection()
 
     if sel:
+        parent_id = tree.parent(sel)
         tree.delete(sel)
+        tree.selection_set(parent_id)
+        tree.focus(parent_id)
+
 
     id = str(sel[0])
 
@@ -222,6 +245,7 @@ def do_remove():
 
     # if prefix1 == 'd' indicates that the selected tree's item is a stage
     if prefix1 == 'd':
+        del bodyParts[value1]
         for i, frame in enumerate(FrameGeometry):
             Val2 = []
             for val2 in str(frame):
@@ -250,6 +274,8 @@ def do_remove():
 
     # if prefix1 == 't' indicates that the selected tree's item is a substage
     if prefix1 == 't':
+        bodyParts[value1].remove(prefix2)
+
         for j, canvas in enumerate(CanvasGeometry[value1]):
             Val3 = []
             for val3 in str(canvas):
@@ -262,13 +288,27 @@ def do_remove():
                 IncC[value1] -= 1
 
                 CanvasGeometry[value1][value3].destroy()
+                del CanvasGeometry[value1][value3]
+                ITEMB[value1] -= 1
 
-                pos1 = PosC[value1][value3]
-                for c, posc in enumerate(PosC[value1]):
-                    PosC[value1][value3] = -1
-                    if posc > pos1:
-                        PosC[value1][c] -= 1
-                        CanvasGeometry[value1][c].grid(row=0, column=PosC[value1][c])
+                for i in range(len(bodyParts[value1])):
+                    tmp2 = []
+                    for l in str(CanvasGeometry[value1][i]):
+                        tmp2.append(l)
+                    print(tmp2)
+                    letter = ''
+                    piece = tmp2[-4]
+                    if int(piece) == 1:
+                        letter = 'n'
+                    if int(piece) == 2:
+                        letter = 't'
+                    if int(piece) == 3:
+                        letter = 'f'
+                    if int(piece) == 4:
+                        letter = 'b'
+
+                    CanvasGeometry[value1][i].grid(row=0, column=bodyParts[value1].index(letter))
+    UpdateBodyPartState(value1)
 
 
 # Move the tree's branch up
@@ -278,7 +318,8 @@ def do_move_up():
     if sel:
         for s in sel:
             idx = tree.index(s)
-            tree.move(s, tree.parent(s), idx-1)
+            if idx != 0:
+                tree.move(s, tree.parent(s), idx-1)
 
     id = str(sel[0])
     Val1 = []
@@ -289,64 +330,66 @@ def do_move_up():
     prefix3 = str(Val1[-2])  # letter which makes each frame unique
     prefix4 = str(Val1[-3])  # letter which makes each canvas unique
 
-    if prefix1 == 'd':
-        for i, frame in enumerate(FrameGeometry):
-            Val2 = []
-            for val2 in str(frame):
-                Val2.append(val2)
-            value2 = int(Val2[-1])
-            letter2 = str(Val2[-2])
+    if idx != 0:
+        if prefix1 == 'd':
+            for i, frame in enumerate(FrameGeometry):
+                Val2 = []
+                for val2 in str(frame):
+                    Val2.append(val2)
+                value2 = int(Val2[-1])
+                letter2 = str(Val2[-2])
 
-            if (value2 == value1) and (letter2 == prefix3):
-                FrameGeometry[value1].grid(row=0, column=PosF[value1]-1)
-                FrameGeometry[np.where(np.array(PosF) == PosF[value1]-1)[0][0]].grid(row=0, column=PosF[value1])
+                if (value2 == value1) and (letter2 == prefix3):
+                    FrameGeometry[value1].grid(row=0, column=PosF[value1]-1)
+                    FrameGeometry[np.where(np.array(PosF) == PosF[value1]-1)[0][0]].grid(row=0, column=PosF[value1])
 
-                PosF[np.where(np.array(PosF) == PosF[value1]-1)[0][0]] += 1
-                PosF[value1] -= 1
+                    PosF[np.where(np.array(PosF) == PosF[value1]-1)[0][0]] += 1
+                    PosF[value1] -= 1
 
-    elif prefix1 == 't':
-        for j, canvas in enumerate(CanvasGeometry[value1]):
-            Val3 = []
-            for val3 in str(canvas):
-                Val3.append(val3)
+        elif prefix1 == 't':
+            for j, canvas in enumerate(CanvasGeometry[value1]):
+                Val3 = []
+                for val3 in str(canvas):
+                    Val3.append(val3)
 
-            value2 = int(Val3[-1]) # stage num
-            value3 = int(Val3[-2]) # itemB
-            letter3 = str(Val3[-3])
+                value2 = int(Val3[-1]) # stage num
+                value3 = int(Val3[-2]) # itemB
+                letter3 = str(Val3[-3])
 
-            if (value2 == value1) and (letter3 == prefix4):
-                #CanvasGeometry[value1][tree.index(sel)].grid(row=0, column=PosC[value1][value3]-1)
-                #CanvasGeometry[value1][np.where(np.array(PosC[value1]) == PosC[value1][value3] - 1)[0][0]].grid(row=0, column=PosC[value1][value3])
-                #CanvasGeometry[value1][tree.index(sel)-1].grid(row=0, column=PosC[value1][tree.index(sel)])
-
-                tmp = bodyParts[value1][tree.index(sel)+1]
-                bodyParts[value1][tree.index(sel)+1] = bodyParts[value1][tree.index(sel)]
-                bodyParts[value1][tree.index(sel)] = tmp
-
-                for i in range(len(bodyParts[value1])):
-                    tmp2 = []
-                    for l in str(CanvasGeometry[value1][i]):
-                        tmp2.append(l)
-
-                    letter = ''
-                    piece = tmp2[-4]
-                    if int(piece) == 1:
-                        letter = 'n'
-                    if int(piece) == 2:
-                        letter = 't'
-                    if int(piece) == 3:
-                        letter = 'f'
-                    if int(piece) == 4:
-                        letter = 'b'
-
-                    CanvasGeometry[value1][i].grid(row=0, column=bodyParts[value1].index(letter))
+                if (value2 == value1) and (letter3 == prefix4):
+                    #CanvasGeometry[value1][tree.index(sel)].grid(row=0, column=PosC[value1][value3]-1)
+                    #CanvasGeometry[value1][np.where(np.array(PosC[value1]) == PosC[value1][value3] - 1)[0][0]].grid(row=0, column=PosC[value1][value3])
+                    #CanvasGeometry[value1][tree.index(sel)-1].grid(row=0, column=PosC[value1][tree.index(sel)])
 
 
+                    tmp = bodyParts[value1][tree.index(sel)+1]
+                    bodyParts[value1][tree.index(sel)+1] = bodyParts[value1][tree.index(sel)]
+                    bodyParts[value1][tree.index(sel)] = tmp
 
-                PosC[value1][value3-1] += 1
-                #PosC[value1][np.where(np.array(PosC[value1]) == PosC[value1][value3] - 1)[0][0]] += 1
-                PosC[value1][value3] -= 1
+                    for i in range(len(bodyParts[value1])):
+                        tmp2 = []
+                        for l in str(CanvasGeometry[value1][i]):
+                            tmp2.append(l)
 
+                        letter = ''
+                        piece = tmp2[-4]
+                        if int(piece) == 1:
+                            letter = 'n'
+                        if int(piece) == 2:
+                            letter = 't'
+                        if int(piece) == 3:
+                            letter = 'f'
+                        if int(piece) == 4:
+                            letter = 'b'
+
+                        CanvasGeometry[value1][i].grid(row=0, column=bodyParts[value1].index(letter))
+
+
+
+                    PosC[value1][value3-1] += 1
+                    #PosC[value1][np.where(np.array(PosC[value1]) == PosC[value1][value3] - 1)[0][0]] += 1
+                    PosC[value1][value3] -= 1
+        UpdateBodyPartState(value1)
 
 
 
@@ -356,75 +399,76 @@ def do_move_up():
 def do_move_down():
     global FrameGeometry, CanvasGeometry, ITEMB, PosF, incF, PosC, IncC
     sel = tree.selection()
-    if sel:
-        for s in sel:
-            idx = tree.index(s)
-            tree.move(s, tree.parent(s), idx+1)
+    if tree.next(sel):
+        if sel:
+            for s in sel:
+                idx = tree.index(s)
+                tree.move(s, tree.parent(s), idx+1)
 
-    id = str(sel[0])
-    Val1 = []
-    for val1 in id:
-        Val1.append(val1)
-    value1 = int(Val1[-1])  # Stage number
-    prefix1 = str(Val1[1])  # 'd' -> frame
-    prefix3 = str(Val1[-2])  # letter which makes each frame unique
-    prefix4 = str(Val1[-3])  # letter which makes each canvas unique
+        id = str(sel[0])
+        Val1 = []
+        for val1 in id:
+            Val1.append(val1)
+        value1 = int(Val1[-1])  # Stage number
+        prefix1 = str(Val1[1])  # 'd' -> frame
+        prefix3 = str(Val1[-2])  # letter which makes each frame unique
+        prefix4 = str(Val1[-3])  # letter which makes each canvas unique
 
-    if prefix1 == 'd':
-        for i, frame in enumerate(FrameGeometry):
-            Val2 = []
-            for val2 in str(frame):
-                Val2.append(val2)
-            value2 = int(Val2[-1])
-            letter2 = str(Val2[-2])
+        if prefix1 == 'd':
+            for i, frame in enumerate(FrameGeometry):
+                Val2 = []
+                for val2 in str(frame):
+                    Val2.append(val2)
+                value2 = int(Val2[-1])
+                letter2 = str(Val2[-2])
 
-            if (value2 == value1) and (letter2 == prefix3):
-                FrameGeometry[value1].grid(row=0, column=PosF[value1]+1)
-                FrameGeometry[np.where(np.array(PosF) == PosF[value1]+1)[0][0]].grid(row=0, column=PosF[value1])
+                if (value2 == value1) and (letter2 == prefix3):
+                    FrameGeometry[value1].grid(row=0, column=PosF[value1]+1)
+                    FrameGeometry[np.where(np.array(PosF) == PosF[value1]+1)[0][0]].grid(row=0, column=PosF[value1])
 
-                PosF[np.where(np.array(PosF) == PosF[value2]+1)[0][0]] -= 1
-                PosF[value1] += 1
+                    PosF[np.where(np.array(PosF) == PosF[value2]+1)[0][0]] -= 1
+                    PosF[value1] += 1
 
-    elif prefix1 == 't':
-        for j, canvas in enumerate(CanvasGeometry[value1]):
-            Val3 = []
-            for val3 in str(canvas):
-                Val3.append(val3)
-            value2 = int(Val3[-1])
-            value3 = int(Val3[-2])
-            letter3 = str(Val3[-3])
+        elif prefix1 == 't':
+            for j, canvas in enumerate(CanvasGeometry[value1]):
+                Val3 = []
+                for val3 in str(canvas):
+                    Val3.append(val3)
+                value2 = int(Val3[-1])
+                value3 = int(Val3[-2])
+                letter3 = str(Val3[-3])
 
-            if (value2 == value1) and (letter3 == prefix4):
+                if (value2 == value1) and (letter3 == prefix4):
 
-                tmp = bodyParts[value1][tree.index(sel)]
-                bodyParts[value1][tree.index(sel)] = bodyParts[value1][tree.index(sel)-1]
-                bodyParts[value1][tree.index(sel)-1] = tmp
+                    tmp = bodyParts[value1][tree.index(sel)]
+                    bodyParts[value1][tree.index(sel)] = bodyParts[value1][tree.index(sel)-1]
+                    bodyParts[value1][tree.index(sel)-1] = tmp
 
-                for i in range(len(bodyParts[value1])):
-                    tmp2 = []
-                    for l in str(CanvasGeometry[value1][i]):
-                        tmp2.append(l)
+                    for i in range(len(bodyParts[value1])):
+                        tmp2 = []
+                        for l in str(CanvasGeometry[value1][i]):
+                            tmp2.append(l)
 
-                    letter = ''
-                    piece = tmp2[-4]
-                    if int(piece) == 1:
-                        letter = 'n'
-                    if int(piece) == 2:
-                        letter = 't'
-                    if int(piece) == 3:
-                        letter = 'f'
-                    if int(piece) == 4:
-                        letter = 'b'
+                        letter = ''
+                        piece = tmp2[-4]
+                        if int(piece) == 1:
+                            letter = 'n'
+                        if int(piece) == 2:
+                            letter = 't'
+                        if int(piece) == 3:
+                            letter = 'f'
+                        if int(piece) == 4:
+                            letter = 'b'
 
-                    CanvasGeometry[value1][i].grid(row=0, column=bodyParts[value1].index(letter))
+                        CanvasGeometry[value1][i].grid(row=0, column=bodyParts[value1].index(letter))
 
-                PosC[value1][value3 - 1] += 1
-                # PosC[value1][np.where(np.array(PosC[value1]) == PosC[value1][value3] - 1)[0][0]] += 1
-                PosC[value1][value3] -= 1
-
+                    PosC[value1][value3 - 1] += 1
+                    # PosC[value1][np.where(np.array(PosC[value1]) == PosC[value1][value3] - 1)[0][0]] += 1
+                    PosC[value1][value3] -= 1
+        UpdateBodyPartState(value1)
 
 # Function which permits to entry rocket's parameters manually
-def EntryButton(frameACN, name, rnum, cnum, entries):
+def EntryButton(frameACN, name, rnum, cnum, entries, val=0):
     # Check all values are mathematical values
     def TestFunction(value):
         if value in '0123456789-+*/.()':
@@ -528,6 +572,7 @@ def DisplayNose(VALUES_N):
                         fill='blue')
     canvas1.create_line(VALUES_N[0] / 3 - 1, 0, VALUES_N[0] / 3 - 1, VALUES_N[1] / 3 - 1, width=1, fill='blue')
     canvas1.grid(row=0, column=itemB)
+    UpdateBodyPartState(Stg)
 
 
 ## TUBE
@@ -594,6 +639,7 @@ def DisplayTube(VALUES_T):
                       relief='ridge')  # 2010 mm
     canvas2.create_rectangle(1, 0, VALUES_T[0] / 3 - 1, VALUES_T[1] / 3 - 1, width=1, outline='blue')
     canvas2.grid(row=0, column=itemB)
+    UpdateBodyPartState(Stg)
 
 
 ## FINS
@@ -676,6 +722,7 @@ def DisplayFins(VALUES_F):
                                VALUES_F[3] / 3 - 3, VALUES_F[2] / 3 + VALUES_F[4] / 3 + VALUES_F[7] / 3, 0,
                                VALUES_F[4] / 3 + VALUES_F[7] / 3, 0, width=1, outline='blue', fill='')
         canvas3.grid(row=0, column=itemB)
+    UpdateBodyPartState(Stg)
 
 
 ## BOAT-TAIL
@@ -749,6 +796,7 @@ def DisplayBoatTail(VALUES_BT):
                                VALUES_BT[0] / 3 - 1, VALUES_BT[2] / 3 - 1, 1,
                                (VALUES_BT[2] / 3 + VALUES_BT[1] / 3) / 2 - 1, width=1, outline='blue', fill='')
     canvas4.grid(row=0, column=itemB)
+    UpdateBodyPartState(Stg)
 
 
 ## MOTOR
@@ -775,6 +823,13 @@ def DispEnvironment():
     frameAC5.bind("<Configure>", ScrollReg(canvasACE))
     frameACE.grid(row=0, column=0, sticky='nswe')
 
+def DispMotor():
+    frameACA.grid_remove()
+    frameACB.grid_remove()
+    frameACC.grid_remove()
+    frameACD.grid_remove()
+    frameAC6.bind("<Configure>", ScrollReg(canvasACF))
+    frameACF.grid(row=0, column=0, sticky='nswe')
 
 # Get values from entries then run GetEnvironment()
 def MexicoEnv():
@@ -787,6 +842,10 @@ def MexicoEnv():
         VALUES_E.append(conv_float)
     GetEnvironment(VALUES_E)
 
+# Get values from entries then execute GetEnvironment()
+def SaveMotor():
+    VALUES_F = hallo(entries6)
+   # TODO: get motor function
 
 # Get values from entries then execute GetEnvironment()
 def SaveEnvironment():
@@ -955,6 +1014,9 @@ def DrawNose(VALUES_N):
 
     canvas1 = CanvasGeometry[Stg][idx]
     canvas1.delete("all")
+    LENGTH[0] = VALUES_N[0]
+    DIAMETER[0] = VALUES_N[1]
+    DispData()
 
     canvas1.configure(width=VALUES_N[0] / 3, height=VALUES_N[1] / 3, bg='white', highlightthickness=0, bd=0,
                       relief='ridge')  # 300 mm + 350 mm
@@ -1492,11 +1554,11 @@ def DrawBoatTail(VALUES_BT):
     canvas4 = CanvasGeometry[Stg][idx]
     canvas4.delete("all")
 
-    """Len_BoatTail = VALUES_BT[0]
+    Len_BoatTail = VALUES_BT[0]
     LENGTH[3] = Len_BoatTail
     Dia_BoatTail = max(VALUES_BT[1], VALUES_BT[2])
     DIAMETER[3] = Dia_BoatTail
-    DispData()"""
+    DispData()
 
     canvas4.configure(width=VALUES_BT[0] / 3, height=max(VALUES_BT[1], VALUES_BT[2]) / 3, bg='white',
                       highlightthickness=0, bd=0, relief='ridge')  # 50 mm
@@ -1601,7 +1663,220 @@ def OpenBoatTailParams(fenetre, values=[41, 155, 133], disp=1):
     validateButton.pack(anchor="e", padx=10, pady=5)
     BoatTailParam.mainloop()
 
-## Menu
+def OpenMotorParams():
+    MotorParams = Toplevel(fenetre)
+    MotorParams.title("Create Custom Motor")
+    MotorParams.geometry("450x450")
+    Title = Label(MotorParams, text="Change Motor params")
+    Title.pack()
+
+    notebook = ttk.Notebook(MotorParams)
+    tab1 = ttk.Frame(notebook)
+    notebook.add(tab1, text="Details")
+    notebook.pack(expand=1, fill="both")
+
+    tab2 = ttk.Frame(notebook)
+    notebook.add(tab2, text="Values")
+    notebook.pack(expand=1, fill="both")
+
+    """entries6 = []
+    EntryButton(tab1, 'Name', 0, 0, entries6, val="test")
+    EntryButton(tab1, 'Diameter [mm]', 0, 1, entries6)
+    EntryButton(tab1, 'Length [mm]', 0, 2, entries6)
+    EntryButton(tab1, 'Delay [s]', 2, 0, entries6)
+    EntryButton(tab1, 'Weight Full [kg]', 2, 1, entries6)
+    EntryButton(tab1, 'Weight Empty [kg]', 2, 2, entries6)
+    EntryButton(tab1, 'Length [mm]', 4, 0, entries6)
+    EntryButton(tab1, 'Name 2', 4, 1, entries6)"""
+
+
+
+    label1 = Label(tab1, text="Name", bg='gray85', anchor=NW).grid(row=0, column=0, padx=10, pady=2)
+    entry1 = Entry(tab1)
+    entry1.grid(row=1, column=0, padx=10, pady=10)
+    entry1.insert(0,"Name : ")
+
+    label2 = Label(tab1, text="Diameter", bg='gray85', anchor=NW).grid(row=0, column=1, padx=10, pady=2)
+    entry2 = Entry(tab1)
+    entry2.grid(row=1, column=1, padx=10, pady=10)
+    entry2.insert(0, 0)
+
+    label3 = Label(tab1, text="Length", bg='gray85', anchor=NW).grid(row=0, column=2, padx=10, pady=2)
+    entry3 = Entry(tab1)
+    entry3.grid(row=1, column=2, padx=10, pady=10)
+    entry3.insert(0, 0)
+
+    label4 = Label(tab1, text="Delay", bg='gray85', anchor=NW).grid(row=2, column=0, padx=10, pady=2)
+    entry4 = Entry(tab1)
+    entry4.grid(row=3, column=0, padx=10, pady=10)
+    entry4.insert(0, 0)
+
+    label5 = Label(tab1, text="Weight Full [kg]", bg='gray85', anchor=NW).grid(row=2, column=1, padx=10, pady=2)
+    entry5 = Entry(tab1)
+    entry5.grid(row=3, column=1, padx=10, pady=10)
+    entry5.insert(0, 0)
+
+    label6 = Label(tab1, text="Weight Empty [kg]", bg='gray85', anchor=NW).grid(row=2, column=2, padx=10, pady=2)
+    entry6 = Entry(tab1)
+    entry6.grid(row=3, column=2, padx=10, pady=10)
+    entry6.insert(0, 0)
+
+    label7 = Label(tab1, text="Length [mm]", bg='gray85', anchor=NW).grid(row=4, column=0, padx=10, pady=2)
+    entry7 = Entry(tab1)
+    entry7.grid(row=5, column=0, padx=10, pady=10)
+    entry7.insert(0, 0)
+
+    label8 = Label(tab1, text="Name 2", bg='gray85', anchor=NW).grid(row=4, column=1, padx=10, pady=2)
+    entry8 = Entry(tab1)
+    entry8.grid(row=5, column=1, padx=10, pady=10)
+    entry8.insert(0, "Name 2: ")
+
+    label9 = Label(tab2, text="Time: ", bg='gray85', anchor=NW).grid(row=0, column=1, padx=10, pady=2)
+    entry9 = Entry(tab2)
+    entry9.grid(row=1, column=1, padx=10, pady=10)
+    entry9.insert(0, 0)
+
+    label10 = Label(tab2, text="Thrust", bg='gray85', anchor=NW).grid(row=0, column=2, padx=10, pady=2)
+    entry10 = Entry(tab2)
+    entry10.grid(row=1, column=2, padx=10, pady=10)
+    entry10.insert(0, 0)
+
+    couples = []
+    def addCouple():
+        couples.append([entry9.get(), entry10.get()])
+        Label(tab2, text="%s" % (entry9.get())).grid(row=2, column=1)
+        Label(tab2, text="%s" % (entry10.get())).grid(row=2, column=2)
+        entry9.delete(0, END); entry10.delete(0,END)
+        entry9.insert(0, 0)
+        entry10.insert(0, 0)
+
+
+    button1 = Button(tab2, text="Add Couple", command=addCouple).grid(row=1, column=3, padx=10, pady=2)
+
+    def validCB():
+        BT_Text = open('Parameters/param_motor/Custom_Motor.txt', "w")
+        vals = [entry1.get(), entry2.get(), entry3.get(), entry4.get(), entry5.get(), entry6.get(), entry7.get(),
+                entry8.get()]
+        for val in vals:
+            BT_Text.write("%s " % (val))
+        BT_Text.write("\n")
+        for couple in couples:
+            BT_Text.write("   "+couple[0]+" "+couple[1]+"\n")
+
+        BT_Text.close()
+
+
+
+    def quitPage():
+        MotorParams.destroy()
+        MotorParams.update()
+
+    applyButton = Button(MotorParams, text="Apply", command=validCB)
+    applyButton.pack(anchor="w", padx=10, pady=5)
+    quitButton = Button(MotorParams, text="Ok", command=quitPage)
+    quitButton.pack(anchor="e", padx=10, pady=5)
+    MotorParams.mainloop()
+
+
+
+def SearchMotorInFolder():
+    fenetre.filemotor = filedialog.askopenfilename(initialdir=os.getcwd()+"/Motors", title="Select a File", filetypes=[("Motor Files", ".eng"), ("All Files", ".*")])
+    count = -5
+    while 1:
+        if fenetre.filemotor[count] == "/":
+            count += 1
+            break
+        if fenetre.filemotor[count] == "\\":
+            count += 1
+            break
+        count -= 1
+
+    name = fenetre.filemotor[count:-4]
+    Text = open("Parameters/param_motor/Motor.txt", "w")
+    Text.write(name)
+    Text.close()
+
+def SearchEnvInFolder():
+    fenetre.fileEnv = filedialog.askopenfilename(initialdir=os.getcwd()+"/Parameters/param_env", title="Select a File", filetypes=[("Txt Files", ".txt"), ("All Files", ".*")])
+    if fenetre.fileEnv:
+        count = -5
+        while 1:
+            if fenetre.fileEnv[count] == "/":
+                count += 1
+                break
+            if fenetre.fileEnv[count] == "\\":
+                count += 1
+                break
+            count -= 1
+
+        name = fenetre.fileEnv[count:-4]
+
+        EP = open('Parameters/param_env/'+name+'.txt', 'r')
+        EP1 = EP.readlines()
+        VALUES_E = []
+        for line in EP1:  # taking each line
+            conv_float = float(line)
+            VALUES_E.append(conv_float)
+        GetEnvironment(VALUES_E)
+    return
+
+def UpdateButtonState():
+    selection = tree.focus()
+    print(selection)
+    if selection[1] == 'd':
+        MoveUp.config(fg="black", state=NORMAL)
+        MoveDown.config(fg="black", state=NORMAL)
+        Change.config(fg="grey", state=DISABLED)
+        Remove.config(fg="black", state=NORMAL)
+        New_Stage.config(fg="grey", state=DISABLED)
+        frameAB.grid(row=0, column=1, sticky='nswe')
+        frameACE.grid_remove()
+        frameACF.grid_remove()
+
+    elif selection[1] == 't':
+        MoveUp.config(fg="black", state=NORMAL)
+        MoveDown.config(fg="black", state=NORMAL)
+        Change.config(fg="black", state=NORMAL)
+        Remove.config(fg="black", state=NORMAL)
+        New_Stage.config(fg="grey", state=DISABLED)
+        frameAB.grid(row=0, column=1, sticky='nswe')
+        frameACE.grid_remove()
+        frameACF.grid_remove()
+
+
+    elif int(selection[1]) == 0:
+        New_Stage.config(fg="black", state=NORMAL)
+        MoveUp.config(fg="grey", state=DISABLED)
+        MoveDown.config(fg="grey", state=DISABLED)
+        Change.config(fg="grey", state=DISABLED)
+        Remove.config(fg="grey", state=DISABLED)
+        frameAB.grid_remove()
+        frameACE.grid_remove()
+        frameACF.grid_remove()
+
+def UpdateBodyPartState(stage):
+    if 'n' in bodyParts[stage]:
+        NoseCone_choice.config(fg="grey", state=DISABLED)
+    else:
+        NoseCone_choice.config(fg="black", state=NORMAL)
+
+    if 't' in bodyParts[stage]:
+        Tube_choice.config(fg="grey", state=DISABLED)
+    else:
+        Tube_choice.config(fg="black", state=NORMAL)
+
+    if 'f' in bodyParts[stage]:
+        Fins_choice.config(fg="grey", state=DISABLED)
+    else:
+        Fins_choice.config(fg="black", state=NORMAL)
+
+    if 'b' in bodyParts[stage]:
+        BoatTail_choice.config(fg="grey", state=DISABLED)
+    else:
+        BoatTail_choice.config(fg="black", state=NORMAL)
+
+
+# Menu
 # TODO: Assign command to menu
 menubar = Menu(fenetre)
 
@@ -1665,6 +1940,8 @@ tree.grid(row=0, column=0, sticky='nswe')
 vbarTree = ttk.Scrollbar(frameAAAA, orient="vertical", command=tree.yview)
 vbarTree.grid(row=0, column=1, sticky='ns')
 tree.configure(yscrollcommand=vbarTree.set)
+tree.focus(NameRocket)
+tree.selection_set(NameRocket)
 
 frameAAAB = Frame(frameAAA, bg='white', highlightthickness=1, bd=1, relief='groove')
 frameAAAB.grid(row=1, column=0, sticky='nswe')
@@ -1684,25 +1961,25 @@ frameAAB.rowconfigure(4, weight=1)
 frameAAB.grid_propagate('False')
 
 # Button Move up
-MoveUp = Button(frameAAB, text='Move up', bg='gray80', fg='black', cursor='hand2', relief=RAISED,
+MoveUp = Button(frameAAB, text='Move up', bg='gray80', fg='grey', cursor='hand2', relief=RAISED, state=DISABLED,
                 command=lambda: do_move_up())
 MoveUp.grid(row=0, column=0, padx=3, pady=1, sticky='we')
 
 # Button Move down
-MoveDown = Button(frameAAB, text='Move down', bg='gray80', fg='black', cursor='hand2', relief=RAISED,
+MoveDown = Button(frameAAB, text='Move down', bg='gray80', fg='grey', cursor='hand2', relief=RAISED, state=DISABLED,
                   command=lambda: do_move_down())
 MoveDown.grid(row=1, column=0, padx=3, pady=1, sticky='we')
-Change = Button(frameAAB, text='Change', bg='gray80', fg='black', cursor='hand2', relief=RAISED,
+Change = Button(frameAAB, text='Change', bg='gray80', fg='grey', cursor='hand2', relief=RAISED, state=DISABLED,
                 command=lambda: change())
 Change.grid(row=2, column=0, padx=3, pady=1, sticky='we')
 
 # Button New Stage
-New_Stage = Button(frameAAB, text='New Stage', bg='gray80', fg='black', cursor='hand2', relief=RAISED,
+New_Stage = Button(frameAAB, text='New Stage', bg='gray80', fg='black', cursor='hand2', relief=RAISED, state=NORMAL,
                    command=lambda: Add_Stage())
 New_Stage.grid(row=3, column=0, padx=3, pady=1, sticky='we')
 
 # Button Remove
-Remove = Button(frameAAB, text="Remove", bg='gray80', fg='black', cursor='hand2', relief=RAISED,
+Remove = Button(frameAAB, text="Remove", bg='gray80', fg='grey', cursor='hand2', relief=RAISED, state=DISABLED,
                 command=lambda: do_remove())
 Remove.grid(row=4, column=0, padx=3, pady=1, sticky='we')
 
@@ -1718,6 +1995,7 @@ vbarAB.pack(side="right", fill="y")
 canvasAB.configure(yscrollcommand=vbarAB.set)
 canvasAB.grid(row=0, column=0, sticky='nswe')
 canvasAB.columnconfigure(0, weight=1)
+frameAB.grid_remove()
 
 # Frame with buttons Nosecone, Tube, Fins, Boat-Tail, Motor and Environment
 frameAB1 = Frame(canvasAB, bg='gray85', highlightthickness=0, bd=0, relief='flat')
@@ -1765,6 +2043,13 @@ canvasACE = Canvas(frameACE)
 vbarACE = Scrollbar(frameACE)
 frameAC5 = Frame(canvasACE, bg='gray85', highlightthickness=0, bd=0, relief='flat')
 Add_Scrollbar(frameACE, canvasACE, vbarACE, frameAC5)
+
+# Motor parameters
+frameACF = Frame(frameAC, bg='gray85', highlightthickness=0, bd=0, relief='flat')
+canvasACF = Canvas(frameACF)
+vbarACF = Scrollbar(frameACF)
+frameAC6 = Frame(canvasACF, bg='gray85', highlightthickness=0, bd=0, relief='flat')
+Add_Scrollbar(frameACF, canvasACF, vbarACF, frameAC6)
 
 # Choose NoseCone
 Inertia = Label(frameAC1, text='Inertia Matrix of Nosecone', bg='gray85', fg='blue')
@@ -1894,9 +2179,24 @@ motor_choice.menu.add_radiobutton(label='AT_L850', value='AT_L850', variable=mtr
 motor_choice.menu.add_radiobutton(label='Cesaroni_M1800', value='Cesaroni_M1800', variable=mtr, command=lambda:
 Cesaroni_M1800())
 motor_choice.menu.add_separator()
-motor_choice.menu.add_radiobutton(label='Personalize', variable=bt, command=lambda: DispBoatTail())
+motor_choice.menu.add_radiobutton(label='Search in folder', variable=bt, command=lambda: SearchMotorInFolder())
+motor_choice.menu.add_separator()
+motor_choice.menu.add_radiobutton(label='Personalize', variable=bt, command=lambda: OpenMotorParams())
 
 motor_choice.grid(row=1, column=1, padx=10, pady=10, ipadx=20, ipady=10, sticky='nswe')
+
+entries6 = []
+EntryButton(frameAC6, 'Name', 0, 0, entries6)
+EntryButton(frameAC6, 'Diameter [mm]', 0, 1, entries6)
+EntryButton(frameAC6, 'Length [mm]', 0, 2, entries6)
+EntryButton(frameAC6, 'Delay [s]', 2, 0, entries6)
+EntryButton(frameAC6, 'Weight Full [kg]', 2, 1, entries6)
+EntryButton(frameAC6, 'Weight Empty [kg]', 2, 2, entries6)
+EntryButton(frameAC6, 'Length [mm]', 4, 0, entries6)
+EntryButton(frameAC6, 'Name 2', 4, 1, entries6)
+
+DispF = Button(frameAC6, text='Save', command=lambda: SaveMotor())
+DispF.grid(row=6, column=2, sticky='se', padx=10, pady=10)
 
 # Choose Environment
 env_choice = Menubutton(frameAB1, text="Environment", bg='white', fg='black', cursor='hand2', relief='raised')
@@ -1912,6 +2212,10 @@ env_choice.menu.add_radiobutton(label='Mexico', variable=env, value='Mexico envi
 #                                 command=lambda: TextLabel('environment ', 'Zurich '))
 # env_choice.menu.add_radiobutton(label='Mexico', variable=env, value='Mexico environment',
 #                                 command=lambda: TextLabel('environment ', 'Mexico '))
+env_choice.menu.add_separator()
+env_choice.menu.add_radiobutton(label='Search in folder', variable=env, command=lambda: SearchEnvInFolder())
+env_choice.grid(row=1, column=2, padx=10, pady=10, ipadx=2, ipady=10, sticky='nswe')
+
 env_choice.menu.add_separator()
 env_choice.menu.add_radiobutton(label='Personalize', variable=env, command=lambda: DispEnvironment())
 env_choice.grid(row=1, column=2, padx=10, pady=10, ipadx=2, ipady=10, sticky='nswe')
@@ -1971,10 +2275,22 @@ simu_button.grid(row=0, column=0, padx=10, pady=10, sticky='nswe')
 # stop = Button(fenetre, text="x", bg='RED', fg='white', command=fenetre.quit)
 # stop.grid(row=1, column=1, sticky='nswe', in_=canvasB)
 
+
+
 #Double click binding for tree
-def binding(b):
+def bindingDoubleClick(b):
     change()
-tree.bind("<Double-1>", binding)
+tree.bind("<Double-1>", bindingDoubleClick)
+
+def bindingSingleClick(b):
+    UpdateButtonState()
+    elem = tree.focus()
+    if elem[1] == 'd' or elem[1] == 't':
+        stage = elem[-1]
+        UpdateBodyPartState(int(stage))
+
+
+tree.bind("<ButtonRelease-1>", bindingSingleClick)
 
 # Disp window
 fenetre.mainloop()
