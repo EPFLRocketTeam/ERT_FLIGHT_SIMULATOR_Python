@@ -1,9 +1,6 @@
 import numpy as np
-from scipy.integrate import ode
 
 from Rocket.Body import Body
-from Rocket.Fins import Fins
-from Rocket.Motor import Motor
 from Rocket.Rocket import Rocket
 from Rocket.Stage import Stage
 
@@ -51,11 +48,11 @@ if __name__ == "__main__":
     print(max(tubes_francais.diameters))
     print(Matterhorn_III.get_mass(0))
 
-    from Functions.stdAtmosUS import stdAtmosUS
+    from Functions.Models.stdAtmosUS import stdAtmosUS
 
     US_Atmos = stdAtmosUS(1382, 308, 85600, 0.15)
 
-    from Functions.drag import drag
+    from Functions.Models.drag import drag
 
     t = 6.11840823842032
     x = [853.848962337705, 166.003984138695]
