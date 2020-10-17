@@ -9,8 +9,8 @@ from scipy.integrate import ode, solve_ivp
 from Rocket.Body import Body
 from Rocket.Rocket import Rocket
 from Rocket.Stage import Stage
-from Functions.Models.stdAtmosUS import stdAtmosUS
-from Functions.Models.drag import drag
+from Functions.stdAtmosUS import stdAtmosUS
+from Functions.drag import drag
 
 
 class Simulator1D:
