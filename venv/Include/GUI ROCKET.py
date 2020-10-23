@@ -247,6 +247,7 @@ def do_remove():
     part = sel[2]
     place = int(tree.index(sel))
     stage = get_stage()
+    substage = get_substage()
 
     if sel:
         parent_id = tree.parent(sel)
@@ -337,7 +338,8 @@ def do_remove():
             CanvasGeometry[value1][i].grid(row=0, column=idx)
 
     if prefix1 == 's':
-        del bodyParts[stage][tree.index(tree.parent(tree.focus()))][place+1]
+        del bodyParts[stage][substage][place+1]
+        DrawFullPiece()
         #TODO: Remove subsub parts from canvas
 
     UpdateBodyPartState(stage)
@@ -547,7 +549,11 @@ def get_stage():
 
 def get_substage():
     selected = tree.focus()
-    if selected[1] == 't':
+    print(selected)
+    if selected[1] == 'd':
+        stage = len(tree.get_children(selected))-1
+        return stage
+    elif selected[1] == 't':
         stage = tree.index(selected)
         return stage
     elif selected[1] == 's':
@@ -788,6 +794,20 @@ def Launch_Simulator1D():
     # Current simulation yields an apogee of 2031.86 m whereas Matlab 1D yields 2022.99 m
     return
 
+def DrawN(VALUES_N, canvas):
+
+    canvas.configure(width=VALUES_N[0] / 3, height=VALUES_N[1] / 3, bg='white', highlightthickness=0, bd=0,
+                      relief='ridge')  # 300 mm + 350 mm
+    canvas.create_arc(2 / 3 * (1 - VALUES_N[1] / 3), 3.3 * VALUES_N[1] / 3, 4.1 * VALUES_N[1] / 3, -1, width=1,
+                       outline='blue', style=ARC, start=90, extent=90)
+    canvas.create_arc(2 / 3 * (1 - VALUES_N[1] / 3), VALUES_N[1] / 3, 4.1 * VALUES_N[1] / 3 + 3,
+                       -2.3 * VALUES_N[1] / 3, width=1, outline='blue', style=ARC, start=-90, extent=-90)
+    canvas.create_line(7 / 5 * VALUES_N[1] / 3, 0, VALUES_N[0] / 3 - 1, 0, width=1, fill='blue')
+    canvas.create_line(7 / 5 * VALUES_N[1] / 3, VALUES_N[1] / 3 - 1, VALUES_N[0] / 3 - 1, VALUES_N[1] / 3 - 1, width=1,
+                        fill='blue')
+    canvas.create_line(VALUES_N[0] / 3 - 1, 0, VALUES_N[0] / 3 - 1, VALUES_N[1] / 3 - 1, width=1, fill='blue')
+
+
 def DrawNose(VALUES_N, display=0):
     # Get the index 'stg' of stage : example, first stage has an index stg = 0
     Stg = int(tree.focus()[-1])
@@ -820,18 +840,8 @@ def DrawNose(VALUES_N, display=0):
     DispData()
 
     canvas1 = CanvasGeometry[Stg][idx]
-    canvas1.delete("all")
 
-    canvas1.configure(width=VALUES_N[0] / 3, height=VALUES_N[1] / 3, bg='white', highlightthickness=0, bd=0,
-                      relief='ridge')  # 300 mm + 350 mm
-    canvas1.create_arc(2 / 3 * (1 - VALUES_N[1] / 3), 3.3 * VALUES_N[1] / 3, 4.1 * VALUES_N[1] / 3, -1, width=1,
-                       outline='blue', style=ARC, start=90, extent=90)
-    canvas1.create_arc(2 / 3 * (1 - VALUES_N[1] / 3), VALUES_N[1] / 3, 4.1 * VALUES_N[1] / 3 + 3,
-                       -2.3 * VALUES_N[1] / 3, width=1, outline='blue', style=ARC, start=-90, extent=-90)
-    canvas1.create_line(7 / 5 * VALUES_N[1] / 3, 0, VALUES_N[0] / 3 - 1, 0, width=1, fill='blue')
-    canvas1.create_line(7 / 5 * VALUES_N[1] / 3, VALUES_N[1] / 3 - 1, VALUES_N[0] / 3 - 1, VALUES_N[1] / 3 - 1, width=1,
-                        fill='blue')
-    canvas1.create_line(VALUES_N[0] / 3 - 1, 0, VALUES_N[0] / 3 - 1, VALUES_N[1] / 3 - 1, width=1, fill='blue')
+    DrawFullPiece()
 
     for i, substage in enumerate(bodyParts[stage]):
         if substage[0] == 'n':
@@ -929,6 +939,13 @@ def OpenNoseParams(fenetre, values=[600, 155, 0,0,0,0,0,0,0,0,0], disp=1):
     #validateButton.grid(row=3, column=2)
     noseParam.mainloop()
 
+def DrawT(VALUES_T, canvas):
+    canvas.configure(width=VALUES_T[0] / 3, height=VALUES_T[1] / 3, bg='white', highlightthickness=0, bd=0,
+                      relief='ridge')  # 2010 mm
+    canvas.create_rectangle(1, 0, VALUES_T[0] / 3 - 1, VALUES_T[1] / 3 - 1, width=1, outline='blue')
+
+
+
 # Display geometrical tube in drawing
 def DrawTube(VALUES_T, display=0):
     # Get the index 'stg' of stage : example, first stage has an index stg = 0
@@ -955,7 +972,6 @@ def DrawTube(VALUES_T, display=0):
             idx = i
 
     canvas2 = CanvasGeometry[Stg][idx]
-    canvas2.delete("all")
 
     Len_Tube = VALUES_T[0]
     LENGTH[1] = Len_Tube
@@ -963,9 +979,7 @@ def DrawTube(VALUES_T, display=0):
     DIAMETER[1] = Dia_Tube
     DispData()
 
-    canvas2.configure(width=VALUES_T[0] / 3, height=VALUES_T[1] / 3, bg='white', highlightthickness=0, bd=0,
-                      relief='ridge')  # 2010 mm
-    canvas2.create_rectangle(1, 0, VALUES_T[0] / 3 - 1, VALUES_T[1] / 3 - 1, width=1, outline='blue')
+    DrawFullPiece()
 
     for i, substage in enumerate(bodyParts[stage]):
         if substage[0] == 't':
@@ -1065,6 +1079,24 @@ def OpenTubeParams(fenetre, values=[2038, 155, 0,0,0,0,0,0,0,0,0], disp=1):
     validateButton.pack(anchor="e", padx=10, pady=5)
     tubeParam.mainloop()
 
+def DrawF(VALUES_F, canvas):
+    print(VALUES_F[0])
+    if VALUES_F[0] == 3:
+        canvas.configure(width=VALUES_F[9] / 3, height=VALUES_F[10] / 3 + 2 * VALUES_F[3] / 3, bg='white',
+                          highlightthickness=0, bd=0, relief='ridge')  # 350 mm
+        canvas.create_rectangle(1, VALUES_F[3] / 3, VALUES_F[9] / 3 - 1, VALUES_F[3] / 3 + VALUES_F[10] / 3 - 1,
+                                 width=1, outline='blue')
+        canvas.create_polygon(VALUES_F[7] / 3, VALUES_F[3] / 3 + 2 / 3 * VALUES_F[10] / 3,
+                               VALUES_F[1] / 3 + VALUES_F[7] / 3 - 1, VALUES_F[3] / 3 + 2 / 3 * VALUES_F[10] / 3,
+                               VALUES_F[2] / 3 + VALUES_F[4] / 3 + VALUES_F[7] / 3,
+                               2 / 3 * VALUES_F[10] / 3 + 5 / 3 * VALUES_F[3] / 3 - 1,
+                               VALUES_F[4] / 3 + VALUES_F[7] / 3,
+                               2 / 3 * VALUES_F[10] / 3 + 5 / 3 * VALUES_F[3] / 3 - 1, width=1, outline='blue', fill='')
+        canvas.create_polygon(VALUES_F[7] / 3, VALUES_F[3] / 3 - 3, VALUES_F[1] / 3 + VALUES_F[7] / 3 - 1,
+                               VALUES_F[3] / 3 - 3, VALUES_F[2] / 3 + VALUES_F[4] / 3 + VALUES_F[7] / 3, 0,
+                               VALUES_F[4] / 3 + VALUES_F[7] / 3, 0, width=1, outline='blue', fill='')
+
+
 # Display geometrical fins in drawing
 def DrawFins(VALUES_F, display=0):
     # Get the index 'stg' of stage : example, first stage has an index stg = 0
@@ -1091,31 +1123,18 @@ def DrawFins(VALUES_F, display=0):
             idx = i
 
     canvas3 = CanvasGeometry[Stg][idx]
-    canvas3.delete("all")
 
     LENGTH[2] = VALUES_F[9]
     DIAMETER[2] = VALUES_F[10]
     DispData()
 
-    if VALUES_F[0] == 3:
-        canvas3.configure(width=VALUES_F[9] / 3, height=VALUES_F[10] / 3 + 2 * VALUES_F[3] / 3, bg='white',
-                          highlightthickness=0, bd=0, relief='ridge')  # 350 mm
-        canvas3.create_rectangle(1, VALUES_F[3] / 3, VALUES_F[9] / 3 - 1, VALUES_F[3] / 3 + VALUES_F[10] / 3 - 1,
-                                 width=1, outline='blue')
-        canvas3.create_polygon(VALUES_F[7] / 3, VALUES_F[3] / 3 + 2 / 3 * VALUES_F[10] / 3,
-                               VALUES_F[1] / 3 + VALUES_F[7] / 3 - 1, VALUES_F[3] / 3 + 2 / 3 * VALUES_F[10] / 3,
-                               VALUES_F[2] / 3 + VALUES_F[4] / 3 + VALUES_F[7] / 3,
-                               2 / 3 * VALUES_F[10] / 3 + 5 / 3 * VALUES_F[3] / 3 - 1,
-                               VALUES_F[4] / 3 + VALUES_F[7] / 3,
-                               2 / 3 * VALUES_F[10] / 3 + 5 / 3 * VALUES_F[3] / 3 - 1, width=1, outline='blue', fill='')
-        canvas3.create_polygon(VALUES_F[7] / 3, VALUES_F[3] / 3 - 3, VALUES_F[1] / 3 + VALUES_F[7] / 3 - 1,
-                               VALUES_F[3] / 3 - 3, VALUES_F[2] / 3 + VALUES_F[4] / 3 + VALUES_F[7] / 3, 0,
-                               VALUES_F[4] / 3 + VALUES_F[7] / 3, 0, width=1, outline='blue', fill='')
-        for i, substage in enumerate(bodyParts[stage]):
-            if substage[0] == 'f':
-                tmp = i
-                break
-        canvas3.grid(row=0, column=tmp)
+    DrawFullPiece()
+
+    for i, substage in enumerate(bodyParts[stage]):
+        if substage[0] == 'f':
+            tmp = i
+            break
+    canvas3.grid(row=0, column=tmp)
 
 def OpenFinsParams(fenetre, values=[30, 282, 123, 216, 115, 3, 0, 40, 300, 350, 155], disp=1):
 
@@ -1353,6 +1372,19 @@ def OpenFinsParams(fenetre, values=[30, 282, 123, 216, 115, 3, 0, 40, 300, 350, 
 
     FinParam.mainloop()
 
+def DrawBT(VALUES_BT, canvas):
+    canvas.configure(width=VALUES_BT[0] / 3, height=max(VALUES_BT[1], VALUES_BT[2]) / 3, bg='white',
+                      highlightthickness=0, bd=0, relief='ridge')  # 50 mm
+    if VALUES_BT[1] > VALUES_BT[2]:
+        canvas.create_polygon(1, 0, VALUES_BT[0] / 3 - 1, (VALUES_BT[1] / 3 - VALUES_BT[2] / 3) / 2,
+                               VALUES_BT[0] / 3 - 1, (VALUES_BT[1] / 3 + VALUES_BT[2] / 3) / 2 - 1, 1,
+                               VALUES_BT[1] / 3 - 1, width=1, outline='blue', fill='')
+    else:
+        canvas.create_polygon(1, (VALUES_BT[2] / 3 - VALUES_BT[1] / 3) / 2, VALUES_BT[0] / 3 - 1, 0,
+                               VALUES_BT[0] / 3 - 1, VALUES_BT[2] / 3 - 1, 1,
+                               (VALUES_BT[2] / 3 + VALUES_BT[1] / 3) / 2 - 1, width=1, outline='blue', fill='')
+
+
 # Display geometrical tube in drawing
 def DrawBoatTail(VALUES_BT, display=0):
 
@@ -1379,24 +1411,14 @@ def DrawBoatTail(VALUES_BT, display=0):
             idx = i
 
     canvas4 = CanvasGeometry[Stg][idx]
-    canvas4.delete("all")
 
-    Len_BoatTail = VALUES_BT[0]
-    LENGTH[3] = Len_BoatTail
+    LENGTH[3] = VALUES_BT[0]
     Dia_BoatTail = max(VALUES_BT[1], VALUES_BT[2])
     DIAMETER[3] = Dia_BoatTail
     DispData()
 
-    canvas4.configure(width=VALUES_BT[0] / 3, height=max(VALUES_BT[1], VALUES_BT[2]) / 3, bg='white',
-                      highlightthickness=0, bd=0, relief='ridge')  # 50 mm
-    if VALUES_BT[1] > VALUES_BT[2]:
-        canvas4.create_polygon(1, 0, VALUES_BT[0] / 3 - 1, (VALUES_BT[1] / 3 - VALUES_BT[2] / 3) / 2,
-                               VALUES_BT[0] / 3 - 1, (VALUES_BT[1] / 3 + VALUES_BT[2] / 3) / 2 - 1, 1,
-                               VALUES_BT[1] / 3 - 1, width=1, outline='blue', fill='')
-    else:
-        canvas4.create_polygon(1, (VALUES_BT[2] / 3 - VALUES_BT[1] / 3) / 2, VALUES_BT[0] / 3 - 1, 0,
-                               VALUES_BT[0] / 3 - 1, VALUES_BT[2] / 3 - 1, 1,
-                               (VALUES_BT[2] / 3 + VALUES_BT[1] / 3) / 2 - 1, width=1, outline='blue', fill='')
+    DrawFullPiece()
+
     for i, substage in enumerate(bodyParts[stage]):
         if substage[0] == 'b':
             tmp = i
@@ -1628,12 +1650,22 @@ def OpenEnvParams():
     quitButton.pack(anchor="e", padx=10, pady=5)
     EnvParams.mainloop()
 
+def DrawP(VALUES_P, canvas):
+    midh = canvas.winfo_height() / 2
+    midw = canvas.winfo_width() / 2
+
+    parachute = canvas.create_oval(midw - VALUES_P[0] / 2, midh - VALUES_P[0] / 2, midw + VALUES_P[0] / 2,
+                                    midh + VALUES_P[0] / 2,
+                                    width=1, outline='red', fill='', dash='1')
+
+    canvas.move(parachute, VALUES_P[2], 0)
+
 
 def DrawParachute(VALUES_P, display=0):
     # Get the index 'stg' of stage : example, first stage has an index stg = 0
     Stg = int(tree.focus()[-1])
     stage = get_stage()
-    substage = tree.index(tree.parent(tree.focus()))
+    substage = get_substage()
 
     if display:
         frame02idx = FrameGeometry[Stg]
@@ -1642,54 +1674,22 @@ def DrawParachute(VALUES_P, display=0):
         # Get Canvas in frame02idx
         Add_SubSubstage(tree.selection(), 'Parachute', 'canvas5', Stg, frame02idx, 'p', idx)
 
-    Para_Text = open("Parameters/param_rocket/Parachute.txt", "w")
+    piece = bodyParts[stage][substage][0]
+    if piece == 'n':
+        p = "Nose"
+    elif piece == 't':
+        p = "Tube"
+    elif piece == 'f':
+        p = "Fins"
+    elif piece == 'b':
+        p = "BT"
+
+    Para_Text = open("Parameters/param_rocket/Parachute"+p+".txt", "w")
     for i in range(len(VALUES_P)):
         Para_Text.write("%s\n" % (VALUES_P[i]))
     Para_Text.close()
 
-    part = tree.parent(tree.focus())[2]
-
-    if part == 'n':
-        num = '1'
-        nbItems = 5
-    elif part == 't':
-        num = '2'
-        nbItems = 1
-    elif part == 'f':
-        num = '3'
-        nbItems = 3
-    elif part == 'b':
-        num = '4'
-        nbItems = 1
-
-    nbItems += len(bodyParts[stage][substage])-1
-
-    for i in range(len(CanvasGeometry[Stg])):
-        tmp2 = []
-        for l in str(CanvasGeometry[Stg][i]):
-            tmp2.append(l)
-        if tmp2[-4] == num:
-            canNum = i
-
-    canvas5 = CanvasGeometry[Stg][canNum]
-
-    midh = canvas5.winfo_height() / 2
-    midw = canvas5.winfo_width() / 2
-
-
-    if len(canvas5.find_all())>=nbItems:
-        print("here", len(canvas5.find_all()))
-        canvas5.delete(canvas5.find_all()[-1])
-    print(canvas5.find_all())
-
-    parachute = canvas5.create_oval(midw - VALUES_P[0] / 2, midh - VALUES_P[0] / 2, midw + VALUES_P[0] / 2,
-                                    midh + VALUES_P[0] / 2,
-                                    width=1, outline='red', fill='', dash='1')
-    print(parachute)
-    canvas5.move(parachute, VALUES_P[2], 0)
-
-    tmp = tree.index(tree.parent(tree.focus()))
-    canvas5.grid(row=0, column=tmp)
+    DrawFullPiece()
 
 
 
@@ -1768,12 +1768,21 @@ def OpenDamperParams(fenetre, values=[20, 20], disp=1):
     return
 
 
+def DrawW(VALUES_W, canvas):
+    midh = canvas.winfo_height() / 2
+    midw = canvas.winfo_width() / 2
+
+    weight = canvas.create_oval(midw - VALUES_W[0] / 2, midh - VALUES_W[0] / 2, midw + VALUES_W[0] / 2,
+                                 midh + VALUES_W[0] / 2,
+                                 width=1.5, outline='black', fill='')
+    canvas.move(weight, VALUES_W[2], 0)
+
+
 def DrawWeight(VALUES_W, display = 0):
     # Get the index 'stg' of stage : example, first stage has an index stg = 0
     Stg = int(tree.focus()[-1])
-
     stage = get_stage()
-    substage = tree.index(tree.parent(tree.focus()))
+    substage = get_substage()
 
     if display:
         frame02idx = FrameGeometry[Stg]
@@ -1782,52 +1791,23 @@ def DrawWeight(VALUES_W, display = 0):
         # Get Canvas in frame02idx
         Add_SubSubstage(tree.selection(), 'Weight', 'canvas5', Stg, frame02idx, 'w', idx)
 
-    Weight_Text = open("Parameters/param_rocket/Weight.txt", "w")
+    piece = bodyParts[stage][substage][0]
+    if piece == 'n':
+        p = "Nose"
+    elif piece == 't':
+        p = "Tube"
+    elif piece == 'f':
+        p = "Fins"
+    elif piece == 'b':
+        p = "BT"
+
+    Weight_Text = open("Parameters/param_rocket/Weight"+p+".txt", "w")
     for i in range(len(VALUES_W)):
         Weight_Text.write("%s\n" % (VALUES_W[i]))
     Weight_Text.close()
 
-    part = tree.parent(tree.focus())[2]
-
-
-    if part == 'n':
-        num = '1'
-        nbItems = 5
-    elif part == 't':
-        num = '2'
-        nbItems = 1
-    elif part == 'f':
-        num = '3'
-        nbItems=3
-    elif part == 'b':
-        num = '4'
-        nbItems = 1
-
-    nbItems += len(bodyParts[stage][substage]) - 1
-
-    for i in range(len(CanvasGeometry[Stg])):
-        tmp2 = []
-        for l in str(CanvasGeometry[Stg][i]):
-            tmp2.append(l)
-        if tmp2[-4] == num:
-            canNum = i
-
-    canvas5 = CanvasGeometry[Stg][canNum]
-
-    midh = canvas5.winfo_height() / 2
-    midw = canvas5.winfo_width() / 2
-
-    if len(canvas5.find_all()) >= nbItems:
-        canvas5.delete(canvas5.find_all()[-1])
-
-    weight = canvas5.create_oval(midw - VALUES_W[0] / 2, midh - VALUES_W[0] / 2, midw + VALUES_W[0] / 2,
-                                    midh + VALUES_W[0] / 2,
-                                    width=1.5, outline='black', fill='')
-    canvas5.move(weight, VALUES_W[2], 0)
-
     DrawFullPiece()
-    tmp = tree.index(tree.parent(tree.focus()))
-    canvas5.grid(row=0, column=tmp)
+
 
 def OpenWeightParams(fenetre, values=[20, 20, 0], disp=1):
     WeightParams = Toplevel(fenetre)
@@ -1917,7 +1897,9 @@ def DrawFullPiece():
     def GetCanvas():
         stage = get_stage()
         selected = tree.focus()
-        if selected[1] == 't':
+        if selected[1] == 'd':
+            place = len(tree.get_children(selected))-1
+        elif selected[1] == 't':
             place = tree.index(tree.focus())
         else:
             place = tree.index(tree.parent(tree.focus()))
@@ -1944,51 +1926,56 @@ def DrawFullPiece():
     stage = get_stage()
     substage = get_substage()
     canvas = GetCanvas()
+    canvas.delete("all")
     list = bodyParts[stage][substage]
 
     accessoryList = ['p', 'w', 'c']
 
     VALUES = []
     if list[0] == 'n':
+        p = 'Nose'
         NoseCone = open('Parameters/param_rocket/NoseCone.txt', 'r')  # Read text file
         NoseCone1 = NoseCone.readlines()
         for line in NoseCone1:  # taking each line
             VALUES.append(float(line))
-        # drawNose....
+        DrawN(VALUES, canvas)
     elif list[0] == 't':
+        p = 'Tube'
         Tube = open('Parameters/param_rocket/Tube.txt', 'r')  # Read text file
         Tube1 = Tube.readlines()
         for line in Tube1:  # taking each line
             VALUES.append(float(line))
-        # drawNose....
+        DrawT(VALUES, canvas)
     elif list[0] == 'f':
+        p = 'Fins'
         Fins = open('Parameters/param_rocket/Fins.txt', 'r')  # Read text file
         Fins1 = Fins.readlines()
         for line in Fins1:  # taking each line
             VALUES.append(float(line))
-        # drawNose....$
+        DrawF(VALUES, canvas)
     elif list[0] == 'b':
+        p = 'BT'
         BoatTail = open('Parameters/param_rocket/BoatTail.txt', 'r')  # Read text file
         BoatTail1 = BoatTail.readlines()
         for line in BoatTail1:  # taking each line
             VALUES.append(float(line))
-            # drawNose....
+        DrawBT(VALUES, canvas)
 
     for item in accessoryList:
         VALUES1 = []
         if item in list:
             if item == 'p':
-                Parachute = open('Parameters/param_rocket/Parachute.txt', 'r')  # Read text file
+                Parachute = open('Parameters/param_rocket/Parachute'+p+'.txt', 'r')  # Read text file
                 Parachute1 = Parachute.readlines()
                 for line in Parachute1:  # taking each line
                     VALUES1.append(float(line))
-                # drawNose....$
+                DrawP(VALUES1, canvas)
             elif item == 'w':
-                Weight = open('Parameters/param_rocket/Weight.txt', 'r')  # Read text file
+                Weight = open('Parameters/param_rocket/Weight'+p+'.txt', 'r')  # Read text file
                 Weight1 = Weight.readlines()
                 for line in Weight1:  # taking each line
                     VALUES1.append(float(line))
-                # drawNose....$
+                DrawW(VALUES1, canvas)
             elif item == 'c':
                 InnerTube = open('Parameters/param_rocket/InnerTube.txt', 'r')  # Read text file
                 InnerTube1 = InnerTube.readlines()
