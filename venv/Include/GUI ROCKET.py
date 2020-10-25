@@ -1919,7 +1919,7 @@ def DrawInnerTube(VALUES_IT, display=0):
 
 
 
-def OpenInnerTubeParams(fenetre, values=[600, 150, 140, 5, 0], disp=1):
+def OpenInnerTubeParams(fenetre, values=[400, 150, 140, 5, 0], disp=1):
     tubeParam = Toplevel(fenetre)
     tubeParam.title("Inner Tube Parameters")
     tubeParam.geometry("500x500")
@@ -1937,6 +1937,7 @@ def OpenInnerTubeParams(fenetre, values=[600, 150, 140, 5, 0], disp=1):
 
     canvas = GetCanvas()
     len = canvas.winfo_width()
+    width = canvas.winfo_height()
     print(len)
 
     def slide(var):
@@ -1994,7 +1995,7 @@ def OpenInnerTubeParams(fenetre, values=[600, 150, 140, 5, 0], disp=1):
     lengthEntry.grid(row=1, column=1)
     lengthEntry.insert(0, values[0])
     lengthEntry.bind("<Return>", insertVal)
-    lengthScale = Scale(tab1, from_=0, to=400, orient=HORIZONTAL, command=slide)
+    lengthScale = Scale(tab1, from_=0, to=3*len, orient=HORIZONTAL, command=slide)
     lengthScale.grid(row=1, column=2)
     lengthScale.set(values[0])
 
@@ -2004,7 +2005,7 @@ def OpenInnerTubeParams(fenetre, values=[600, 150, 140, 5, 0], disp=1):
     DiaExtEntry.grid(row=2, column=1)
     DiaExtEntry.insert(0, values[1])
     DiaExtEntry.bind("<Return>", insertVal1)
-    DiaExtScale = Scale(tab1, from_=0, to=300, orient=HORIZONTAL, command=slide1)
+    DiaExtScale = Scale(tab1, from_=0, to=3*width, orient=HORIZONTAL, command=slide1)
     DiaExtScale.grid(row=2, column=2)
     DiaExtScale.set(values[1])
 
