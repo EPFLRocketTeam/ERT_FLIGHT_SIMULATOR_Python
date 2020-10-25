@@ -56,6 +56,8 @@ def UpdateScale():
 # TODO: Modify the tree's branch selected to change parameters
 def change():
     selected = tree.focus()
+    stage = get_stage()
+    substage = get_substage()
 
     #case ogive selected
     if selected[1] == "t":
@@ -68,8 +70,7 @@ def change():
             OpenNoseParams(fenetre, VAL_N, disp=0)
 
         # case tube selected
-
-        if selected[2] == 't':
+        elif selected[2] == 't':
             Tube = open('Parameters/param_rocket/Tube.txt', 'r')  # Read text file
             Tube1 = Tube.readlines()
             VAL_N = []
@@ -78,8 +79,7 @@ def change():
             OpenTubeParams(fenetre, VAL_N, disp=0)
 
         # case fins selected
-
-        if selected[2] == 'f':
+        elif selected[2] == 'f':
             Fins = open('Parameters/param_rocket/Fins.txt', 'r')  # Read text file
             Fins1 = Fins.readlines()
             VAL_N = []
@@ -88,13 +88,48 @@ def change():
             OpenFinsParams(fenetre, VAL_N, disp=0)
 
         # case BT selected
-        if selected[2] == 'b':
+        elif selected[2] == 'b':
             BT = open('Parameters/param_rocket/BoatTail.txt', 'r')  # Read text file
             BT1 = BT.readlines()
             VAL_N = []
             for line in BT1:  # taking each line
                 VAL_N.append(float(line))
             OpenBoatTailParams(fenetre, VAL_N, disp=0)
+
+    elif selected[1] == "s":
+        piece = bodyParts[stage][substage][0]
+        if piece == 'n':
+            p = 'Nose'
+        elif piece == 't':
+            p = 'Tube'
+        elif piece == 'f':
+            p = 'Fins'
+        elif piece == 'b':
+            p = 'BT'
+
+        if selected[2] == 'p':
+            Parachute = open('Parameters/param_rocket/Parachute'+p+'.txt', 'r')  # Read text file
+            Parachute1 = Parachute.readlines()
+            VAL_P = []
+            for line in Parachute1:  # taking each line
+                VAL_P.append(float(line))
+            OpenParachuteParams(fenetre, VAL_P, disp=0)
+
+        elif selected[2] == 'w':
+            Weight = open('Parameters/param_rocket/Weight'+p+'.txt', 'r')  # Read text file
+            Weight1 = Weight.readlines()
+            VAL_W = []
+            for line in Weight1:  # taking each line
+                VAL_W.append(float(line))
+            OpenWeightParams(fenetre, VAL_W, disp=0)
+
+        elif selected[2] == 'c':
+            InnerTube = open('Parameters/param_rocket/InnerTube'+p+'.txt', 'r')  # Read text file
+            InnerTube1 = InnerTube.readlines()
+            VAL_IT = []
+            for line in InnerTube1:  # taking each line
+                VAL_IT.append(float(line))
+            OpenInnerTubeParams(fenetre, VAL_IT, disp=0)
 
 ## Add a stage
 # Make an array of Frame Geometry to memorize each stage's frame
@@ -120,6 +155,9 @@ IncC = []
 # Alphabet
 alpha0 = list(string.ascii_lowercase)
 inc0 = -1
+
+# Colors
+colors = ["blue", "red", "green", "black", "yellow"]
 
 # Add a stage to the tree view
 def Add_Stage():
@@ -219,8 +257,9 @@ def Add_Substage(StageSelected, subpart, canvasN, Stg, frame_idx, name):
     br = tree.insert(StageSelected, 'end', 'it%s%s%d%d' % (name, alpha[inc], ITEMB[Stg], Stg), text=subpart)
     tree.see(br)
 
-    print(CanvasGeometry)
+
     CanvasSubstage(canvasN, Stg, frame_idx)
+    print(CanvasGeometry)
     UpdateBodyPartState(get_stage())
 
 # Add a subbranch in treeview
@@ -795,17 +834,17 @@ def Launch_Simulator1D():
     return
 
 def DrawN(VALUES_N, canvas):
-
+    print(VALUES_N[2])
     canvas.configure(width=VALUES_N[0] / 3, height=VALUES_N[1] / 3, bg='white', highlightthickness=0, bd=0,
                       relief='ridge')  # 300 mm + 350 mm
     canvas.create_arc(2 / 3 * (1 - VALUES_N[1] / 3), 3.3 * VALUES_N[1] / 3, 4.1 * VALUES_N[1] / 3, -1, width=1,
-                       outline='blue', style=ARC, start=90, extent=90)
+                       outline=colors[int(VALUES_N[2])], style=ARC, start=90, extent=90)
     canvas.create_arc(2 / 3 * (1 - VALUES_N[1] / 3), VALUES_N[1] / 3, 4.1 * VALUES_N[1] / 3 + 3,
-                       -2.3 * VALUES_N[1] / 3, width=1, outline='blue', style=ARC, start=-90, extent=-90)
-    canvas.create_line(7 / 5 * VALUES_N[1] / 3, 0, VALUES_N[0] / 3 - 1, 0, width=1, fill='blue')
+                       -2.3 * VALUES_N[1] / 3, width=1, outline=colors[int(VALUES_N[2])], style=ARC, start=-90, extent=-90)
+    canvas.create_line(7 / 5 * VALUES_N[1] / 3, 0, VALUES_N[0] / 3 - 1, 0, width=1, fill=colors[int(VALUES_N[2])])
     canvas.create_line(7 / 5 * VALUES_N[1] / 3, VALUES_N[1] / 3 - 1, VALUES_N[0] / 3 - 1, VALUES_N[1] / 3 - 1, width=1,
-                        fill='blue')
-    canvas.create_line(VALUES_N[0] / 3 - 1, 0, VALUES_N[0] / 3 - 1, VALUES_N[1] / 3 - 1, width=1, fill='blue')
+                        fill=colors[int(VALUES_N[2])])
+    canvas.create_line(VALUES_N[0] / 3 - 1, 0, VALUES_N[0] / 3 - 1, VALUES_N[1] / 3 - 1, width=1, fill=colors[int(VALUES_N[2])])
 
 
 def DrawNose(VALUES_N, display=0):
@@ -851,7 +890,7 @@ def DrawNose(VALUES_N, display=0):
     canvas1.grid(row=0, column=tmp)
 
 
-def OpenNoseParams(fenetre, values=[600, 155, 0,0,0,0,0,0,0,0,0], disp=1):
+def OpenNoseParams(fenetre, values=[600, 155,0,0,0,0,0,0,0,0,0,0], disp=1):
 
     noseParam = Toplevel(fenetre)
     noseParam.title("NoseCone Parameters")
@@ -868,12 +907,17 @@ def OpenNoseParams(fenetre, values=[600, 155, 0,0,0,0,0,0,0,0,0], disp=1):
     notebook.add(tab2, text="Inertia")
     notebook.pack(expand=1, fill="both")
 
+    tab3 = ttk.Frame(notebook)
+    notebook.add(tab3, text="Personalize")
+    notebook.pack(expand=1, fill="both")
 
+    color=values[2]
 
     def slide(var):
         lengthEntry.delete(0, "end")
         lengthEntry.insert(0,str(lengthScale.get()))
-        DrawNose([lengthScale.get(), DiaScale.get()])
+        DrawNose([lengthScale.get(), DiaScale.get(), color,inertia1.get(),inertia2.get(),inertia3.get(),inertia4.get(),
+                 inertia5.get(),inertia6.get(),inertia7.get(),inertia8.get(),inertia9.get()])
 
     def insertVal(var):
         lengthScale.set(lengthEntry.get())
@@ -881,11 +925,16 @@ def OpenNoseParams(fenetre, values=[600, 155, 0,0,0,0,0,0,0,0,0], disp=1):
     def slide1(var):
         DiaEntry.delete(0, "end")
         DiaEntry.insert(0,str(DiaScale.get()))
-        DrawNose([lengthScale.get(), DiaScale.get()])
+        DrawNose([lengthScale.get(), DiaScale.get(), color,inertia1.get(),inertia2.get(),inertia3.get(),inertia4.get(),
+                 inertia5.get(),inertia6.get(),inertia7.get(),inertia8.get(),inertia9.get()])
 
     def insertVal1(var):
         DiaScale.set(DiaEntry.get())
 
+    def Ok():
+        color = colors.index(clicked.get())
+        DrawNose([lengthScale.get(), DiaScale.get(), color, inertia1.get(),inertia2.get(),inertia3.get(),inertia4.get(),
+                 inertia5.get(),inertia6.get(),inertia7.get(),inertia8.get(),inertia9.get()])
 
     lengthLabel = Label(tab1, text="Length: ")
     lengthLabel.grid(row=1, column=0)
@@ -909,28 +958,33 @@ def OpenNoseParams(fenetre, values=[600, 155, 0,0,0,0,0,0,0,0,0], disp=1):
 
     inertia0 = Label(tab2, text="Inertial Matrix: ")
     inertia0.grid(row=1, column=0)
+    print(values)
 
-    inertia1 = Entry(tab2, width=4, justify=CENTER); inertia1.grid(row=0, column=1, pady = 2, padx=2); inertia1.insert(0,values[2])
-    inertia2 = Entry(tab2, width=4, justify=CENTER); inertia2.grid(row=0, column=2, pady = 2, padx=2); inertia2.insert(0,values[3])
-    inertia3 = Entry(tab2, width=4, justify=CENTER); inertia3.grid(row=0, column=3, pady = 2, padx=2); inertia3.insert(0,values[4])
-    inertia4 = Entry(tab2, width=4, justify=CENTER); inertia4.grid(row=1, column=1, pady = 2, padx=2); inertia4.insert(0,values[5])
-    inertia5 = Entry(tab2, width=4, justify=CENTER); inertia5.grid(row=1, column=2, pady = 2, padx=2); inertia5.insert(0,values[6])
-    inertia6 = Entry(tab2, width=4, justify=CENTER); inertia6.grid(row=1, column=3, pady = 2, padx=2); inertia6.insert(0,values[7])
-    inertia7 = Entry(tab2, width=4, justify=CENTER); inertia7.grid(row=2, column=1, pady = 2, padx=2); inertia7.insert(0,values[8])
-    inertia8 = Entry(tab2, width=4, justify=CENTER); inertia8.grid(row=2, column=2, pady = 2, padx=2); inertia8.insert(0,values[9])
-    inertia9 = Entry(tab2, width=4, justify=CENTER); inertia9.grid(row=2, column=3, pady = 2, padx=2); inertia9.insert(0,values[10])
+    inertia1 = Entry(tab2, width=4, justify=CENTER); inertia1.grid(row=0, column=1, pady = 2, padx=2); inertia1.insert(0,values[3])
+    inertia2 = Entry(tab2, width=4, justify=CENTER); inertia2.grid(row=0, column=2, pady = 2, padx=2); inertia2.insert(0,values[4])
+    inertia3 = Entry(tab2, width=4, justify=CENTER); inertia3.grid(row=0, column=3, pady = 2, padx=2); inertia3.insert(0,values[5])
+    inertia4 = Entry(tab2, width=4, justify=CENTER); inertia4.grid(row=1, column=1, pady = 2, padx=2); inertia4.insert(0,values[6])
+    inertia5 = Entry(tab2, width=4, justify=CENTER); inertia5.grid(row=1, column=2, pady = 2, padx=2); inertia5.insert(0,values[7])
+    inertia6 = Entry(tab2, width=4, justify=CENTER); inertia6.grid(row=1, column=3, pady = 2, padx=2); inertia6.insert(0,values[8])
+    inertia7 = Entry(tab2, width=4, justify=CENTER); inertia7.grid(row=2, column=1, pady = 2, padx=2); inertia7.insert(0,values[9])
+    inertia8 = Entry(tab2, width=4, justify=CENTER); inertia8.grid(row=2, column=2, pady = 2, padx=2); inertia8.insert(0,values[10])
+    inertia9 = Entry(tab2, width=4, justify=CENTER); inertia9.grid(row=2, column=3, pady = 2, padx=2); inertia9.insert(0,values[11])
+
+    ColorLabel = Label(tab3, text="Color: ")
+    ColorLabel.grid(row=0, column=0)
+    clicked = StringVar()
+    clicked.set(colors[int(color)])
+    ColorMenu = OptionMenu(tab3, clicked,"blue", "red", "green", "black", "yellow")
+    ColorMenu.grid(row=0, column=1)
+    Button(tab3, text="Ok", command=Ok).grid(row=0, column=2)
 
     if disp:
-        DrawNose([lengthScale.get(), DiaScale.get(),inertia1.get(),inertia2.get(),inertia3.get(),inertia4.get(),
+        DrawNose([lengthScale.get(), DiaScale.get(), color,inertia1.get(),inertia2.get(),inertia3.get(),inertia4.get(),
                  inertia5.get(),inertia6.get(),inertia7.get(),inertia8.get(),inertia9.get()], display=1)
 
     def validCB():
-        NoseCone_Text = open('Parameters/param_rocket/NoseCone.txt', "w")
-        vals = [lengthScale.get(), DiaScale.get(),inertia1.get(),inertia2.get(),inertia3.get(),inertia4.get(),
-                 inertia5.get(),inertia6.get(),inertia7.get(),inertia8.get(),inertia9.get()]
-        for val in vals:
-            NoseCone_Text.write("%s\n" % (val))
-        NoseCone_Text.close()
+        DrawNose([lengthScale.get(), DiaScale.get(), colors.index(clicked.get()), inertia1.get(), inertia2.get(), inertia3.get(), inertia4.get(),
+             inertia5.get(), inertia6.get(), inertia7.get(), inertia8.get(), inertia9.get()])
         noseParam.destroy()
         noseParam.update()
 
@@ -942,7 +996,8 @@ def OpenNoseParams(fenetre, values=[600, 155, 0,0,0,0,0,0,0,0,0], disp=1):
 def DrawT(VALUES_T, canvas):
     canvas.configure(width=VALUES_T[0] / 3, height=VALUES_T[1] / 3, bg='white', highlightthickness=0, bd=0,
                       relief='ridge')  # 2010 mm
-    canvas.create_rectangle(1, 0, VALUES_T[0] / 3 - 1, VALUES_T[1] / 3 - 1, width=1, outline='blue')
+
+    canvas.create_rectangle(1, 0, VALUES_T[0] / 3 - 1, VALUES_T[1] / 3 - 1, width=1, outline=colors[int(VALUES_T[2])])
 
 
 
@@ -988,7 +1043,7 @@ def DrawTube(VALUES_T, display=0):
 
     canvas2.grid(row=0, column=tmp)
 
-def OpenTubeParams(fenetre, values=[2038, 155, 0,0,0,0,0,0,0,0,0], disp=1):
+def OpenTubeParams(fenetre, values=[2038, 155, 0, 0,0,0,0,0,0,0,0,0], disp=1):
 
     tubeParam = Toplevel(fenetre)
     tubeParam.title("Tube Parameters")
@@ -1005,11 +1060,19 @@ def OpenTubeParams(fenetre, values=[2038, 155, 0,0,0,0,0,0,0,0,0], disp=1):
     notebook.add(tab2, text="Inertia")
     notebook.pack(expand=1, fill="both")
 
+    tab3 = ttk.Frame(notebook)
+    notebook.add(tab3, text="Personalize")
+    notebook.pack(expand=1, fill="both")
+
+    color = values[2]
+
 
     def slide(var):
         lengthEntry.delete(0, "end")
         lengthEntry.insert(0,str(lengthScale.get()))
-        DrawTube([lengthScale.get(), DiaScale.get()])
+        DrawTube([lengthScale.get(), DiaScale.get(), colors.index(clicked.get()), inertia1.get(), inertia2.get(),
+                  inertia3.get(), inertia4.get()
+                     , inertia5.get(), inertia6.get(), inertia7.get(), inertia8.get(), inertia9.get()])
 
     def insertVal(var):
         lengthScale.set(lengthEntry.get())
@@ -1017,10 +1080,17 @@ def OpenTubeParams(fenetre, values=[2038, 155, 0,0,0,0,0,0,0,0,0], disp=1):
     def slide1(var):
         DiaEntry.delete(0, "end")
         DiaEntry.insert(0,str(DiaScale.get()))
-        DrawTube([lengthScale.get(), DiaScale.get()])
+        DrawTube([lengthScale.get(), DiaScale.get(), colors.index(clicked.get()), inertia1.get(), inertia2.get(),
+                  inertia3.get(), inertia4.get()
+                     , inertia5.get(), inertia6.get(), inertia7.get(), inertia8.get(), inertia9.get()])
 
     def insertVal1(var):
         DiaScale.set(DiaEntry.get())
+
+    def Ok():
+        color = colors.index(clicked.get())
+        DrawTube([lengthScale.get(), DiaScale.get(), color, inertia1.get(),inertia2.get(),inertia3.get(),inertia4.get(),
+                 inertia5.get(),inertia6.get(),inertia7.get(),inertia8.get(),inertia9.get()])
 
 
     lengthLabel = Label(tab1, text="Length: ")
@@ -1044,34 +1114,41 @@ def OpenTubeParams(fenetre, values=[2038, 155, 0,0,0,0,0,0,0,0,0], disp=1):
     DiaScale.set(values[1])
 
     inertia1 = Entry(tab2, width=4, justify=CENTER);inertia1.grid(row=0, column=1, pady=2, padx=2)
-    inertia1.insert(0, values[2])
+    inertia1.insert(0, values[3])
     inertia2 = Entry(tab2, width=4, justify=CENTER);inertia2.grid(row=0, column=2, pady=2, padx=2)
-    inertia2.insert(0, values[3])
+    inertia2.insert(0, values[4])
     inertia3 = Entry(tab2, width=4, justify=CENTER);inertia3.grid(row=0, column=3, pady=2, padx=2)
-    inertia3.insert(0, values[4])
+    inertia3.insert(0, values[5])
     inertia4 = Entry(tab2, width=4, justify=CENTER);inertia4.grid(row=1, column=1, pady=2, padx=2)
-    inertia4.insert(0, values[5])
+    inertia4.insert(0, values[6])
     inertia5 = Entry(tab2, width=4, justify=CENTER);inertia5.grid(row=1, column=2, pady=2, padx=2)
-    inertia5.insert(0, values[6])
+    inertia5.insert(0, values[7])
     inertia6 = Entry(tab2, width=4, justify=CENTER);inertia6.grid(row=1, column=3, pady=2, padx=2)
-    inertia6.insert(0, values[7])
+    inertia6.insert(0, values[8])
     inertia7 = Entry(tab2, width=4, justify=CENTER);inertia7.grid(row=2, column=1, pady=2, padx=2)
-    inertia7.insert(0, values[8])
+    inertia7.insert(0, values[9])
     inertia8 = Entry(tab2, width=4, justify=CENTER);inertia8.grid(row=2, column=2, pady=2, padx=2)
-    inertia8.insert(0, values[9])
+    inertia8.insert(0, values[10])
     inertia9 = Entry(tab2, width=4, justify=CENTER);inertia9.grid(row=2, column=3, pady=2, padx=2)
-    inertia9.insert(0, values[10])
+    inertia9.insert(0, values[11])
+
+    ColorLabel = Label(tab3, text="Color: ")
+    ColorLabel.grid(row=0, column=0)
+    clicked = StringVar()
+    clicked.set(colors[int(color)])
+    ColorMenu = OptionMenu(tab3, clicked, "blue", "red", "green", "black", "yellow")
+    ColorMenu.grid(row=0, column=1)
+    Button(tab3, text="Ok", command=Ok).grid(row=0, column=2)
 
     if disp:
-        DrawTube([lengthScale.get(), DiaScale.get(), inertia1.get(), inertia2.get(), inertia3.get(), inertia4.get()
+        DrawTube([lengthScale.get(), DiaScale.get(), colors.index(clicked.get()), inertia1.get(), inertia2.get(), inertia3.get(), inertia4.get()
                         , inertia5.get(), inertia6.get(), inertia7.get(), inertia8.get(), inertia9.get()], display=1)
 
     def validCB():
-        Tube_Text = open('Parameters/param_rocket/Tube.txt', "w")
-        vals = [lengthScale.get(), DiaScale.get(),0,0,0,0,0,0,0,0,0]
-        for val in vals:
-            Tube_Text.write("%s\n" % (val))
-        Tube_Text.close()
+        color = colors.index(clicked.get())
+        DrawTube(
+            [lengthScale.get(), DiaScale.get(), color, inertia1.get(), inertia2.get(), inertia3.get(), inertia4.get(),
+             inertia5.get(), inertia6.get(), inertia7.get(), inertia8.get(), inertia9.get()])
         tubeParam.destroy()
         tubeParam.update()
 
@@ -1080,21 +1157,21 @@ def OpenTubeParams(fenetre, values=[2038, 155, 0,0,0,0,0,0,0,0,0], disp=1):
     tubeParam.mainloop()
 
 def DrawF(VALUES_F, canvas):
-    print(VALUES_F[0])
+    color = colors[int(VALUES_F[11])]
     if VALUES_F[0] == 3:
         canvas.configure(width=VALUES_F[9] / 3, height=VALUES_F[10] / 3 + 2 * VALUES_F[3] / 3, bg='white',
                           highlightthickness=0, bd=0, relief='ridge')  # 350 mm
         canvas.create_rectangle(1, VALUES_F[3] / 3, VALUES_F[9] / 3 - 1, VALUES_F[3] / 3 + VALUES_F[10] / 3 - 1,
-                                 width=1, outline='blue')
+                                 width=1, outline=color)
         canvas.create_polygon(VALUES_F[7] / 3, VALUES_F[3] / 3 + 2 / 3 * VALUES_F[10] / 3,
                                VALUES_F[1] / 3 + VALUES_F[7] / 3 - 1, VALUES_F[3] / 3 + 2 / 3 * VALUES_F[10] / 3,
                                VALUES_F[2] / 3 + VALUES_F[4] / 3 + VALUES_F[7] / 3,
                                2 / 3 * VALUES_F[10] / 3 + 5 / 3 * VALUES_F[3] / 3 - 1,
                                VALUES_F[4] / 3 + VALUES_F[7] / 3,
-                               2 / 3 * VALUES_F[10] / 3 + 5 / 3 * VALUES_F[3] / 3 - 1, width=1, outline='blue', fill='')
+                               2 / 3 * VALUES_F[10] / 3 + 5 / 3 * VALUES_F[3] / 3 - 1, width=1, outline=color, fill='')
         canvas.create_polygon(VALUES_F[7] / 3, VALUES_F[3] / 3 - 3, VALUES_F[1] / 3 + VALUES_F[7] / 3 - 1,
                                VALUES_F[3] / 3 - 3, VALUES_F[2] / 3 + VALUES_F[4] / 3 + VALUES_F[7] / 3, 0,
-                               VALUES_F[4] / 3 + VALUES_F[7] / 3, 0, width=1, outline='blue', fill='')
+                               VALUES_F[4] / 3 + VALUES_F[7] / 3, 0, width=1, outline=color, fill='')
 
 
 # Display geometrical fins in drawing
@@ -1136,19 +1213,29 @@ def DrawFins(VALUES_F, display=0):
             break
     canvas3.grid(row=0, column=tmp)
 
-def OpenFinsParams(fenetre, values=[30, 282, 123, 216, 115, 3, 0, 40, 300, 350, 155], disp=1):
+def OpenFinsParams(fenetre, values=[3, 282, 123, 216, 115, 30, 0, 40, 300, 350, 155, 0], disp=1):
 
     FinParam = Toplevel(fenetre)
     FinParam.title("Fin Parameters")
     FinParam.geometry("400x600")
-    Label(FinParam, text = "Change Fin params").grid(row=0, column=1)
+    Label(FinParam, text = "Change Fin params").pack()
 
+    notebook = ttk.Notebook(FinParam)
+    tab1 = ttk.Frame(notebook)
+    notebook.add(tab1, text="Dimensions")
+    notebook.pack(expand=1, fill="both")
+
+    tab2 = ttk.Frame(notebook)
+    notebook.add(tab2, text="Personalize")
+    notebook.pack(expand=1, fill="both")
+
+    color = values[11]
 
     def slideLength(var):
         lengthEntry.delete(0, "end")
         lengthEntry.insert(0,str(lengthScale.get()))
         DrawFins([nbScale.get(),rcScale.get(),tcScale.get(),spanScale.get(),sweepScale.get(),ThScale.get(),
-                 PhScale.get(),BTOScale.get(),MassScale.get(),lengthScale.get(),DiaScale.get()])
+                 PhScale.get(),BTOScale.get(),MassScale.get(),lengthScale.get(),DiaScale.get(), color])
 
     def insertValLength(var):
         lengthScale.set(lengthEntry.get())
@@ -1157,7 +1244,7 @@ def OpenFinsParams(fenetre, values=[30, 282, 123, 216, 115, 3, 0, 40, 300, 350, 
         DiaEntry.delete(0, "end")
         DiaEntry.insert(0,str(DiaScale.get()))
         DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
-                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get(), color])
 
     def insertValDia(var):
         DiaScale.set(DiaEntry.get())
@@ -1166,7 +1253,7 @@ def OpenFinsParams(fenetre, values=[30, 282, 123, 216, 115, 3, 0, 40, 300, 350, 
         nbEntry.delete(0, "end")
         nbEntry.insert(0,str(nbScale.get()))
         DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
-                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get(), color])
 
     def insertValNum(var):
         nbScale.set(nbEntry.get())
@@ -1175,7 +1262,7 @@ def OpenFinsParams(fenetre, values=[30, 282, 123, 216, 115, 3, 0, 40, 300, 350, 
         rcEntry.delete(0, "end")
         rcEntry.insert(0, str(rcScale.get()))
         DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
-                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get(), color])
 
     def insertValRC(var):
         rcScale.set(rcEntry.get())
@@ -1184,7 +1271,7 @@ def OpenFinsParams(fenetre, values=[30, 282, 123, 216, 115, 3, 0, 40, 300, 350, 
         tcEntry.delete(0, "end")
         tcEntry.insert(0,str(tcScale.get()))
         DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
-                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get(), color])
 
     def insertValTC(var):
         tcScale.set(tcEntry.get())
@@ -1193,7 +1280,7 @@ def OpenFinsParams(fenetre, values=[30, 282, 123, 216, 115, 3, 0, 40, 300, 350, 
         spanEntry.delete(0, "end")
         spanEntry.insert(0,str(spanScale.get()))
         DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
-                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get(), color])
 
     def insertValSpan(var):
         spanScale.set(spanEntry.get())
@@ -1202,7 +1289,7 @@ def OpenFinsParams(fenetre, values=[30, 282, 123, 216, 115, 3, 0, 40, 300, 350, 
         sweepEntry.delete(0, "end")
         sweepEntry.insert(0,str(sweepScale.get()))
         DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
-                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get(), color])
 
     def insertValSwp(var):
         sweepScale.set(sweepEntry.get())
@@ -1211,7 +1298,7 @@ def OpenFinsParams(fenetre, values=[30, 282, 123, 216, 115, 3, 0, 40, 300, 350, 
         ThEntry.delete(0, "end")
         ThEntry.insert(0,str(ThScale.get()))
         DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
-                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get(), color])
 
     def insertValTh(var):
         ThScale.set(ThEntry.get())
@@ -1220,7 +1307,7 @@ def OpenFinsParams(fenetre, values=[30, 282, 123, 216, 115, 3, 0, 40, 300, 350, 
         MassEntry.delete(0, "end")
         MassEntry.insert(0,str(MassScale.get()))
         DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
-                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get(), color])
 
     def insertValMass(var):
         MassScale.set(MassEntry.get())
@@ -1229,7 +1316,7 @@ def OpenFinsParams(fenetre, values=[30, 282, 123, 216, 115, 3, 0, 40, 300, 350, 
         BTOEntry.delete(0, "end")
         BTOEntry.insert(0,str(BTOScale.get()))
         DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
-                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get(), color])
 
     def insertValBTO(var):
         BTOScale.set(BTOEntry.get())
@@ -1238,151 +1325,161 @@ def OpenFinsParams(fenetre, values=[30, 282, 123, 216, 115, 3, 0, 40, 300, 350, 
         PhEntry.delete(0, "end")
         PhEntry.insert(0,str(PhScale.get()))
         DrawFins([nbScale.get(), rcScale.get(), tcScale.get(), spanScale.get(), sweepScale.get(), ThScale.get(),
-                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get()])
+                  PhScale.get(), BTOScale.get(), MassScale.get(), lengthScale.get(), DiaScale.get(), color])
 
     def insertValPh(var):
         PhScale.set(PhEntry.get())
 
-    nbLabel = Label(FinParam, text="Num: ")
-    nbLabel.grid(row=1, column=0)
-    nbEntry = Entry(FinParam)
-    nbEntry.grid(row=1, column=1)
-    nbEntry.insert(0, values[5])
-    nbEntry.bind("<Return>", insertValNum)
-    nbScale = Scale(FinParam, from_=0, to=10, orient=HORIZONTAL, command=slideNum)
-    nbScale.grid(row=1, column=2)
-    nbScale.set(values[5])
+    def Ok():
+        color = colors.index(clicked.get())
+        DrawFins([nbScale.get(),rcScale.get(),tcScale.get(),spanScale.get(),sweepScale.get(),ThScale.get(),
+                 PhScale.get(),BTOScale.get(),MassScale.get(),lengthScale.get(),DiaScale.get(), color])
 
-    rcLabel = Label(FinParam, text="Root coord: ")
+    nbLabel = Label(tab1, text="Num: ")
+    nbLabel.grid(row=1, column=0)
+    nbEntry = Entry(tab1)
+    nbEntry.grid(row=1, column=1)
+    nbEntry.insert(0, values[0])
+    nbEntry.bind("<Return>", insertValNum)
+    nbScale = Scale(tab1, from_=0, to=10, orient=HORIZONTAL, command=slideNum)
+    nbScale.grid(row=1, column=2)
+    nbScale.set(values[0])
+
+    rcLabel = Label(tab1, text="Root coord: ")
     rcLabel.grid(row=2, column=0)
-    rcEntry = Entry(FinParam)
+    rcEntry = Entry(tab1)
     rcEntry.grid(row=2, column=1)
     rcEntry.insert(0, values[1])
     rcEntry.bind("<Return>", insertValRC)
-    rcScale = Scale(FinParam, from_=0, to=500, orient=HORIZONTAL, command=slideRC)
+    rcScale = Scale(tab1, from_=0, to=500, orient=HORIZONTAL, command=slideRC)
     rcScale.grid(row=2, column=2)
     rcScale.set(values[1])
 
-    tcLabel = Label(FinParam, text="Tip coord: ")
+    tcLabel = Label(tab1, text="Tip coord: ")
     tcLabel.grid(row=3, column=0)
-    tcEntry = Entry(FinParam)
+    tcEntry = Entry(tab1)
     tcEntry.grid(row=3, column=1)
     tcEntry.insert(0, values[2])
     tcEntry.bind("<Return>", insertValTC)
-    tcScale = Scale(FinParam, from_=0, to=300, orient=HORIZONTAL, command=slideTC)
+    tcScale = Scale(tab1, from_=0, to=300, orient=HORIZONTAL, command=slideTC)
     tcScale.grid(row=3, column=2)
     tcScale.set(values[2])
 
-    spanLabel = Label(FinParam, text="Span: ")
+    spanLabel = Label(tab1, text="Span: ")
     spanLabel.grid(row=4, column=0)
-    spanEntry = Entry(FinParam)
+    spanEntry = Entry(tab1)
     spanEntry.grid(row=4, column=1)
     spanEntry.insert(0, values[3])
     spanEntry.bind("<Return>", insertValSpan)
-    spanScale = Scale(FinParam, from_=0, to=500, orient=HORIZONTAL, command=slideSpan)
+    spanScale = Scale(tab1, from_=0, to=500, orient=HORIZONTAL, command=slideSpan)
     spanScale.grid(row=4, column=2)
     spanScale.set(values[3])
 
-    sweepLabel = Label(FinParam, text="Sweep: ")
+    sweepLabel = Label(tab1, text="Sweep: ")
     sweepLabel.grid(row=5, column=0)
-    sweepEntry = Entry(FinParam)
+    sweepEntry = Entry(tab1)
     sweepEntry.grid(row=5, column=1)
     sweepEntry.insert(0, values[4])
     sweepEntry.bind("<Return>", insertValSwp)
-    sweepScale = Scale(FinParam, from_=0, to=300, orient=HORIZONTAL, command=slideSwp)
+    sweepScale = Scale(tab1, from_=0, to=300, orient=HORIZONTAL, command=slideSwp)
     sweepScale.grid(row=5, column=2)
     sweepScale.set(values[4])
 
-    ThLabel = Label(FinParam, text="Thickness: ")
+    ThLabel = Label(tab1, text="Thickness: ")
     ThLabel.grid(row=6, column=0)
-    ThEntry = Entry(FinParam)
+    ThEntry = Entry(tab1)
     ThEntry.grid(row=6, column=1)
-    ThEntry.insert(0, values[0])
+    ThEntry.insert(0, values[5])
     ThEntry.bind("<Return>", insertValTh)
-    ThScale = Scale(FinParam, from_=0, to=50, orient=HORIZONTAL, command=slideTh)
+    ThScale = Scale(tab1, from_=0, to=50, orient=HORIZONTAL, command=slideTh)
     ThScale.grid(row=6, column=2)
-    ThScale.set(values[0])
+    ThScale.set(values[5])
 
-    PhLabel = Label(FinParam, text="Phase: ")
+    PhLabel = Label(tab1, text="Phase: ")
     PhLabel.grid(row=7, column=0)
-    PhEntry = Entry(FinParam)
+    PhEntry = Entry(tab1)
     PhEntry.grid(row=7, column=1)
     PhEntry.insert(0, values[6])
     PhEntry.bind("<Return>", insertValPh)
-    PhScale = Scale(FinParam, from_=0, to=360, orient=HORIZONTAL, command=slidePh)
+    PhScale = Scale(tab1, from_=0, to=360, orient=HORIZONTAL, command=slidePh)
     PhScale.grid(row=7, column=2)
     PhScale.set(values[6])
 
-    BTOLabel = Label(FinParam, text="Body Top Offset: ")
+    BTOLabel = Label(tab1, text="Body Top Offset: ")
     BTOLabel.grid(row=8, column=0)
-    BTOEntry = Entry(FinParam)
+    BTOEntry = Entry(tab1)
     BTOEntry.grid(row=8, column=1)
     BTOEntry.insert(0, values[7])
     BTOEntry.bind("<Return>", insertValBTO)
-    BTOScale = Scale(FinParam, from_=0, to=200, orient=HORIZONTAL, command=slideBTO)
+    BTOScale = Scale(tab1, from_=0, to=200, orient=HORIZONTAL, command=slideBTO)
     BTOScale.grid(row=8, column=2)
     BTOScale.set(values[7])
 
-    MassLabel = Label(FinParam, text="Mass: ")
+    MassLabel = Label(tab1, text="Mass: ")
     MassLabel.grid(row=9, column=0)
-    MassEntry = Entry(FinParam)
+    MassEntry = Entry(tab1)
     MassEntry.grid(row=9, column=1)
     MassEntry.insert(0, values[8])
     MassEntry.bind("<Return>", insertValMass)
-    MassScale = Scale(FinParam, from_=0, to=1000, orient=HORIZONTAL, command=slideMass)
+    MassScale = Scale(tab1, from_=0, to=1000, orient=HORIZONTAL, command=slideMass)
     MassScale.grid(row=9, column=2)
     MassScale.set(values[8])
 
-    lengthLabel = Label(FinParam, text="Length: ")
+    lengthLabel = Label(tab1, text="Length: ")
     lengthLabel.grid(row=10, column=0)
-    lengthEntry = Entry(FinParam)
+    lengthEntry = Entry(tab1)
     lengthEntry.grid(row=10, column=1)
     lengthEntry.insert(0, values[9])
     lengthEntry.bind("<Return>", insertValLength)
-    lengthScale = Scale(FinParam, from_=0, to=1000, orient=HORIZONTAL, command=slideLength)
+    lengthScale = Scale(tab1, from_=0, to=1000, orient=HORIZONTAL, command=slideLength)
     lengthScale.grid(row=10, column=2)
     lengthScale.set(values[9])
 
-    DiaLabel = Label(FinParam, text="Diameter: ")
+    DiaLabel = Label(tab1, text="Diameter: ")
     DiaLabel.grid(row=11, column=0)
-    DiaEntry = Entry(FinParam)
+    DiaEntry = Entry(tab1)
     DiaEntry.grid(row=11, column=1)
     DiaEntry.insert(0, values[10])
     DiaEntry.bind("<Return>", insertValDia)
-    DiaScale = Scale(FinParam, from_=0, to=300, orient=HORIZONTAL, command=slideDia)
+    DiaScale = Scale(tab1, from_=0, to=300, orient=HORIZONTAL, command=slideDia)
     DiaScale.grid(row=11, column=2)
     DiaScale.set(values[10])
 
+    ColorLabel = Label(tab2, text="Color: ")
+    ColorLabel.grid(row=0, column=0)
+    clicked = StringVar()
+    clicked.set(colors[int(color)])
+    ColorMenu = OptionMenu(tab2, clicked, "blue", "red", "green", "black", "yellow")
+    ColorMenu.grid(row=0, column=1)
+    Button(tab2, text="Ok", command=Ok).grid(row=0, column=2)
+
     if disp:
         DrawFins([nbScale.get(),rcScale.get(),tcScale.get(),spanScale.get(),sweepScale.get(),ThScale.get(),
-                 PhScale.get(),BTOScale.get(),MassScale.get(),lengthScale.get(),DiaScale.get()], display=1)
+                 PhScale.get(),BTOScale.get(),MassScale.get(),lengthScale.get(),DiaScale.get(), color], display=1)
 
     def validCB():
-        Fins_Text = open('Parameters/param_rocket/Fins.txt', "w")
-        vals = [ThScale.get(),rcScale.get(),tcScale.get(),spanScale.get(),sweepScale.get(),nbScale.get(),
-                 PhScale.get(),BTOScale.get(),MassScale.get(),lengthScale.get(),DiaScale.get()]
-        for val in vals:
-            Fins_Text.write("%s\n" % (val))
-        Fins_Text.close()
+        color = colors.index(clicked.get())
+        DrawFins([nbScale.get(),rcScale.get(),tcScale.get(),spanScale.get(),sweepScale.get(),ThScale.get(),
+                 PhScale.get(),BTOScale.get(),MassScale.get(),lengthScale.get(),DiaScale.get(), color])
         FinParam.destroy()
         FinParam.update()
 
     validateButton = Button(FinParam, text="OK", command=validCB)
-    validateButton.grid(row=12, column=2)
-
+    validateButton.pack(anchor="e", padx=10, pady=5)
     FinParam.mainloop()
 
 def DrawBT(VALUES_BT, canvas):
+    color = colors[int(VALUES_BT[-1])]
     canvas.configure(width=VALUES_BT[0] / 3, height=max(VALUES_BT[1], VALUES_BT[2]) / 3, bg='white',
                       highlightthickness=0, bd=0, relief='ridge')  # 50 mm
     if VALUES_BT[1] > VALUES_BT[2]:
         canvas.create_polygon(1, 0, VALUES_BT[0] / 3 - 1, (VALUES_BT[1] / 3 - VALUES_BT[2] / 3) / 2,
                                VALUES_BT[0] / 3 - 1, (VALUES_BT[1] / 3 + VALUES_BT[2] / 3) / 2 - 1, 1,
-                               VALUES_BT[1] / 3 - 1, width=1, outline='blue', fill='')
+                               VALUES_BT[1] / 3 - 1, width=1, outline=color, fill='')
     else:
         canvas.create_polygon(1, (VALUES_BT[2] / 3 - VALUES_BT[1] / 3) / 2, VALUES_BT[0] / 3 - 1, 0,
                                VALUES_BT[0] / 3 - 1, VALUES_BT[2] / 3 - 1, 1,
-                               (VALUES_BT[2] / 3 + VALUES_BT[1] / 3) / 2 - 1, width=1, outline='blue', fill='')
+                               (VALUES_BT[2] / 3 + VALUES_BT[1] / 3) / 2 - 1, width=1, outline=color, fill='')
 
 
 # Display geometrical tube in drawing
@@ -1425,7 +1522,7 @@ def DrawBoatTail(VALUES_BT, display=0):
             break
     canvas4.grid(row=0, column=tmp)
 
-def OpenBoatTailParams(fenetre, values=[41, 155, 133], disp=1):
+def OpenBoatTailParams(fenetre, values=[41, 155, 133, 0], disp=1):
 
     BoatTailParam = Toplevel(fenetre)
     BoatTailParam.title("Boat Tail Parameters")
@@ -1439,14 +1536,15 @@ def OpenBoatTailParams(fenetre, values=[41, 155, 133], disp=1):
     notebook.pack(expand=1, fill="both")
 
     tab2 = ttk.Frame(notebook)
-    notebook.add(tab2, text="...")
+    notebook.add(tab2, text="Personalize")
     notebook.pack(expand=1, fill="both")
 
+    color = values[-1]
 
     def slide(var):
         lengthEntry.delete(0, "end")
         lengthEntry.insert(0,str(lengthScale.get()))
-        DrawBoatTail([lengthScale.get(), Dia1Scale.get(), Dia2Scale.get()])
+        DrawBoatTail([lengthScale.get(), Dia1Scale.get(), Dia2Scale.get(), color])
 
     def insertVal(var):
         lengthScale.set(lengthEntry.get())
@@ -1454,7 +1552,7 @@ def OpenBoatTailParams(fenetre, values=[41, 155, 133], disp=1):
     def slide1(var):
         Dia1Entry.delete(0, "end")
         Dia1Entry.insert(0,str(Dia1Scale.get()))
-        DrawBoatTail([lengthScale.get(), Dia1Scale.get(), Dia2Scale.get()])
+        DrawBoatTail([lengthScale.get(), Dia1Scale.get(), Dia2Scale.get(), color])
 
     def insertVal1(var):
         Dia1Scale.set(Dia1Entry.get())
@@ -1462,10 +1560,14 @@ def OpenBoatTailParams(fenetre, values=[41, 155, 133], disp=1):
     def slide2(var):
         Dia2Entry.delete(0, "end")
         Dia2Entry.insert(0, str(Dia2Scale.get()))
-        DrawBoatTail([lengthScale.get(), Dia1Scale.get(), Dia2Scale.get()])
+        DrawBoatTail([lengthScale.get(), Dia1Scale.get(), Dia2Scale.get(), color])
 
     def insertVal2(var):
         Dia2Scale.set(Dia2Entry.get())
+
+    def Ok():
+        color = colors.index(clicked.get())
+        DrawBoatTail([lengthScale.get(), Dia1Scale.get(), Dia2Scale.get(), color])
 
 
     lengthLabel = Label(tab1, text="Length: ")
@@ -1498,16 +1600,20 @@ def OpenBoatTailParams(fenetre, values=[41, 155, 133], disp=1):
     Dia2Scale.grid(row=3, column=2)
     Dia2Scale.set(values[2])
 
+    ColorLabel = Label(tab2, text="Color: ")
+    ColorLabel.grid(row=0, column=0)
+    clicked = StringVar()
+    clicked.set(colors[int(color)])
+    ColorMenu = OptionMenu(tab2, clicked, "blue", "red", "green", "black", "yellow")
+    ColorMenu.grid(row=0, column=1)
+    Button(tab2, text="Ok", command=Ok).grid(row=0, column=2)
 
     if disp:
-        DrawBoatTail([lengthScale.get(), Dia1Scale.get(), Dia1Scale.get()], display=1)
+        DrawBoatTail([lengthScale.get(), Dia1Scale.get(), Dia1Scale.get(), color], display=1)
 
     def validCB():
-        BT_Text = open('Parameters/param_rocket/BoatTail.txt', "w")
-        vals = [lengthScale.get(), Dia1Scale.get(), Dia2Scale.get()]
-        for val in vals:
-            BT_Text.write("%s\n" % (val))
-        BT_Text.close()
+        color = colors.index(clicked.get())
+        DrawBoatTail([lengthScale.get(), Dia1Scale.get(), Dia2Scale.get(), color])
         BoatTailParam.destroy()
         BoatTailParam.update()
 
@@ -1658,7 +1764,10 @@ def DrawP(VALUES_P, canvas):
                                     midh + VALUES_P[0] / 2,
                                     width=1, outline='red', fill='', dash='1')
 
+    text = canvas.create_text(midw, midh, text="P", fill='red')
+
     canvas.move(parachute, VALUES_P[2], 0)
+    canvas.move(text, VALUES_P[2], 0)
 
 
 def DrawParachute(VALUES_P, display=0):
@@ -1697,7 +1806,7 @@ def OpenParachuteParams(fenetre, values=[20, 20, 0], disp=1):
     ParachuteParams = Toplevel(fenetre)
     ParachuteParams.title("Create Custom Parachute")
     ParachuteParams.geometry("450x450")
-    Title = Label(ParachuteParams, text="Change Motor params")
+    Title = Label(ParachuteParams, text="Change Parachute params")
     Title.pack()
 
     notebook = ttk.Notebook(ParachuteParams)
@@ -1708,6 +1817,9 @@ def OpenParachuteParams(fenetre, values=[20, 20, 0], disp=1):
     tab2 = ttk.Frame(notebook)
     notebook.add(tab2, text="Values")
     notebook.pack(expand=1, fill="both")
+
+    canvas = GetCanvas()
+    len = canvas.winfo_width()/2
 
     def slide(var):
         DiaEntry.delete(0, "end")
@@ -1741,7 +1853,7 @@ def OpenParachuteParams(fenetre, values=[20, 20, 0], disp=1):
     PosEntry.grid(row=3, column=1)
     PosEntry.insert(0, values[2])
     PosEntry.bind("<Return>", insertVal1)
-    PosScale = Scale(tab1, from_=-100, to=100, orient=HORIZONTAL, command=slide1)
+    PosScale = Scale(tab1, from_=-len, to=len, orient=HORIZONTAL, command=slide1)
     PosScale.grid(row=3, column=2)
     PosScale.set(values[2])
 
@@ -1762,10 +1874,187 @@ def OpenParachuteParams(fenetre, values=[20, 20, 0], disp=1):
     quitButton.pack(anchor="e", padx=10, pady=5)
     ParachuteParams.mainloop()
 
+def DrawIT(VALUES_IT, canvas):
+    length = canvas.winfo_width()
+    height = canvas.winfo_height()
+
+    inner_tube1 = canvas.create_rectangle(length-(VALUES_IT[0])/3, height/2-(VALUES_IT[1]/2)/3, length, height/2+(VALUES_IT[1]/2)/3, width=1, outline='green')
+    inner_tube2 = canvas.create_rectangle(length - (VALUES_IT[0])/3, height / 2 - (VALUES_IT[2] / 2)/3, length,
+                                          height / 2 + (VALUES_IT[2] / 2)/3, width=1, outline='green', dash='1')
+
+    canvas.move(inner_tube1, -VALUES_IT[4], 0)
+    canvas.move(inner_tube2, -VALUES_IT[4], 0)
+
+
+def DrawInnerTube(VALUES_IT, display=0):
+
+    # Get the index 'stg' of stage : example, first stage has an index stg = 0
+    Stg = int(tree.focus()[-1])
+    stage = get_stage()
+    substage = get_substage()
+
+    if display:
+        frame02idx = FrameGeometry[Stg]
+        idx = tree.index(tree.focus())
+
+        # Get Canvas in frame02idx
+        Add_SubSubstage(tree.selection(), 'InnerTube', 'canvas5', Stg, frame02idx, 'c', idx)
+
+    piece = bodyParts[stage][substage][0]
+    if piece == 'n':
+        p = "Nose"
+    elif piece == 't':
+        p = "Tube"
+    elif piece == 'f':
+        p = "Fins"
+    elif piece == 'b':
+        p = "BT"
+
+    IT_Text = open("Parameters/param_rocket/InnerTube"+p+".txt", "w")
+    for i in range(len(VALUES_IT)):
+        IT_Text.write("%s\n" % (VALUES_IT[i]))
+    IT_Text.close()
+
+    DrawFullPiece()
+
+
+
+def OpenInnerTubeParams(fenetre, values=[600, 150, 140, 5, 0], disp=1):
+    tubeParam = Toplevel(fenetre)
+    tubeParam.title("Inner Tube Parameters")
+    tubeParam.geometry("500x500")
+    Title = Label(tubeParam, text="Change inner tube params")
+    Title.pack()
+
+    notebook = ttk.Notebook(tubeParam)
+    tab1 = ttk.Frame(notebook)
+    notebook.add(tab1, text="Dimensions")
+    notebook.pack(expand=1, fill="both")
+
+    tab2 = ttk.Frame(notebook)
+    notebook.add(tab2, text="Inertia")
+    notebook.pack(expand=1, fill="both")
+
+    canvas = GetCanvas()
+    len = canvas.winfo_width()
+    print(len)
+
+    def slide(var):
+        lengthEntry.delete(0, "end")
+        lengthEntry.insert(0, str(lengthScale.get()))
+        PosScale.config(to=len-lengthScale.get()/3)
+        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get()])
+
+    def insertVal(var):
+        lengthScale.set(lengthEntry.get())
+
+    def slide1(var):
+        DiaExtEntry.delete(0, "end")
+        DiaExtEntry.insert(0, str(DiaExtScale.get()))
+        DiaInnScale.config(to=DiaExtScale.get())
+        ThScale.config(to=DiaExtScale.get() / 2)
+        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get()])
+
+    def insertVal1(var):
+        DiaExtScale.set(DiaExtEntry.get())
+
+    def slide2(var):
+        DiaInnEntry.delete(0, "end")
+        DiaInnEntry.insert(0, str(DiaInnScale.get()))
+        ThEntry.delete(0, "end")
+        ThEntry.insert(0, (DiaExtScale.get() - DiaInnScale.get())/2)
+        ThScale.set(ThEntry.get())
+        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get()])
+
+    def insertVal2(var):
+        DiaInnScale.set(DiaInnEntry.get())
+
+    def slide3(var):
+        ThEntry.delete(0, "end")
+        ThEntry.insert(0, str(ThScale.get()))
+        DiaInnEntry.delete(0, "end")
+        DiaInnEntry.insert(0, DiaExtScale.get()-2*ThScale.get())
+        DiaInnScale.set(DiaInnEntry.get())
+        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get()])
+
+    def insertVal3(var):
+        ThScale.set(ThEntry.get())
+
+    def slide4(var):
+        PosEntry.delete(0, "end")
+        PosEntry.insert(0, str(PosScale.get()))
+        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get()])
+
+    def insertVal4(var):
+        PosScale.set(PosEntry.get())
+
+    lengthLabel = Label(tab1, text="Length: ")
+    lengthLabel.grid(row=1, column=0)
+    lengthEntry = Entry(tab1)
+    lengthEntry.grid(row=1, column=1)
+    lengthEntry.insert(0, values[0])
+    lengthEntry.bind("<Return>", insertVal)
+    lengthScale = Scale(tab1, from_=0, to=400, orient=HORIZONTAL, command=slide)
+    lengthScale.grid(row=1, column=2)
+    lengthScale.set(values[0])
+
+    DiaExtLabel = Label(tab1, text="Ext. Diameter: ")
+    DiaExtLabel.grid(row=2, column=0)
+    DiaExtEntry = Entry(tab1)
+    DiaExtEntry.grid(row=2, column=1)
+    DiaExtEntry.insert(0, values[1])
+    DiaExtEntry.bind("<Return>", insertVal1)
+    DiaExtScale = Scale(tab1, from_=0, to=300, orient=HORIZONTAL, command=slide1)
+    DiaExtScale.grid(row=2, column=2)
+    DiaExtScale.set(values[1])
+
+    DiaInnLabel = Label(tab1, text="Inner Diameter: ")
+    DiaInnLabel.grid(row=3, column=0)
+    DiaInnEntry = Entry(tab1)
+    DiaInnEntry.grid(row=3, column=1)
+    DiaInnEntry.insert(0, values[2])
+    DiaInnEntry.bind("<Return>", insertVal2)
+    DiaInnScale = Scale(tab1, from_=0, to=DiaExtScale.get(), orient=HORIZONTAL, command=slide2)
+    DiaInnScale.grid(row=3, column=2)
+    DiaInnScale.set(values[2])
+
+    ThLabel = Label(tab1, text="Tube Thickness: ")
+    ThLabel.grid(row=4, column=0)
+    ThEntry = Entry(tab1)
+    ThEntry.grid(row=4, column=1)
+    ThEntry.insert(0, values[3])
+    ThEntry.bind("<Return>", insertVal3)
+    ThScale = Scale(tab1, from_=0, to=DiaExtScale.get()/2, orient=HORIZONTAL, command=slide3)
+    ThScale.grid(row=4, column=2)
+    ThScale.set(values[3])
+
+    PosLabel = Label(tab1, text="Position relative au bout de la piece: ")
+    PosLabel.grid(row=5, column=0)
+    PosEntry = Entry(tab1)
+    PosEntry.grid(row=5, column=1)
+    PosEntry.insert(0, values[4])
+    PosEntry.bind("<Return>", insertVal4)
+    PosScale = Scale(tab1, from_=0, to=len, orient=HORIZONTAL, command=slide4)
+    PosScale.grid(row=5, column=2)
+    PosScale.set(values[4])
+
+    if disp:
+        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get()], display=1)
+
+    def validCB():
+        tubeParam.destroy()
+        tubeParam.update()
+
+    validateButton = Button(tubeParam, text="OK", command=validCB)
+    validateButton.pack(anchor="e", padx=10, pady=5)
+    tubeParam.mainloop()
+
 def OpenBanderolleParams(fenetre, values=[20, 20], disp=1):
     return
 def OpenDamperParams(fenetre, values=[20, 20], disp=1):
     return
+
+
 
 
 def DrawW(VALUES_W, canvas):
@@ -1775,7 +2064,11 @@ def DrawW(VALUES_W, canvas):
     weight = canvas.create_oval(midw - VALUES_W[0] / 2, midh - VALUES_W[0] / 2, midw + VALUES_W[0] / 2,
                                  midh + VALUES_W[0] / 2,
                                  width=1.5, outline='black', fill='')
-    canvas.move(weight, VALUES_W[2], 0)
+
+    text = canvas.create_text(midw, midh, text="W", fill='black')
+
+    canvas.move(weight, VALUES_W[1], 0)
+    canvas.move(text, VALUES_W[1], 0)
 
 
 def DrawWeight(VALUES_W, display = 0):
@@ -1809,7 +2102,7 @@ def DrawWeight(VALUES_W, display = 0):
     DrawFullPiece()
 
 
-def OpenWeightParams(fenetre, values=[20, 20, 0], disp=1):
+def OpenWeightParams(fenetre, values=[20, 0], disp=1):
     WeightParams = Toplevel(fenetre)
     WeightParams.title("Add Weight")
     WeightParams.geometry("450x450")
@@ -1828,26 +2121,21 @@ def OpenWeightParams(fenetre, values=[20, 20, 0], disp=1):
     def slide(var):
         WeightEntry.delete(0, "end")
         WeightEntry.insert(0, str(WeightScale.get()))
-        DrawWeight([DiaScale.get(), WeightScale.get(),PosScale.get()])
+        DrawWeight([WeightScale.get(), PosScale.get()])
 
     def insertVal(var):
         WeightScale.set(WeightEntry.get())
 
-    def slide1(var):
-        DiaEntry.delete(0, "end")
-        DiaEntry.insert(0, str(DiaScale.get()))
-        DrawWeight([DiaScale.get(), WeightScale.get(), PosScale.get()])
-
-    def insertVal1(var):
-        DiaScale.set(DiaEntry.get())
-
     def slide2(var):
         PosEntry.delete(0, "end")
         PosEntry.insert(0, str(PosScale.get()))
-        DrawParachute([DiaScale.get(), WeightScale.get(), PosScale.get()])
+        DrawWeight([WeightScale.get(), PosScale.get()])
 
     def insertVal2(var):
         PosScale.set(PosEntry.get())
+
+    canvas = GetCanvas()
+    len = canvas.winfo_width()/2
 
     WeightLabel = Label(tab1, text="Weight: ")
     WeightLabel.grid(row=1, column=0)
@@ -1859,29 +2147,19 @@ def OpenWeightParams(fenetre, values=[20, 20, 0], disp=1):
     WeightScale.grid(row=1, column=2)
     WeightScale.set(values[0])
 
-    DiaLabel = Label(tab1, text="Diameter: ")
-    DiaLabel.grid(row=2, column=0)
-    DiaEntry = Entry(tab1)
-    DiaEntry.grid(row=2, column=1)
-    DiaEntry.insert(0, values[1])
-    DiaEntry.bind("<Return>", insertVal1)
-    DiaScale = Scale(tab1, from_=0, to=100, orient=HORIZONTAL, command=slide1)
-    DiaScale.grid(row=2, column=2)
-    DiaScale.set(values[1])
-
     PosLabel = Label(tab1, text="Position relative au centre de la piece: ")
     PosLabel.grid(row=3, column=0)
     PosEntry = Entry(tab1)
     PosEntry.grid(row=3, column=1)
-    PosEntry.insert(0, values[2])
-    PosEntry.bind("<Return>", insertVal1)
-    PosScale = Scale(tab1, from_=-100, to=100, orient=HORIZONTAL, command=slide1)
+    PosEntry.insert(0, values[1])
+    PosEntry.bind("<Return>", insertVal2)
+    PosScale = Scale(tab1, from_=-len, to=len, orient=HORIZONTAL, command=slide2)
     PosScale.grid(row=3, column=2)
-    PosScale.set(values[2])
+    PosScale.set(values[1])
 
 
     if disp:
-        DrawWeight([WeightScale.get(), DiaScale.get(), PosScale.get()], display=1)
+        DrawWeight([WeightScale.get(), PosScale.get()], display=1)
 
     def quitPage():
         WeightParams.destroy()
@@ -1891,37 +2169,36 @@ def OpenWeightParams(fenetre, values=[20, 20, 0], disp=1):
     quitButton.pack(anchor="e", padx=10, pady=5)
     WeightParams.mainloop()
 
+def GetCanvas():
+    stage = get_stage()
+    selected = tree.focus()
+    if selected[1] == 'd':
+        place = len(tree.get_children(selected))-1
+    elif selected[1] == 't':
+        place = tree.index(tree.focus())
+    else:
+        place = tree.index(tree.parent(tree.focus()))
+
+    piece = bodyParts[stage][place][0]
+
+    if piece == 'n':
+        num = 1
+    elif piece == 't':
+        num = 2
+    elif piece == 'f':
+        num = 3
+    elif piece == 'b':
+        num = 4
+
+    for i in range(len(CanvasGeometry[int(selected[-1])])):
+        tmp = []
+        for l in str(CanvasGeometry[int(selected[-1])][i]):
+            tmp.append(l)
+
+        if tmp[-4] == str(num):
+            return CanvasGeometry[int(selected[-1])][i]
 
 def DrawFullPiece():
-
-    def GetCanvas():
-        stage = get_stage()
-        selected = tree.focus()
-        if selected[1] == 'd':
-            place = len(tree.get_children(selected))-1
-        elif selected[1] == 't':
-            place = tree.index(tree.focus())
-        else:
-            place = tree.index(tree.parent(tree.focus()))
-
-        piece = bodyParts[stage][place][0]
-
-        if piece == 'n':
-            num = 1
-        elif piece == 't':
-            num = 2
-        elif piece == 'f':
-            num = 3
-        elif piece == 'b':
-            num = 4
-
-        for i in range(len(CanvasGeometry[int(selected[-1])])):
-            tmp = []
-            for l in str(CanvasGeometry[int(selected[-1])][i]):
-                tmp.append(l)
-
-            if tmp[-4] == str(num):
-                return CanvasGeometry[int(selected[-1])][i]
 
     stage = get_stage()
     substage = get_substage()
@@ -1977,17 +2254,11 @@ def DrawFullPiece():
                     VALUES1.append(float(line))
                 DrawW(VALUES1, canvas)
             elif item == 'c':
-                InnerTube = open('Parameters/param_rocket/InnerTube.txt', 'r')  # Read text file
+                InnerTube = open('Parameters/param_rocket/InnerTube'+p+'.txt', 'r')  # Read text file
                 InnerTube1 = InnerTube.readlines()
                 for line in InnerTube1:  # taking each line
                     VALUES1.append(float(line))
-                # drawNose....$
-
-
-
-
-    print(canvas)
-    print(list)
+                DrawIT(VALUES1, canvas)
 
 
 def SearchMotorInFolder():
@@ -2071,6 +2342,7 @@ def UpdateBodyPartState(stage):
     Band_choice.config(fg="black", state=NORMAL)
     Damper_choice.config(fg="black", state=NORMAL)
     Weight_choice.config(fg="black", state=NORMAL)
+    IT_choice.config(fg="black", state=NORMAL)
 
     for parts in bodyParts[stage]:
         if 'n' in parts:
@@ -2100,12 +2372,15 @@ def UpdateBodyPartState(stage):
                 Damper_choice.config(fg="grey", state=DISABLED)
             if 'w' in subpart:
                 Weight_choice.config(fg="grey", state=DISABLED)
+            if 'c' in subpart:
+                IT_choice.config(fg="grey", state=DISABLED)
 
     if selection[1] == 's':
         Parachute_choice.config(fg="grey", state=DISABLED)
         Band_choice.config(fg="grey", state=DISABLED)
         Damper_choice.config(fg="grey", state=DISABLED)
         Weight_choice.config(fg="grey", state=DISABLED)
+        IT_choice.config(fg="grey", state=DISABLED)
 
     DispOtherPieces()
 
@@ -2258,25 +2533,34 @@ vbarACA = Scrollbar(frameACA)
 frameAC1 = Frame(canvasACA, bg='gray85', highlightthickness=0, bd=0, relief='flat')
 Add_Scrollbar(frameACA, canvasACA, vbarACA, frameAC1)
 
+#Accessories
+Label(frameAC1, text="Accessories: ", bg="grey85", anchor="w").grid(row=0, column=0)
+Label(frameAC1, text="InnerPieces: ", bg="grey85", anchor="w").grid(row=2, column=0)
+
 #Parachute Button
 Parachute_choice = Button(frameAC1, text='Parachute', bg='white', fg='black', cursor='hand2', relief=RAISED,
                           command=lambda: OpenParachuteParams(fenetre))
-Parachute_choice.grid(row=0, column=0, padx=10, pady=10, ipadx=20, ipady=10, sticky='nswe')
+Parachute_choice.grid(row=1, column=0, padx=10, pady=10, ipadx=20, ipady=10, sticky='nswe')
 
 #Banderolle Button
 Band_choice = Button(frameAC1, text='Banderolle', bg='white', fg='grey', cursor='hand2', relief=RAISED, state=DISABLED,
                           command=lambda: OpenBanderolleParams(fenetre))
-Band_choice.grid(row=0, column=1, padx=10, pady=10, ipadx=20, ipady=10, sticky='nswe')
+#Band_choice.grid(row=0, column=1, padx=10, pady=10, ipadx=20, ipady=10, sticky='nswe')
 
 #Cordon Amortisseur Button
 Damper_choice = Button(frameAC1, text='Damper', bg='white', fg='grey', cursor='hand2', relief=RAISED, state=DISABLED,
                           command=lambda: OpenDamperParams(fenetre))
-Damper_choice.grid(row=0, column=2, padx=10, pady=10, ipadx=20, ipady=10, sticky='nswe')
+#Damper_choice.grid(row=0, column=2, padx=10, pady=10, ipadx=20, ipady=10, sticky='nswe')
 
 #Weight Button
 Weight_choice = Button(frameAC1, text='Weight', bg='white', fg='black', cursor='hand2', relief=RAISED, state=NORMAL,
                           command=lambda: OpenWeightParams(fenetre))
-Weight_choice.grid(row=2, column=0, padx=10, pady=10, ipadx=20, ipady=10, sticky='nswe')
+Weight_choice.grid(row=1, column=1, padx=10, pady=10, ipadx=20, ipady=10, sticky='nswe')
+
+#Inner Tube Button
+IT_choice = Button(frameAC1, text='Inner Tube', bg='white', fg='black', cursor='hand2', relief=RAISED, state=NORMAL,
+                          command=lambda: OpenInnerTubeParams(fenetre))
+IT_choice.grid(row=3, column=0, padx=10, pady=10, ipadx=20, ipady=10, sticky='nswe')
 
 # Button 'Nosecone' allows to select Eiger NoseCone or to enter specific parameters
 NoseCone_choice = Menubutton(frameAB1, text='Nosecone', bg='white', fg='black', cursor='hand2', relief=RAISED)
