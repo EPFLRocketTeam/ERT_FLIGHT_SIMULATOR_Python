@@ -1,3 +1,7 @@
+# Author : Paul Nadal
+# Last update : 16 October 2020
+# EPFL Rocket Team, 1015 Lausanne, Switzerland
+
 def motorReader(motorFilePath):
     # MOTORREADER extracts the raw motor data from RASP formated text file
     # named 'motorFilePath'.

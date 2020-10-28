@@ -1,3 +1,7 @@
+# Author : Paul Nadal
+# Last update : 16 October 2020
+# EPFL Rocket Team, 1015 Lausanne, Switzerland
+
 import numpy as np
 
 from Functions.Utilities.motorReader import motorReader
