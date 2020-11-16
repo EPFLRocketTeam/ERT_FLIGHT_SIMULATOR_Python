@@ -56,15 +56,23 @@ def UpdateScale():
 
 # TODO: Modify the tree's branch selected to change parameters
 def change():
+    """
+    Opens the parameters of the selected element.
+
+    Called when the Change button is pressed or when an element is double clicked
+    """
+
     selected = tree.focus()
     stage = get_stage()
     substage = get_substage()
 
+    # Whole rocket is selected
     if selected[0] == 'I':
         OpenGenerelParams()
 
-    #case ogive selected
+    # A rocket part is selected
     if selected[1] == "t":
+        # case ogive selected
         if selected[2] == 'n':
             NoseCone = open('Parameters/param_rocket/NoseCone.txt', 'r')  # Read text file
             NoseCone1 = NoseCone.readlines()
@@ -100,6 +108,7 @@ def change():
                 VAL_N.append(float(line))
             OpenBoatTailParams(fenetre, VAL_N, disp=0)
 
+    # Case sub element of rocket is selected
     elif selected[1] == "s":
         piece = bodyParts[stage][substage][0]
         if piece == 'n':
@@ -111,10 +120,12 @@ def change():
         elif piece == 'b':
             p = 'BT'
 
+        # Case parachute selected
         if selected[2] == 'p':
             index = tree.index(selected)
             main = bodyParts[stage][substage][1+index]
-            print(index, main)
+
+            # Main Parachute
             if main == 'mp':
                 Parachute = open('Parameters/param_rocket/Parachute'+p+'Main.txt', 'r')  # Read text file
                 Parachute1 = Parachute.readlines()
@@ -123,6 +134,7 @@ def change():
                     VAL_P.append(float(line))
                 OpenParachuteParams(fenetre, VAL_P, disp=0, change=1)
 
+            # Drogue Parachute
             elif main == 'dp':
                 Parachute = open('Parameters/param_rocket/Parachute'+p+'Drogue.txt', 'r')  # Read text file
                 Parachute1 = Parachute.readlines()
@@ -131,6 +143,7 @@ def change():
                     VAL_P.append(float(line))
                 OpenParachuteParams(fenetre, VAL_P, disp=0, change=1)
 
+        # Case Weight
         elif selected[2] == 'w':
             Weight = open('Parameters/param_rocket/Weight'+p+'.txt', 'r')  # Read text file
             Weight1 = Weight.readlines()
@@ -139,6 +152,7 @@ def change():
                 VAL_W.append(float(line))
             OpenWeightParams(fenetre, VAL_W, disp=0)
 
+        # Case Inner Tube
         elif selected[2] == 'c':
             InnerTube = open('Parameters/param_rocket/InnerTube'+p+'.txt', 'r')  # Read text file
             InnerTube1 = InnerTube.readlines()
@@ -147,6 +161,7 @@ def change():
                 VAL_IT.append(float(line))
             OpenInnerTubeParams(fenetre, VAL_IT, disp=0)
 
+        # Case Air Brakes
         elif selected[2] == 'a':
             AirBrakes = open('Parameters/param_rocket/AirBrakes'+p+'.txt', 'r')  # Read text file
             AirBrakes1 = AirBrakes.readlines()
@@ -155,6 +170,7 @@ def change():
                 VAL_AB.append(float(line))
             OpenAirBrakesParams(fenetre, VAL_AB, disp=0)
 
+        # Case Launch Lugs
         elif selected[2] == 'l':
             Lugs = open('Parameters/param_rocket/Lugs'+p+'.txt', 'r')  # Read text file
             Lugs1 = Lugs.readlines()
@@ -192,29 +208,32 @@ inc0 = -1
 # Colors
 colors = ["blue", "red", "green", "black", "yellow"]
 
-# Add a stage to the tree view
+
 def Add_Stage(rocket=0):
-    # Insert tree's branch to the rocket
-    # Create a frame by stage in which canvas are then created for different rocket's parts
+    """
+        Adds a stage to the treeview.
+
+        Parameters: rocket: Signals if function is called from the Rocket Reader
+
+    """
+
     def addstage():
+        """ Create 1 frame / stage in which canvas' are then created for different rocket's parts """
         global item, ITEMB, FrameGeometry, PosF, incF, PosCN, IncC, alpha0, inc0  # global allows to update variables out of the function
         incF += 1
         posF = incF
         PosF.append(posF)
-
         PosCN = []
         PosC.append(PosCN)
         incCN = -1
         IncC.append(incCN)
-
         itemBN = -1
         ITEMB.append(itemBN)
-
-        bodyParts.append([])
-
         inc0 += 1
-
         item += 1
+
+        # ADD a new list to body parts. BodyParts keeps track of all the elements of the rocket and their position
+        bodyParts.append([])
 
         # Create frame and attribute to the n-ième frame, name 'frame02n'
         frame02idx = Frame(frame02, name='frame02%s%d' % (alpha0[inc0], item), bg='white',
@@ -224,11 +243,19 @@ def Add_Stage(rocket=0):
 
 
     def FrameStage(frame02idx):
+        """ Adds a new stage
+            item is the i'th item added to the list
+
+            frame02idx : frame of the current stage"""
         global item, FrameGeometry, alpha0, inc0
+
+        # Create new branch, develop it and select the created element.
         branch = tree.insert(NameRocket, 'end', 'id%s%d' % (alpha0[inc0], item), text='%s' % (StageName.get()))
         tree.focus(branch)
         tree.selection_set(branch)
         tree.see(branch)
+
+        # Update the state of the buttons
         UpdateButtonState()
         elem = tree.focus()
         if elem[1] == 'd' or elem[1] == 't':
@@ -237,23 +264,28 @@ def Add_Stage(rocket=0):
         StageName.destroy()
         Save.destroy()
 
+        # Plot the frame
         frame02idx.grid(row=0, column=item)
         frame02idx.rowconfigure(0, weight=1)
 
     def UpdateSaveButton(entry):
+        """ Add stage when button save is pressed and a name was entered"""
         if entry.get():
             addstage()
 
     def enter(b):
+        """ Save when pressed on Enter"""
         Save.invoke()
 
+    # Create and plot entry and save button for new stage
     StageName = Entry(frameAAAB, validate='key')  # Enter the name of the new stage
     StageName.grid(row=1, column=0, sticky='nswe')
     StageName.focus()
     StageName.bind('<Return>', enter)
-    Save = Button(frameAAAB, text='Save', command=lambda: UpdateSaveButton(StageName))  # Button 'Save' launches addstage()
+    Save = Button(frameAAAB, text='Save', command=lambda: UpdateSaveButton(StageName))  # Button 'Save' start addstage()
     Save.grid(row=1, column=1, sticky='nswe')
 
+    # if called from rocket builder, create new stage with name Stage1
     if rocket:
         StageName.insert(0, "Stage1")
         Save.invoke()
@@ -266,71 +298,99 @@ def Selected_Stage():
     StageItem = tree.selection()
     return StageItem
 
-
-## Add a substage
 # Alphabet
 alpha = list(string.ascii_lowercase)
 inc = -1
 
 # Add a subbranch in treeview
 def Add_Substage(StageSelected, subpart, canvasN, Stg, frame_idx, name):
-    # Add a canvasN (N as Number) to draw Nosecone for N=1, Tube N=2, Fins N=3, Boat-Tail N=4
+    """
+    Add a canvasN (N as Number) to draw Nosecone for N=1, Tube N=2, Fins N=3, Boat-Tail N=4
+
+    Parameters:
+        - StageSelected: Current stage in treeview
+        - subpart: name of the subpart to Add: NoseCone, Tube, Fins or BoatTail
+        - canvasN: The canvas on which to draw the subpart
+        - Stg: index at which the canvas is in "CanvasSubstage
+        - frame_idx: Frame parent of canvas
+        - name: letter of subpart: n, t, f, b
+    """
+
     def CanvasSubstage(canvasN, Stg, frame_idx):
+        """ Create new canvas for the subpart and add is to the list of canvas'"""
         global CanvasGeometry, inc, ITEMB
         # Create canvas, named canvas-N-itemA-Stg
         # N design type rocket's part, itemA numbers canvas, Stg references it to his frame parent
         canvasidx = Canvas(frame_idx, name='%s%s%d%d' % (canvasN, alpha[inc], ITEMB[Stg], Stg))
         CanvasGeometry[Stg].append(canvasidx)
 
-
     global ITEMB, alpha, inc, PosC, IncC
-    IncC[Stg] += 1
-    posC = IncC[Stg]
-    PosC[Stg].append(posC)
-    ITEMB[Stg] += 1
+
+    IncC[Stg] += 1;    posC = IncC[Stg];    PosC[Stg].append(posC);    ITEMB[Stg] += 1
+
+    # Add letter to list of parts
     bodyParts[tree.index(tree.focus())].append([name])
     inc += 1
+
+    # Add a branch to tree and open it. branch id = it-name-alpha-itemA-Stg
+    # t is to signal it's a subbranch, the name is to identify it, and Stg is the index of the canvas in canvasGeometry.
     br = tree.insert(StageSelected, 'end', 'it%s%s%d%d' % (name, alpha[inc], ITEMB[Stg], Stg), text=subpart)
     tree.see(br)
 
-
     CanvasSubstage(canvasN, Stg, frame_idx)
-    UpdateBodyPartState(get_stage())
+    UpdateBodyPartState(get_stage()) # Update Buttons
 
 # Add a subbranch in treeview
 def Add_SubSubstage(StageSelected, subpart, canvasN, Stg, frame_idx, name, pos):
+    """ Add Sub sub branch in treeview. A subsub branch is for ex. Parachutes, weight or other accessories
 
+    Parameters:
+        - StageSelected: Stage of the selected element in tree.
+        - subpart: name of the sub sub part.
+        - canvasN: canvas of Sub part.
+        - Stg: index in CanvasGeometry
+        - frame_idx: frame parent of canvas
+        - name: like subpart but only the 1st letter
+        - pos: Position of subpart in treeview
+    """
 
     global ITEMB, alpha, inc, PosC, IncC
 
+    # Add sub sub part to body parts.
     bodyParts[tree.index(tree.parent(tree.focus()))][pos].append(name)
-    l = tree.focus()[2]
     inc += 1
+
+    # Case main or drogue parachute: name -> p
     if name == 'mp' or name == 'dp':
         name = 'p'
+
+    # Add branch to treeview, open and view it.
     br = tree.insert(StageSelected, 'end', 'is%s%s%d%d' % (name, alpha[inc], ITEMB[Stg], Stg), text=subpart)
     tree.see(br)
     tree.selection_set(br)
     tree.focus(br)
+
+    # Update button state
     UpdateBodyPartState(get_stage())
 
-## Remodulate treeview and rocket (remove, move up, move down, change)
-# Remove the tree's branch
 def do_remove():
+    """ Remove the selected tree's branch """
+
     global FrameGeometry, CanvasGeometry, ITEMB, PosF, incF, PosC, IncC, item
-    sel = tree.focus()
-    part = sel[2]
-    place = int(tree.index(sel))
+
+    sel = tree.focus() # ID of selected branch
+    part = sel[2] # Letter of sub branch: n, t, f, b
+    place = int(tree.index(sel)) # index of selected child
+
     stage = get_stage()
     substage = get_substage()
 
+    # Delete element from tree and select it's parent.
     if sel:
         parent_id = tree.parent(sel)
         tree.delete(sel)
         tree.selection_set(parent_id)
         tree.focus(parent_id)
-
-
 
     value1 = int(sel[-1])  # Stage number
     prefix1 = sel[1] # 'd' -> frame / 't' -> canvas
@@ -371,6 +431,7 @@ def do_remove():
     if prefix1 == 't':
         del bodyParts[stage][place]
 
+        # Get the number of the corresponding selected item
         if part == 'n':
             num = '1'
         elif part == 't':
@@ -380,6 +441,7 @@ def do_remove():
         elif part == 'b':
             num = '4'
 
+        # find index "can" of corresponding canvas in canvas list
         for j, canvas in enumerate(CanvasGeometry[value1]):
             Val3 = []
             for val3 in str(canvas):
@@ -387,15 +449,19 @@ def do_remove():
             if Val3[-4] == num:
                 can = j
 
+        # Delete the canvas
         CanvasGeometry[value1][can].destroy()
         del CanvasGeometry[value1][can]
         ITEMB[value1] -= 1
 
+        # For each canvas in the canvas list. Find the position at which it should be displayed and display it.
         for i in range(len(CanvasGeometry[value1])):
             tmp2 = []
             for l in str(CanvasGeometry[value1][i]):
                 tmp2.append(l)
-            piece = tmp2[-4]
+            piece = tmp2[-4] # piece = N from canvasN.
+
+            # Attribute corresponding letter
             if piece == str(1):
                 letter = 'n'
             elif piece == str(2):
@@ -405,27 +471,34 @@ def do_remove():
             elif piece == str(4):
                 letter = 'b'
 
+            # Find index of letter in the tree
             idx = 0
             for k, part in enumerate(bodyParts[stage]):
                 if part[0] == letter:
                     idx = k
 
-            CanvasGeometry[value1][i].grid(row=0, column=idx)
+            CanvasGeometry[value1][i].grid(row=0, column=idx) # plot the canvas
 
+    # Case of subsubpart
     if prefix1 == 's':
         del bodyParts[stage][substage][place+1]
         DrawFullPiece()
 
+    # Update buttons
     UpdateBodyPartState(stage)
     UpdateButtonState()
 
 
-# Move the tree's branch up
 def do_move_up():
+    """ Move the tree's branch up"""
+
     global FrameGeometry, CanvasGeometry, ITEMB, PosF, incF, PosC, IncC
+
     sel = tree.selection()
     stage = get_stage()
     substage = get_substage()
+
+    # Move the branch up in tree view
     if sel:
         for s in sel:
             idx = tree.index(s)
@@ -441,9 +514,12 @@ def do_move_up():
     prefix3 = str(Val1[-2])  # letter which makes each frame unique
     prefix4 = str(Val1[-3])  # letter which makes each canvas unique
 
-    if idx != 0:
+    if idx != 0: # if element top of list, don't do anything
+        # Case stage
         if prefix1 == 'd':
+            # Move element up in body parts
             bodyParts[tree.index(sel)], bodyParts[tree.index(sel)+1] = bodyParts[tree.index(sel)+1], bodyParts[tree.index(sel)]
+
             for i, frame in enumerate(FrameGeometry):
                 Val2 = []
                 for val2 in str(frame):
@@ -458,6 +534,7 @@ def do_move_up():
                     PosF[np.where(np.array(PosF) == PosF[value1]-1)[0][0]] += 1
                     PosF[value1] -= 1
 
+        # Case substage
         elif prefix1 == 't':
             for j, canvas in enumerate(CanvasGeometry[value1]):
                 Val3 = []
@@ -473,18 +550,19 @@ def do_move_up():
                     #CanvasGeometry[value1][np.where(np.array(PosC[value1]) == PosC[value1][value3] - 1)[0][0]].grid(row=0, column=PosC[value1][value3])
                     #CanvasGeometry[value1][tree.index(sel)-1].grid(row=0, column=PosC[value1][tree.index(sel)])
 
-
+                    # Move Element up in body parts
                     tmp = bodyParts[stage][tree.index(sel)+1]
                     bodyParts[stage][tree.index(sel)+1] = bodyParts[stage][tree.index(sel)]
                     bodyParts[stage][tree.index(sel)] = tmp
 
+                    # Reposition canvas' accordingly
                     for i in range(len(CanvasGeometry[value1])):
                         tmp2 = []
                         for l in str(CanvasGeometry[value1][i]):
                             tmp2.append(l)
 
                         letter = ''
-                        piece = tmp2[-4]
+                        piece = tmp2[-4] # canvas number
                         if piece == str(1):
                             letter = 'n'
                         elif piece == str(2):
@@ -501,22 +579,28 @@ def do_move_up():
                             if part[0] == letter:
                                 idx = k
 
+                        # Plot canvas at the right place
                         CanvasGeometry[value1][i].grid(row=0, column=idx)
 
                     PosC[value1][value3-1] += 1
                     #PosC[value1][np.where(np.array(PosC[value1]) == PosC[value1][value3] - 1)[0][0]] += 1
                     PosC[value1][value3] -= 1
 
+        # Case sub sub part
         elif prefix1 == 's':
             tmp = bodyParts[stage][substage][tree.index(sel)+2]
             bodyParts[stage][substage][tree.index(sel) + 2] = bodyParts[stage][substage][tree.index(sel)+1]
             bodyParts[stage][substage][tree.index(sel)+1] = tmp
+
+        # Update button state
         UpdateBodyPartState(stage)
         UpdateButtonState()
 
-# Move the tree's branch down
-# Move the tree's branch up; refer to do_move_dow() (very similar)
+
 def do_move_down():
+    """ Move the tree's branch down.
+        Refer to do_move_up(), basically the same
+    """
     global FrameGeometry, CanvasGeometry, ITEMB, PosF, incF, PosC, IncC
     sel = tree.selection()
     stage = get_stage()
@@ -619,7 +703,10 @@ def EntryButton(frameACN, name, rnum, cnum, entries, val=0):
     entry.grid(row=rnum + 1, column=cnum, padx=10, pady=10)
     entries.append(entry)
 
+
 def get_stage():
+    """ Get the stage number of selected element """
+
     selected = tree.focus()
     if selected[1] == 'd':
         stage = tree.index(tree.focus())
@@ -635,6 +722,8 @@ def get_stage():
         return stage
 
 def get_substage():
+    """ If any, return the substage number of selected element """
+
     selected = tree.focus()
     if selected[1] == 'd':
         stage = len(tree.get_children(selected))-1
@@ -661,8 +750,9 @@ LENGTH = [0, 0, 0, 0, 0, 0, 0]
 DIAMETER = [0, 0, 0, 0, 0, 0, 0]
 MASS = [0, 0, 0, 0, 0, 0, 0]
 
-# Display geometrical Eiger nosecone in drawing
 def EigerNoseCone():
+
+
     frameACA.grid_remove()
 
     # a file EigerNose.txt is already created with parameters pre-selected
@@ -672,10 +762,13 @@ def EigerNoseCone():
     for line in EP1:  # taking each line
         conv_float = float(line)
         VALUES_N.append(conv_float)
+
+    # Draw Nose
     DrawNose(VALUES_N, display=1)
 
-# Display geometrical Eiger tube in drawing
 def EigerTube():
+    """ Get Eiger Tube parameters and display """
+
     EP = open('Parameters/param_rocket/EigerTube.txt', 'r')
     EP1 = EP.readlines()
     VALUES_T = []
@@ -684,8 +777,9 @@ def EigerTube():
         VALUES_T.append(conv_float)
     DrawTube(VALUES_T, display=1)
 
-# Display geometrical Eiger fins in drawing
 def EigerFins():
+    """ Get Eiger Fins parameters and display """
+
     EP = open('Parameters/param_rocket/EigerFins.txt', 'r')
     EP1 = EP.readlines()
     VALUES_F = []
@@ -699,8 +793,9 @@ def EigerFins():
 
     DrawFins(VALUES_F, display=1)
 
-# Display geometrical Eiger nosecone in drawing
 def EigerBoatTail():
+    """ Get Eiger Boat Tail parameters and display """
+
     EP = open('Parameters/param_rocket/EigerBoatTail.txt', 'r')
     EP1 = EP.readlines()
     VALUES_BT = []
@@ -748,9 +843,9 @@ def GetEnvironment(VALUES_E):
     Env_Text.close()
 
 
-## DATAs
-# Displays Data
 def DispData():
+    """ Displays the data of the rocket"""
+
     # Name, Mass, Length, Max Diameter
     Name = 'Eiger'
     Mass = sum(MASS)
@@ -882,12 +977,16 @@ def Launch_Simulator1D():
     return
 
 def OpenGenerelParams():
+    """ Open the general parameters window when double clicked on the rocket."""
+
+    # Create new window
     GeneralParam = Toplevel(fenetre)
     GeneralParam.title("General parameters for the rocket")
     GeneralParam.geometry("400x200")
     Title = Label(GeneralParam, text="Change params")
     Title.pack()
 
+    # Create new tabs
     notebook = ttk.Notebook(GeneralParam)
     tab1 = ttk.Frame(notebook)
     notebook.add(tab1, text="General")
@@ -898,6 +997,7 @@ def OpenGenerelParams():
     notebook.pack(expand=1, fill="both")
 
     def callback():
+        """ Function to be called when the "Enter params manually" checkbox is checked"""
         if Var.get():
             weightL.config(fg="black")
             weightE.configure(state=NORMAL)
@@ -913,13 +1013,13 @@ def OpenGenerelParams():
             CPL.configure(fg="grey")
             CPE.configure(state=DISABLED)
 
-
+    # Checkbox to enter rocket parameter manually
     Var = BooleanVar()
-
     ManualCheckBox = Checkbutton(tab1, text=": Manually Enter Parameters", variable=Var, onvalue=True, offvalue=False,
                                  command=lambda:callback())
     ManualCheckBox.grid(row=0, column=0, sticky=W)
 
+    # General rocket parameters: Weight, center of gravity, center of pressure, Inertia
     weightL = Label(tab1, text="Weight of rocket: ")
     weightL.grid(row=1, column=0)
     weightE = Entry(tab1)
@@ -941,8 +1041,18 @@ def OpenGenerelParams():
 
 
 def DrawN(VALUES_N, canvas):
+    """ Function that draws the nose on the canvas. Scale 1:3
+
+    Parameters:
+        - VALUES_N: Nose params [Length, Diameter, weight, color, inertia]
+        - canvas: The canvas on which to draw
+    """
+
+    # Configure canvas to be adequate size
     canvas.configure(width=VALUES_N[0] / 3, height=VALUES_N[1] / 3, bg='white', highlightthickness=0, bd=0,
                       relief='ridge')  # 300 mm + 350 mm
+
+    # Draw nosecone
     canvas.create_arc(2 / 3 * (1 - VALUES_N[1] / 3), 3.3 * VALUES_N[1] / 3, 4.1 * VALUES_N[1] / 3, -1, width=1,
                        outline=colors[int(VALUES_N[3])], style=ARC, start=90, extent=90)
     canvas.create_arc(2 / 3 * (1 - VALUES_N[1] / 3), VALUES_N[1] / 3, 4.1 * VALUES_N[1] / 3 + 3,
@@ -954,9 +1064,15 @@ def DrawN(VALUES_N, canvas):
 
 
 def DrawNose(VALUES_N, display=0):
-    # Get the index 'stg' of stage : example, first stage has an index stg = 0
-    Stg = int(tree.focus()[-1])
-    stage = get_stage()
+    """ Function that writes the nosecone parameters to file and add a new substage if necessary
+
+    Parameters:
+        - VALUES_N: Nose params [Length, Diameter, weight, color, inertia]
+        - display=0: if 1, create a new subpart. Default = 0.
+    """
+
+    Stg = int(tree.focus()[-1]) # index of canvas in CanvasGeometry
+    stage = get_stage() # stage number
 
     if display:
         # Get frame parent of canvas
@@ -971,6 +1087,7 @@ def DrawNose(VALUES_N, display=0):
         NoseCone_Text.write("%s\n" % (VALUES_N[i]))
     NoseCone_Text.close()
 
+    # get index of canas in list
     idx = 0
     for i in range(len(bodyParts[stage])):
         tmp2 = []
@@ -979,7 +1096,7 @@ def DrawNose(VALUES_N, display=0):
         if int(tmp2[-4]) == 1:
             idx = i
 
-
+    # Gather general data and display
     LENGTH[0] = VALUES_N[0]
     DIAMETER[0] = VALUES_N[1]
     MASS[0] = VALUES_N[2]
@@ -987,8 +1104,10 @@ def DrawNose(VALUES_N, display=0):
 
     canvas1 = CanvasGeometry[Stg][idx]
 
+    # Draw full nose + accessories
     DrawFullPiece()
 
+    # Display at correct position
     for i, substage in enumerate(bodyParts[stage]):
         if substage[0] == 'n':
             tmp = i
@@ -998,13 +1117,22 @@ def DrawNose(VALUES_N, display=0):
 
 
 def OpenNoseParams(fenetre, values=[600, 155, 1000, 0,0,0,0,0,0,0,0,0,0], disp=1):
+    """ Function that open a new window containing the nosecone parameters and allows to customize them.
 
+    Parameters:
+        - fenetre: parent window.
+        - values: Nosecone parameters. [Length, Diameter, weight, color, inertia]
+        - disp=1: if 1 then create new subpart. Default = 1
+    """
+
+    # Create new window
     noseParam = Toplevel(fenetre)
     noseParam.title("NoseCone Parameters")
     noseParam.geometry("400x200")
     Title = Label(noseParam, text = "Change params")
     Title.pack()
 
+    # Create new Tabs
     notebook = ttk.Notebook(noseParam)
     tab1 = ttk.Frame(notebook)
     notebook.add(tab1, text="Dimensions")
@@ -1021,12 +1149,14 @@ def OpenNoseParams(fenetre, values=[600, 155, 1000, 0,0,0,0,0,0,0,0,0,0], disp=1
     color=values[3]
 
     def slide(var):
+        """ slide : insert in the entry box the value of the scale and draw the piece"""
         lengthEntry.delete(0, "end")
         lengthEntry.insert(0,str(lengthScale.get()))
         DrawNose([lengthScale.get(), DiaScale.get(), MassScale.get(), color,inertia1.get(),inertia2.get(),inertia3.get(),inertia4.get(),
                  inertia5.get(),inertia6.get(),inertia7.get(),inertia8.get(),inertia9.get()])
 
     def insertVal(var):
+        """ insert in the scale the value of the entry box"""
         lengthScale.set(lengthEntry.get())
 
     def slide1(var):
@@ -1052,6 +1182,8 @@ def OpenNoseParams(fenetre, values=[600, 155, 1000, 0,0,0,0,0,0,0,0,0,0], disp=1
         DrawNose([lengthScale.get(), DiaScale.get(), MassScale.get(), color, inertia1.get(),inertia2.get(),inertia3.get(),inertia4.get(),
                  inertia5.get(),inertia6.get(),inertia7.get(),inertia8.get(),inertia9.get()])
 
+
+    # Label, Entry and Scale for each of the nosecone parameters.
     lengthLabel = Label(tab1, text="Length: ")
     lengthLabel.grid(row=1, column=0)
     lengthEntry = Entry(tab1)
@@ -1103,10 +1235,12 @@ def OpenNoseParams(fenetre, values=[600, 155, 1000, 0,0,0,0,0,0,0,0,0,0], disp=1
     ColorMenu.grid(row=0, column=1)
     Button(tab3, text="Ok", command=Ok).grid(row=0, column=2)
 
+    # Draw Nose with display = 1 if disp
     if disp:
         DrawNose([lengthScale.get(), DiaScale.get(), MassScale.get(), color,inertia1.get(),inertia2.get(),inertia3.get(),inertia4.get(),
                  inertia5.get(),inertia6.get(),inertia7.get(),inertia8.get(),inertia9.get()], display=1)
 
+    # When ok is pressed, draw nose and quit window
     def validCB():
         DrawNose([lengthScale.get(), DiaScale.get(), MassScale.get(), colors.index(clicked.get()), inertia1.get(), inertia2.get(), inertia3.get(), inertia4.get(),
              inertia5.get(), inertia6.get(), inertia7.get(), inertia8.get(), inertia9.get()])
@@ -1115,7 +1249,6 @@ def OpenNoseParams(fenetre, values=[600, 155, 1000, 0,0,0,0,0,0,0,0,0,0], disp=1
 
     validateButton = Button(noseParam, text="OK", command=validCB)
     validateButton.pack(anchor="e", padx=10, pady=5)
-    #validateButton.grid(row=3, column=2)
     noseParam.mainloop()
 
 def DrawT(VALUES_T, canvas):
@@ -3057,7 +3190,7 @@ def Build_Rocket(values):
         sel = tree.focus()
         tree.focus(tree.get_children(sel)[1])
         tree.selection_set(tree.get_children(sel)[1])
-        DrawAirBrakes([100, 40, ab_n, ab_phi, ab_x-nc_length], display=1)
+        DrawAirBrakes([100, 40, ab_n, ab_phi+270, ab_x-nc_length], display=1)
         parent = tree.parent(tree.parent(tree.focus()))
         tree.focus(parent)
         tree.selection_set(parent)
