@@ -60,8 +60,8 @@ class Simulator1D:
 
         self.integration_ivp = solve_ivp(self.xdot, [self.t0, max_time], self.x_0, method='RK45', events=off_rail)
         print('Solve_ivp rail')
-        print(self.integration_ivp.t)
-        print(self.integration_ivp.y)
+        print("t", self.integration_ivp.t)
+        print("y", self.integration_ivp.y)
 
         plt.plot(self.integration_ivp.t, self.integration_ivp.y[0])
         plt.show()

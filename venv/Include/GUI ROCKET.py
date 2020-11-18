@@ -746,9 +746,10 @@ def hallo(entries):
 
 
 # Display geometrical nosecone in drawing
-LENGTH = [0, 0, 0, 0, 0, 0, 0]
-DIAMETER = [0, 0, 0, 0, 0, 0, 0]
-MASS = [0, 0, 0, 0, 0, 0, 0]
+LENGTH = [0,0,0,0]
+DIAMETER = [0,0,0,0]
+MASS = [0,0,0,0]
+MASS_CENTER = [0,0,0,0]
 
 def EigerNoseCone():
 
@@ -997,7 +998,9 @@ def OpenGenerelParams():
     notebook.pack(expand=1, fill="both")
 
     def callback():
-        """ Function to be called when the "Enter params manually" checkbox is checked"""
+        """ Function to be called when the "Enter params manually" checkbox is checked
+            Enables and disables the Entry boxes
+        """
         if Var.get():
             weightL.config(fg="black")
             weightE.configure(state=NORMAL)
@@ -1039,6 +1042,133 @@ def OpenGenerelParams():
 
     GeneralParam.mainloop()
 
+def get_CM():
+    for stage in bodyParts:
+        for substage in stage:
+            for subsubstage in substage:
+                VALUES = []
+                if subsubstage == 'n':
+                    item = 0
+                    p = 'Nose'
+                    NoseCone = open('Parameters/param_rocket/NoseCone.txt', 'r')  # Read text file
+                    NoseCone1 = NoseCone.readlines()
+                    for line in NoseCone1:  # taking each line
+                        VALUES.append(float(line))
+                    Mass = VALUES[2]
+                    Length = VALUES[0]
+                    Dia = VALUES[1]
+                    CM = CM_Ogive(Length, Dia)
+
+                elif subsubstage == 't':
+                    item = 1
+                    p = 'Tube'
+                    Data = open('Parameters/param_rocket/Tube.txt', 'r')  # Read text file
+                    Data1 = Data.readlines()
+                    for line in Data1:  # taking each line
+                        VALUES.append(float(line))
+                    Mass = VALUES[2]
+                    Length = VALUES[0]
+                    Dia = VALUES[1]
+                    CM = Length/2
+
+                elif subsubstage == 'f':
+                    item = 2
+                    p = 'Fins'
+                    Data = open('Parameters/param_rocket/Fins.txt', 'r')  # Read text file
+                    Data1 = Data.readlines()
+                    for line in Data1:  # taking each line
+                        VALUES.append(float(line))
+                    Mass = VALUES[8]
+                    Length = VALUES[9]
+                    Dia = VALUES[10]
+                    CM = Length/2
+
+                elif subsubstage == 'b':
+                    item = 3
+                    p = 'BT'
+                    Data = open('Parameters/param_rocket/BoatTail.txt', 'r')  # Read text file
+                    Data1 = Data.readlines()
+                    for line in Data1:  # taking each line
+                        VALUES.append(float(line))
+                    Mass = VALUES[3]
+                    Length = VALUES[0]
+                    Dia = max(VALUES[1], VALUES[2])
+                    CM = Length/2
+
+                elif subsubstage == 'mp':
+                    Data = open('Parameters/param_rocket/Parachute'+p+'Main.txt', 'r')  # Read text file
+                    Data1 = Data.readlines()
+                    for line in Data1:  # taking each line
+                        VALUES.append(float(line))
+                    Total_Mass = Mass + VALUES[3]
+                    Pos = VALUES[2]
+                    CM = Mass*CM/Total_Mass + VALUES[3]*Pos/Total_Mass
+                    Mass = Total_Mass
+
+                elif subsubstage == 'dp':
+                    Data = open('Parameters/param_rocket/Parachute'+p+'Drogue.txt', 'r')  # Read text file
+                    Data1 = Data.readlines()
+                    for line in Data1:  # taking each line
+                        VALUES.append(float(line))
+                    Total_Mass = Mass + VALUES[3]
+                    Pos = VALUES[2]
+                    CM = Mass*CM/Total_Mass + VALUES[3]*Pos/Total_Mass
+                    Mass = Total_Mass
+
+                elif subsubstage == 'c':
+                    Data = open('Parameters/param_rocket/InnerTube'+p+'.txt', 'r')  # Read text file
+                    Data1 = Data.readlines()
+                    for line in Data1:  # taking each line
+                        VALUES.append(float(line))
+                    Total_Mass = Mass + VALUES[5]
+                    Pos = VALUES[4]+VALUES[0]/2
+                    CM = Mass*CM/Total_Mass + VALUES[5]*Pos/Total_Mass
+                    Mass = Total_Mass
+
+                elif subsubstage == 'w':
+                    Data = open('Parameters/param_rocket/Weight'+p+'.txt', 'r')  # Read text file
+                    Data1 = Data.readlines()
+                    for line in Data1:  # taking each line
+                        VALUES.append(float(line))
+                    Total_Mass = Mass + VALUES[0]
+                    Pos = VALUES[1]
+                    CM = Mass*CM/Total_Mass + VALUES[0]*Pos/Total_Mass
+                    Mass = Total_Mass
+
+                elif subsubstage == 'a':
+                    Data = open('Parameters/param_rocket/AirBrakes'+p+'.txt', 'r')  # Read text file
+                    Data1 = Data.readlines()
+                    for line in Data1:  # taking each line
+                        VALUES.append(float(line))
+                    Total_Mass = Mass + VALUES[-1]
+                    Pos = VALUES[4]+120
+                    CM = Mass*CM/Total_Mass + VALUES[-1]*Pos/Total_Mass
+                    Mass = Total_Mass
+
+            MASS[item] = Mass
+            MASS_CENTER[item] = CM
+            print(MASS, MASS_CENTER)
+
+
+def CM_Ogive(length, dia):
+
+    """ calculates center of mass of the nose con"""
+    l = 7/5*dia
+    alpha = math.atan(14/5)/2
+    x = math.tan(alpha)*dia/2*1.1
+    V = dia*l/2*1.1
+
+    l1 = length-7/5*dia
+    x1 = l1/2
+    V1 = dia*l1
+
+    Vtot = V + V1
+    frac = V/Vtot
+    frac1 = 1-frac
+
+    CM = length/2 - frac1*(length/2-x1) + frac*(l1-length/2+x)
+
+    return CM
 
 def DrawN(VALUES_N, canvas):
     """ Function that draws the nose on the canvas. Scale 1:3
@@ -1055,7 +1185,8 @@ def DrawN(VALUES_N, canvas):
     # Draw nosecone
     canvas.create_arc(2 / 3 * (1 - VALUES_N[1] / 3), 3.3 * VALUES_N[1] / 3, 4.1 * VALUES_N[1] / 3, -1, width=1,
                        outline=colors[int(VALUES_N[3])], style=ARC, start=90, extent=90)
-    canvas.create_arc(2 / 3 * (1 - VALUES_N[1] / 3), VALUES_N[1] / 3, 4.1 * VALUES_N[1] / 3 + 3,
+    print(VALUES_N[1]/3, 2 / 3 * (1 - VALUES_N[1] / 3), 4.1 * VALUES_N[1] / 3)
+    canvas.create_arc(2 / 3 * (1 - VALUES_N[1] / 3), VALUES_N[1] / 3, 4.1 * VALUES_N[1] / 3,
                        -2.3 * VALUES_N[1] / 3, width=1, outline=colors[int(VALUES_N[3])], style=ARC, start=-90, extent=-90)
     canvas.create_line(7 / 5 * VALUES_N[1] / 3, 0, VALUES_N[0] / 3 - 1, 0, width=1, fill=colors[int(VALUES_N[3])])
     canvas.create_line(7 / 5 * VALUES_N[1] / 3, VALUES_N[1] / 3 - 1, VALUES_N[0] / 3 - 1, VALUES_N[1] / 3 - 1, width=1,
@@ -1064,7 +1195,7 @@ def DrawN(VALUES_N, canvas):
 
 
 def DrawNose(VALUES_N, display=0):
-    """ Function that writes the nosecone parameters to file and add a new substage if necessary
+    """ Function that writes the nosecone parameters to file and adds a new substage if necessary
 
     Parameters:
         - VALUES_N: Nose params [Length, Diameter, weight, color, inertia]
@@ -1097,10 +1228,6 @@ def DrawNose(VALUES_N, display=0):
             idx = i
 
     # Gather general data and display
-    LENGTH[0] = VALUES_N[0]
-    DIAMETER[0] = VALUES_N[1]
-    MASS[0] = VALUES_N[2]
-    DispData()
 
     canvas1 = CanvasGeometry[Stg][idx]
 
@@ -1217,6 +1344,7 @@ def OpenNoseParams(fenetre, values=[600, 155, 1000, 0,0,0,0,0,0,0,0,0,0], disp=1
     inertia0 = Label(tab2, text="Inertial Matrix: ")
     inertia0.grid(row=1, column=0)
 
+    # 9 entries for the intertial matrix
     inertia1 = Entry(tab2, width=4, justify=CENTER); inertia1.grid(row=0, column=1, pady = 2, padx=2); inertia1.insert(0,values[4])
     inertia2 = Entry(tab2, width=4, justify=CENTER); inertia2.grid(row=0, column=2, pady = 2, padx=2); inertia2.insert(0,values[5])
     inertia3 = Entry(tab2, width=4, justify=CENTER); inertia3.grid(row=0, column=3, pady = 2, padx=2); inertia3.insert(0,values[6])
@@ -1252,10 +1380,16 @@ def OpenNoseParams(fenetre, values=[600, 155, 1000, 0,0,0,0,0,0,0,0,0,0], disp=1
     noseParam.mainloop()
 
 def DrawT(VALUES_T, canvas):
+    """ Function that draws the tube of the rocket on the canvas. Scale 1:3
+
+        Parameters:
+            - VALUES_T: Tube params [Length, Diameter, weight, color, inertia]
+            - canvas: The canvas on which to draw
+        """
     fenetre.update_idletasks()
 
     canvas.configure(width=VALUES_T[0] / 3, height=4*VALUES_T[1] / 3, bg='white', highlightthickness=0, bd=0,
-                      relief='ridge')  # 2010 mm
+                      relief='ridge')
     height = 4*VALUES_T[1]/3
 
     canvas.create_rectangle(1, height/2-VALUES_T[1]/2/3, VALUES_T[0] / 3 - 1, height/2+VALUES_T[1]/2 / 3 , width=1, outline=colors[int(VALUES_T[3])])
@@ -1264,21 +1398,31 @@ def DrawT(VALUES_T, canvas):
 
 # Display geometrical tube in drawing
 def DrawTube(VALUES_T, display=0):
+    """ Function that writes the tube parameters to file and adds a new substage if necessary
+
+        Parameters:
+            - VALUES_T: Tube params [Length, Diameter, weight, color, inertia]
+            - display=0: if 1, create a new subpart. Default = 0.
+        """
+
     # Get the index 'stg' of stage : example, first stage has an index stg = 0
     Stg = int(tree.focus()[-1])
     stage = get_stage()
 
+    # Create a canvas for the tube if new tube
     if display:
         frame02idx = FrameGeometry[Stg]
 
         # Get Canvas in frame02idx
         Add_Substage(tree.selection(), 'Tube', 'canvas2', Stg, frame02idx, 't')
 
+    # Get tube parameters
     Tube_Text = open("Parameters/param_rocket/Tube.txt", "w")
     for i in range(len(VALUES_T)):
         Tube_Text.write("%s\n" % (VALUES_T[i]))
     Tube_Text.close()
 
+    # Find the correct canvas for the tube: canvas2
     idx = 0
     for i in range(len(CanvasGeometry[Stg])):
         tmp2 = []
@@ -1289,30 +1433,34 @@ def DrawTube(VALUES_T, display=0):
 
     canvas2 = CanvasGeometry[Stg][idx]
 
-    Len_Tube = VALUES_T[0]
-    LENGTH[1] = Len_Tube
-    Dia_Tube = VALUES_T[1]
-    DIAMETER[1] = Dia_Tube
-    MASS[1] = VALUES_T[2]
-    DispData()
+    DrawFullPiece() #Draw the piece
 
-    DrawFullPiece()
-
+    # Find correct place to display the tube
     for i, substage in enumerate(bodyParts[stage]):
         if substage[0] == 't':
             tmp = i
             break
 
+    # Display the tube
     canvas2.grid(row=0, column=tmp)
 
 def OpenTubeParams(fenetre, values=[2038, 155, 1000, 0, 0,0,0,0,0,0,0,0,0], disp=1):
+    """ Function that open a new window containing the tube parameters and allows to customize them.
 
+        Parameters:
+            - fenetre: parent window.
+            - values: Tube params [Length, Diameter, weight, color, inertia]
+            - disp=1: if 1 then create new subpart. Default = 1
+        """
+
+    # Create new window to modify parameters
     tubeParam = Toplevel(fenetre)
     tubeParam.title("Tube Parameters")
     tubeParam.geometry("400x200")
     Title = Label(tubeParam, text = "Change tube params")
     Title.pack()
 
+    # Add tabs
     notebook = ttk.Notebook(tubeParam)
     tab1 = ttk.Frame(notebook)
     notebook.add(tab1, text="Dimensions")
@@ -1329,6 +1477,7 @@ def OpenTubeParams(fenetre, values=[2038, 155, 1000, 0, 0,0,0,0,0,0,0,0,0], disp
     color = values[3]
 
     def slide(var):
+        """Write in entry the value on the scale and draw the tube"""
         lengthEntry.delete(0, "end")
         lengthEntry.insert(0,str(lengthScale.get()))
         DrawTube([lengthScale.get(), DiaScale.get(), MassScale.get(), colors.index(clicked.get()), inertia1.get(), inertia2.get(),
@@ -1336,6 +1485,7 @@ def OpenTubeParams(fenetre, values=[2038, 155, 1000, 0, 0,0,0,0,0,0,0,0,0], disp
                      , inertia5.get(), inertia6.get(), inertia7.get(), inertia8.get(), inertia9.get()])
 
     def insertVal(var):
+        """insert in the scale the value of the entry"""
         lengthScale.set(lengthEntry.get())
 
     def slide1(var):
@@ -1363,6 +1513,7 @@ def OpenTubeParams(fenetre, values=[2038, 155, 1000, 0, 0,0,0,0,0,0,0,0,0], disp
                  inertia5.get(),inertia6.get(),inertia7.get(),inertia8.get(),inertia9.get()])
 
 
+    # Label, Entry and Scale for each of the tubes parameters
     lengthLabel = Label(tab1, text="Length: ")
     lengthLabel.grid(row=1, column=0)
     lengthEntry = Entry(tab1)
@@ -1393,6 +1544,7 @@ def OpenTubeParams(fenetre, values=[2038, 155, 1000, 0, 0,0,0,0,0,0,0,0,0], disp
     MassScale.grid(row=3, column=2)
     MassScale.set(values[2])
 
+    # Entries for inertial matrix
     inertia1 = Entry(tab2, width=4, justify=CENTER);inertia1.grid(row=0, column=1, pady=2, padx=2)
     inertia1.insert(0, values[4])
     inertia2 = Entry(tab2, width=4, justify=CENTER);inertia2.grid(row=0, column=2, pady=2, padx=2)
@@ -1425,6 +1577,7 @@ def OpenTubeParams(fenetre, values=[2038, 155, 1000, 0, 0,0,0,0,0,0,0,0,0], disp
                         , inertia5.get(), inertia6.get(), inertia7.get(), inertia8.get(), inertia9.get()], display=1)
 
     def validCB():
+        """ Called when OK button is pressed, draws the tube and exits the window """
         color = colors.index(clicked.get())
         DrawTube(
             [lengthScale.get(), DiaScale.get(), MassScale.get(), color, inertia1.get(), inertia2.get(), inertia3.get(), inertia4.get(),
@@ -1437,7 +1590,17 @@ def OpenTubeParams(fenetre, values=[2038, 155, 1000, 0, 0,0,0,0,0,0,0,0,0], disp
     tubeParam.mainloop()
 
 def DrawF(VALUES_F, canvas):
+    """ Function that draws the fins on the canvas. Scale 1:3
+
+        Parameters:
+            - VALUES_F: Fins params [Number of fins, Root coordinate, Tip coordinate, Span, Sweep, Thickness, Phase,
+                                    BTO, Length, Tube Diameter, color]
+            - canvas: The canvas on which to draw
+        """
+
     color = colors[int(VALUES_F[11])]
+
+    # Can only draw 3 fins
     if VALUES_F[0] == 3:
         canvas.configure(width=VALUES_F[9] / 3, height=VALUES_F[10] / 3 + 2 * VALUES_F[3] / 3, bg='white',
                           highlightthickness=0, bd=0, relief='ridge')  # 350 mm
@@ -1455,24 +1618,32 @@ def DrawF(VALUES_F, canvas):
                                VALUES_F[4] / 3 + VALUES_F[7] / 3, 0, width=1, outline=color, fill='')
 
 
-
-# Display geometrical fins in drawing
 def DrawFins(VALUES_F, display=0):
-    # Get the index 'stg' of stage : example, first stage has an index stg = 0
-    Stg = int(tree.focus()[-1])
-    stage = get_stage()
+    """ Function that writes the fins parameters to file and adds a new substage if necessary
 
+        Parameters:
+            - VALUES_F: Fins params [Number of fins, Root coordinate, Tip coordinate, Span, Sweep, Thickness, Phase,
+                                    BTO, Length, Tube Diameter, color]
+            - display=0: if 1, create a new subpart. Default = 0.
+        """
+
+    Stg = int(tree.focus()[-1]) # Index of canvas in CanvasGeometry
+    stage = get_stage() # Selected Stage
+
+    # Create a canvas if new fins.
     if display:
         frame02idx = FrameGeometry[Stg]
 
         # Get Canvas in frame02idx
         Add_Substage(tree.selection(), 'Fins', 'canvas3', Stg, frame02idx, 'f')
 
+    # Write fins parameters to file
     Fins_Text = open("Parameters/param_rocket/Fins.txt", "w")
     for i in range(len(VALUES_F)):
         Fins_Text.write("%s\n" % (VALUES_F[i]))
     Fins_Text.close()
 
+    # Find correct canvas for fins: canvas3
     idx = 0
     for i in range(len(bodyParts[stage])):
         tmp2 = []
@@ -1483,26 +1654,33 @@ def DrawFins(VALUES_F, display=0):
 
     canvas3 = CanvasGeometry[Stg][idx]
 
-    LENGTH[2] = VALUES_F[9]
-    DIAMETER[2] = VALUES_F[10]
-    MASS[2] = VALUES_F[-4]
-    DispData()
-
     DrawFullPiece()
 
+    # Find where to plot the fins
     for i, substage in enumerate(bodyParts[stage]):
         if substage[0] == 'f':
             tmp = i
             break
-    canvas3.grid(row=0, column=tmp)
+
+    canvas3.grid(row=0, column=tmp) # Plot fins
 
 def OpenFinsParams(fenetre, values=[3, 282, 123, 216, 115, 30, 0, 40, 300, 350, 155, 0], disp=1):
+    """ Function that open a new window containing the fins parameters and allows to customize them.
 
+        Parameters:
+            - fenetre: parent window.
+            - values: Fins params [Number of fins, Root coordinate, Tip coordinate, Span, Sweep, Thickness, Phase,
+                                    BTO, Mass, Length, Tube Diameter, color]
+            - disp=1: if 1 then create new subpart. Default = 1
+        """
+
+    # Create new window to modify fin parameters
     FinParam = Toplevel(fenetre)
     FinParam.title("Fin Parameters")
     FinParam.geometry("400x600")
     Label(FinParam, text = "Change Fin params").pack()
 
+    # Add tabs
     notebook = ttk.Notebook(FinParam)
     tab1 = ttk.Frame(notebook)
     notebook.add(tab1, text="Dimensions")
@@ -1514,13 +1692,16 @@ def OpenFinsParams(fenetre, values=[3, 282, 123, 216, 115, 30, 0, 40, 300, 350, 
 
     color = values[-1]
 
+    # Entry and scale call backs for each of the fin parameters
     def slideLength(var):
+        """ Write scale value in entry and draw fins"""
         lengthEntry.delete(0, "end")
         lengthEntry.insert(0,str(lengthScale.get()))
         DrawFins([nbScale.get(),rcScale.get(),tcScale.get(),spanScale.get(),sweepScale.get(),ThScale.get(),
                  PhScale.get(),BTOScale.get(),MassScale.get(),lengthScale.get(),DiaScale.get(), color])
 
     def insertValLength(var):
+        """ Enter entry value in scale"""
         lengthScale.set(lengthEntry.get())
 
     def slideDia(var):
@@ -1618,6 +1799,7 @@ def OpenFinsParams(fenetre, values=[3, 282, 123, 216, 115, 30, 0, 40, 300, 350, 
         DrawFins([nbScale.get(),rcScale.get(),tcScale.get(),spanScale.get(),sweepScale.get(),ThScale.get(),
                  PhScale.get(),BTOScale.get(),MassScale.get(),lengthScale.get(),DiaScale.get(), color])
 
+    # Label, Entry and Scale for each of the fin parameters
     nbLabel = Label(tab1, text="Num: ")
     nbLabel.grid(row=1, column=0)
     nbEntry = Entry(tab1)
@@ -1741,6 +1923,7 @@ def OpenFinsParams(fenetre, values=[3, 282, 123, 216, 115, 30, 0, 40, 300, 350, 
                  PhScale.get(),BTOScale.get(),MassScale.get(),lengthScale.get(),DiaScale.get(), color], display=1)
 
     def validCB():
+        """ Called when Ok button is pressed. Draws the fins and exits the window"""
         color = colors.index(clicked.get())
         DrawFins([nbScale.get(),rcScale.get(),tcScale.get(),spanScale.get(),sweepScale.get(),ThScale.get(),
                  PhScale.get(),BTOScale.get(),MassScale.get(),lengthScale.get(),DiaScale.get(), color])
@@ -1752,9 +1935,17 @@ def OpenFinsParams(fenetre, values=[3, 282, 123, 216, 115, 30, 0, 40, 300, 350, 
     FinParam.mainloop()
 
 def DrawBT(VALUES_BT, canvas):
+    """ Function that draws the Boat Tail on the canvas. Scale 1:3
+
+        Parameters:
+            - VALUES_BT: Boat Tail params [Length, 1st Diameter, 2nd Diameter, weight, color]
+            - canvas: The canvas on which to draw
+        """
     color = colors[int(VALUES_BT[-1])]
     canvas.configure(width=VALUES_BT[0] / 3, height=max(VALUES_BT[1], VALUES_BT[2]) / 3, bg='white',
                       highlightthickness=0, bd=0, relief='ridge')  # 50 mm
+
+    # Draw boat tail
     if VALUES_BT[1] > VALUES_BT[2]:
         canvas.create_polygon(1, 0, VALUES_BT[0] / 3 - 1, (VALUES_BT[1] / 3 - VALUES_BT[2] / 3) / 2,
                                VALUES_BT[0] / 3 - 1, (VALUES_BT[1] / 3 + VALUES_BT[2] / 3) / 2 - 1, 1,
@@ -1765,23 +1956,31 @@ def DrawBT(VALUES_BT, canvas):
                                (VALUES_BT[2] / 3 + VALUES_BT[1] / 3) / 2 - 1, width=1, outline=color, fill='')
 
 
-# Display geometrical tube in drawing
 def DrawBoatTail(VALUES_BT, display=0):
+    """ Function that writes the Boat Tail parameters to file and adds a new substage if necessary
 
-    Stg = int(tree.focus()[-1])
-    stage = get_stage()
+        Parameters:
+            - VALUES_BT: Boat Tail params [Length, 1st Diameter, 2nd Diameter, weight, color]
+            - display=0: if 1, create a new subpart. Default = 0.
+        """
 
+    Stg = int(tree.focus()[-1]) # Index of canvas in canvas geometry
+    stage = get_stage() # Stage of selected element
+
+    # Create a new canvas for the piece if its a new one
     if display:
         frame02idx = FrameGeometry[Stg]
 
         # Get Canvas in frame02idx
         Add_Substage(tree.selection(), 'Boat-Tail', 'canvas4', Stg, frame02idx, 'b')
 
+    # Write parameters to file
     BoatTail_Text = open("Parameters/param_rocket/BoatTail.txt", "w")
     for i in range(len(VALUES_BT)):
         BoatTail_Text.write("%s\n" % (VALUES_BT[i]))
     BoatTail_Text.close()
 
+    # find correct canvas: canvas4
     idx = 0
     for i in range(len(bodyParts[stage])):
         tmp2 = []
@@ -1792,28 +1991,33 @@ def DrawBoatTail(VALUES_BT, display=0):
 
     canvas4 = CanvasGeometry[Stg][idx]
 
-    LENGTH[3] = VALUES_BT[0]
-    Dia_BoatTail = max(VALUES_BT[1], VALUES_BT[2])
-    DIAMETER[3] = Dia_BoatTail
-    MASS[3] = VALUES_BT[-2]
-    DispData()
-
     DrawFullPiece()
 
+    # Find where to display the boat tail
     for i, substage in enumerate(bodyParts[stage]):
         if substage[0] == 'b':
             tmp = i
             break
-    canvas4.grid(row=0, column=tmp)
+
+    canvas4.grid(row=0, column=tmp) # Display boat tail
 
 def OpenBoatTailParams(fenetre, values=[41, 155, 133, 300, 0], disp=1):
+    """ Function that open a new window containing the boat tail parameters and allows to customize them.
 
+        Parameters:
+            - fenetre: parent window.
+            - values: Boat Tail params [Length, 1st Diameter, 2nd Diameter, weight, color]
+            - disp=1: if 1 then create new subpart. Default = 1
+        """
+
+    # Create new window to modify boat tail parameters
     BoatTailParam = Toplevel(fenetre)
     BoatTailParam.title("Boat Tail Parameters")
     BoatTailParam.geometry("400x200")
     Title = Label(BoatTailParam, text = "Change boat tail params")
     Title.pack()
 
+    # Add tabs
     notebook = ttk.Notebook(BoatTailParam)
     tab1 = ttk.Frame(notebook)
     notebook.add(tab1, text="Dimensions")
@@ -1825,12 +2029,15 @@ def OpenBoatTailParams(fenetre, values=[41, 155, 133, 300, 0], disp=1):
 
     color = values[-1]
 
+    # Callback for all entries and scales
     def slide(var):
+        """ Insert scale value in entry and draw the piece"""
         lengthEntry.delete(0, "end")
         lengthEntry.insert(0,str(lengthScale.get()))
         DrawBoatTail([lengthScale.get(), Dia1Scale.get(), Dia2Scale.get(), MassScale.get(), color])
 
     def insertVal(var):
+        """ Insert entry value in the scale"""
         lengthScale.set(lengthEntry.get())
 
     def slide1(var):
@@ -1862,7 +2069,7 @@ def OpenBoatTailParams(fenetre, values=[41, 155, 133, 300, 0], disp=1):
         color = colors.index(clicked.get())
         DrawBoatTail([lengthScale.get(), Dia1Scale.get(), Dia2Scale.get(), MassScale.get(), color])
 
-
+    # Label, entry and Scale for each boat tail parameter
     lengthLabel = Label(tab1, text="Length: ")
     lengthLabel.grid(row=1, column=0)
     lengthEntry = Entry(tab1)
@@ -1915,6 +2122,7 @@ def OpenBoatTailParams(fenetre, values=[41, 155, 133, 300, 0], disp=1):
         DrawBoatTail([lengthScale.get(), Dia1Scale.get(), Dia1Scale.get(), MassScale.get(), color], display=1)
 
     def validCB():
+        """ Called when OK is pressed. Draws the boat tail and exits the window"""
         color = colors.index(clicked.get())
         DrawBoatTail([lengthScale.get(), Dia1Scale.get(), Dia2Scale.get(), MassScale.get(), color])
         BoatTailParam.destroy()
@@ -1925,6 +2133,7 @@ def OpenBoatTailParams(fenetre, values=[41, 155, 133, 300, 0], disp=1):
     BoatTailParam.mainloop()
 
 def OpenMotorParams():
+    """Opens a new window to create a customized motor"""
     MotorParams = Toplevel(fenetre)
     MotorParams.title("Create Custom Motor")
     MotorParams.geometry("450x450")
@@ -1940,6 +2149,7 @@ def OpenMotorParams():
     notebook.add(tab2, text="Values")
     notebook.pack(expand=1, fill="both")
 
+    # Label and entry for the different custom motor parameters
     label1 = Label(tab1, text="Name", bg='gray85', anchor=NW).grid(row=0, column=0, padx=10, pady=2)
     entry1 = Entry(tab1)
     entry1.grid(row=1, column=0, padx=10, pady=10)
@@ -1992,6 +2202,7 @@ def OpenMotorParams():
 
     couples = []
     def addCouple():
+        """Adds a [time, thrust] couple to the list """
         couples.append([entry9.get(), entry10.get()])
         Label(tab2, text="%s" % (entry9.get())).grid(row=2, column=1)
         Label(tab2, text="%s" % (entry10.get())).grid(row=2, column=2)
@@ -1999,10 +2210,10 @@ def OpenMotorParams():
         entry9.insert(0, 0)
         entry10.insert(0, 0)
 
-
     button1 = Button(tab2, text="Add Couple", command=addCouple).grid(row=1, column=3, padx=10, pady=2)
 
     def validCB():
+        """ Writes the custom motor to the custom motor file"""
         Text = open('Motors/Custom_Motor.txt', "w")
         vals = [entry1.get(), entry2.get(), entry3.get(), entry4.get(), entry5.get(), entry6.get(), entry7.get(),
                 entry8.get()]
@@ -2017,6 +2228,7 @@ def OpenMotorParams():
 
 
     def quitPage():
+        """ Close motor parameters window"""
         Text = open('Parameters/param_motor/Motor.txt', "w")
         Text.write("Custom_Motor")
         Text.close()
@@ -2063,6 +2275,12 @@ def OpenEnvParams():
     EnvParams.mainloop()
 
 def DrawP(VALUES_P, canvas):
+    """ Function that draws a parachute on the canvas. Scale 1:3
+
+        Parameters:
+            - VALUES_P: Parachute params [Diameter, Drag Coeficient, Position, Mass, Main/Drogue, Altitude of Event]
+            - canvas: The canvas on which to draw
+        """
 
     fenetre.update_idletasks()
     midh = canvas.winfo_height() / 2
@@ -2075,11 +2293,18 @@ def DrawP(VALUES_P, canvas):
         text = canvas.create_text(midw, midh, text="MP", fill='red')
     else:
         text = canvas.create_text(midw, midh, text="DP", fill='red')
-    canvas.move(parachute, VALUES_P[2], 0)
-    canvas.move(text, VALUES_P[2], 0)
+    canvas.move(parachute, - midw + VALUES_P[2], 0)
+    canvas.move(text, -midw + VALUES_P[2], 0)
 
 
 def DrawParachute(VALUES_P, display=0, main=2):
+    """ Function that writes the Parachute parameters to file and adds a new substage if necessary
+
+        Parameters:
+            - VALUES_P: Parachute params [Diameter, Drag Coeficient, Position, Mass, Main/Drogue, Altitude of Event]
+            - display=0: if 1, create a new subpart. Default = 0.
+        """
+
     # Get the index 'stg' of stage : example, first stage has an index stg = 0
     Stg = int(tree.focus()[-1])
     stage = get_stage()
@@ -2099,15 +2324,15 @@ def DrawParachute(VALUES_P, display=0, main=2):
 
     piece = bodyParts[stage][substage][0]
     if piece == 'n':
-        p = "Nose"
+        p = "Nose"; num = 1
     elif piece == 't':
-        p = "Tube"
+        p = "Tube"; num = 2
     elif piece == 'f':
-        p = "Fins"
+        p = "Fins"; num = 3
     elif piece == 'b':
-        p = "BT"
+        p = "BT"; num = 3
 
-    if VALUES_P[3]:
+    if VALUES_P[4]:
         main = "Main"
     else:
         main = "Drogue"
@@ -2121,7 +2346,15 @@ def DrawParachute(VALUES_P, display=0, main=2):
 
 
 
-def OpenParachuteParams(fenetre, values=[350, 1, 0, 1, 2500], disp=1, change=0):
+def OpenParachuteParams(fenetre, values=[350, 1, 0, 0, 1, 2500], disp=1, change=0):
+    """ Function that open a new window containing the parachute parameters and allows to customize them.
+
+        Parameters:
+            - fenetre: parent window.
+            - values: Parachute params [Diameter, Drag Coeficient, Position, Mass, Main/Drogue, Altitude of Event]
+            - disp=1: if 1 then create new subpart. Default = 1
+        """
+
     ParachuteParams = Toplevel(fenetre)
     ParachuteParams.title("Create Custom Parachute")
     ParachuteParams.geometry("450x450")
@@ -2145,7 +2378,7 @@ def OpenParachuteParams(fenetre, values=[350, 1, 0, 1, 2500], disp=1, change=0):
         DiaEntry.delete(0, "end")
         DiaEntry.insert(0,str(DiaScale.get()))
         SCDLabel2.configure(text=DiaScale.get() * CoefScale.get())
-        DrawParachute([DiaScale.get(), CoefEntry.get(), PosScale.get(), BooleanVar.get(), EventScale.get()])
+        DrawParachute([DiaScale.get(), CoefScale.get(), PosScale.get(), MassScale.get(), BooleanVar.get(), EventScale.get()])
 
     def insertVal(var):
         DiaScale.set(DiaEntry.get())
@@ -2154,7 +2387,7 @@ def OpenParachuteParams(fenetre, values=[350, 1, 0, 1, 2500], disp=1, change=0):
         PosEntry.delete(0, "end")
         PosEntry.insert(0,str(PosScale.get()))
 
-        DrawParachute([DiaScale.get(), CoefEntry.get(), PosScale.get(), BooleanVar.get(), EventScale.get()])
+        DrawParachute([DiaScale.get(), CoefScale.get(), PosScale.get(), MassScale.get(), BooleanVar.get(), EventScale.get()])
 
     def insertVal1(var):
         PosScale.set(PosEntry.get())
@@ -2163,7 +2396,7 @@ def OpenParachuteParams(fenetre, values=[350, 1, 0, 1, 2500], disp=1, change=0):
         CoefEntry.delete(0, "end")
         CoefEntry.insert(0,str(CoefScale.get()))
         SCDLabel2.configure(text=DiaScale.get()*CoefScale.get())
-        DrawParachute([DiaScale.get(), CoefScale.get(), PosScale.get(), BooleanVar.get(), EventScale.get()])
+        DrawParachute([DiaScale.get(), CoefScale.get(), PosScale.get(), MassScale.get(), BooleanVar.get(), EventScale.get()])
 
     def insertVal2(var):
         CoefScale.set(CoefEntry.get())
@@ -2171,10 +2404,18 @@ def OpenParachuteParams(fenetre, values=[350, 1, 0, 1, 2500], disp=1, change=0):
     def slide3(var):
         EventEntry.delete(0, "end")
         EventEntry.insert(0,str(EventScale.get()))
-        DrawParachute([DiaScale.get(), CoefScale.get(), PosScale.get(), BooleanVar.get(), EventScale.get()])
+        DrawParachute([DiaScale.get(), CoefScale.get(), PosScale.get(), MassScale.get(), BooleanVar.get(), EventScale.get()])
 
     def insertVal3(var):
         EventScale.set(EventEntry.get())
+
+    def slide4(var):
+        MassEntry.delete(0, "end")
+        MassEntry.insert(0,str(MassScale.get()))
+        DrawParachute([DiaScale.get(), CoefScale.get(), PosScale.get(), MassScale.get(), BooleanVar.get(), EventScale.get()])
+
+    def insertVal4(var):
+        MassScale.set(MassEntry.get())
 
     def MainParachute(change=0):
         list = bodyParts[get_stage()][get_substage()]
@@ -2185,20 +2426,20 @@ def OpenParachuteParams(fenetre, values=[350, 1, 0, 1, 2500], disp=1, change=0):
             elif 'mp' in list and not change:
                 ParaButton.deselect()
                 MainParachute(change)
+
                 return
             elif 'p' in list:
                 index = list.index('p')
                 list[index] = 'mp'
-                print(bodyParts)
             elif 'dp' in list and not change:
                 index = list.index('dp')
                 list[index] = 'mp'
-                print(bodyParts)
 
             EventLabel.config(fg="black")
             EventEntry.config(state=NORMAL)
             EventScale.config(state=NORMAL)
-            DrawParachute([DiaScale.get(), CoefScale.get(), PosScale.get(), BooleanVar.get(), EventScale.get()])
+            DrawParachute(
+                [DiaScale.get(), CoefScale.get(), PosScale.get(), MassScale.get(), BooleanVar.get(), EventScale.get()])
         else:
             if 'mp' in list and 'dp' in list and not change:
                 ParaButton.select()
@@ -2210,17 +2451,15 @@ def OpenParachuteParams(fenetre, values=[350, 1, 0, 1, 2500], disp=1, change=0):
             elif 'p' in list:
                 index = list.index('p')
                 list[index] = 'dp'
-                print(bodyParts)
             elif 'mp' in list and not change:
                 index = list.index('mp')
                 list[index] = 'dp'
-                print(bodyParts)
 
             EventLabel.config(fg="grey")
             EventEntry.config(state=DISABLED)
             EventScale.config(state=DISABLED)
-            DrawParachute([DiaScale.get(), CoefScale.get(), PosScale.get(), BooleanVar.get(), EventScale.get()])
-
+            DrawParachute(
+                [DiaScale.get(), CoefScale.get(), PosScale.get(), MassScale.get(), BooleanVar.get(), EventScale.get()])
 
     DiaLabel = Label(tab1, text="Surface: ")
     DiaLabel.grid(row=1, column=0)
@@ -2238,7 +2477,7 @@ def OpenParachuteParams(fenetre, values=[350, 1, 0, 1, 2500], disp=1, change=0):
     PosEntry.grid(row=4, column=1)
     PosEntry.insert(0, values[2])
     PosEntry.bind("<Return>", insertVal1)
-    PosScale = Scale(tab1, from_=-len, to=len, orient=HORIZONTAL, command=slide1)
+    PosScale = Scale(tab1, from_=0, to=2*len, orient=HORIZONTAL, command=slide1)
     PosScale.grid(row=4, column=2)
     PosScale.set(values[2])
 
@@ -2252,27 +2491,39 @@ def OpenParachuteParams(fenetre, values=[350, 1, 0, 1, 2500], disp=1, change=0):
     CoefScale.grid(row=2, column=2)
     CoefScale.set(values[1])
 
+    MassLabel = Label(tab1, text="Weight [g]: ")
+    MassLabel.grid(row=5, column=0)
+    MassEntry = Entry(tab1)
+    MassEntry.grid(row=5, column=1)
+    MassEntry.insert(0, values[3])
+    MassEntry.bind("<Return>", insertVal4)
+    MassScale = Scale(tab1, from_=0, to=3000, orient=HORIZONTAL, command=slide4)
+    MassScale.grid(row=5, column=2)
+    MassScale.set(values[3])
+
     SCDLabel1 = Label(tab1, text="SCD Factor: ")
     SCDLabel1.grid(row=3, column=0)
     SCDLabel2 = Label(tab1, text=DiaScale.get()*CoefScale.get())
     SCDLabel2.grid(row=3, column=1)
 
     EventLabel = Label(tab1, text="Altitude of event: ")
-    EventLabel.grid(row=6, column=0)
+    EventLabel.grid(row=7, column=0)
     EventEntry = Entry(tab1, state=NORMAL)
-    EventEntry.grid(row=6, column=1)
-    EventEntry.insert(0, values[4])
+    EventEntry.grid(row=7, column=1)
+    EventEntry.insert(0, values[5])
     EventEntry.bind("<Return>", insertVal3)
     EventScale = Scale(tab1, from_=0, to=3000, orient=HORIZONTAL, command=slide3, state=NORMAL)
-    EventScale.grid(row=6, column=2)
-    EventScale.set(values[4])
+    EventScale.grid(row=7, column=2)
+    EventScale.set(values[5])
 
-    ParaButton = Checkbutton(tab1, text="This is a main parachute", variable=BooleanVar, onvalue=1, offvalue=0, command=lambda:MainParachute())
-    ParaButton.grid(row=5, column=0, sticky=W)
+    ParaButton = Checkbutton(tab1, text="This is a main parachute", variable=BooleanVar, onvalue=1, offvalue=0,
+                             command=lambda:MainParachute())
+    ParaButton.grid(row=6, column=0, sticky=W)
 
     if disp:
-        DrawParachute([DiaScale.get(), CoefEntry.get(), PosScale.get(), BooleanVar.get(), EventScale.get()], display=1)
-    if values[3]:
+        DrawParachute([DiaScale.get(), CoefEntry.get(), PosScale.get(), MassScale.get(), BooleanVar.get(),
+                       EventScale.get()], display=1)
+    if values[4]:
         ParaButton.select()
     else:
         ParaButton.deselect()
@@ -2287,6 +2538,12 @@ def OpenParachuteParams(fenetre, values=[350, 1, 0, 1, 2500], disp=1, change=0):
     ParachuteParams.mainloop()
 
 def DrawIT(VALUES_IT, canvas):
+    """ Function that draws an Inner Tube on the canvas. Scale 1:3
+
+        Parameters:
+            - VALUES_IT: Inner tube params [Length, 1st Diameter, 2nd Diameter, Width, Position, Mass, Motor Holder]
+            - canvas: The canvas on which to draw
+        """
 
     fenetre.update_idletasks()
     length = canvas.winfo_width()
@@ -2301,6 +2558,12 @@ def DrawIT(VALUES_IT, canvas):
 
 
 def DrawInnerTube(VALUES_IT, display=0):
+    """ Function that writes the Inner tube parameters to file and adds a new substage if necessary
+
+        Parameters:
+            - VALUES_IT: Inner tube params [Length, 1st Diameter, 2nd Diameter, Width, Position, Mass, Motor Holder]
+            - display=0: if 1, create a new subpart. Default = 0.
+        """
 
     # Get the index 'stg' of stage : example, first stage has an index stg = 0
     Stg = int(tree.focus()[-1])
@@ -2316,13 +2579,13 @@ def DrawInnerTube(VALUES_IT, display=0):
 
     piece = bodyParts[stage][substage][0]
     if piece == 'n':
-        p = "Nose"
+        p = "Nose"; num = 0
     elif piece == 't':
-        p = "Tube"
+        p = "Tube"; num = 1
     elif piece == 'f':
-        p = "Fins"
+        p = "Fins"; num = 2
     elif piece == 'b':
-        p = "BT"
+        p = "BT"; num = 3
 
     IT_Text = open("Parameters/param_rocket/InnerTube"+p+".txt", "w")
     for i in range(len(VALUES_IT)):
@@ -2333,7 +2596,14 @@ def DrawInnerTube(VALUES_IT, display=0):
 
 
 
-def OpenInnerTubeParams(fenetre, values=[400, 150, 140, 5, 0, 0], disp=1):
+def OpenInnerTubeParams(fenetre, values=[400, 150, 140, 5, 0, 0, 0], disp=1):
+    """ Function that open a new window containing the inner tube parameters and allows to customize them.
+
+        Parameters:
+            - fenetre: parent window.
+            - values: Inner tube params [Length, 1st Diameter, 2nd Diameter, Width, Position, Mass, Motor Holder]
+            - disp=1: if 1 then create new subpart. Default = 1
+        """
     tubeParam = Toplevel(fenetre)
     tubeParam.title("Inner Tube Parameters")
     tubeParam.geometry("500x500")
@@ -2359,7 +2629,8 @@ def OpenInnerTubeParams(fenetre, values=[400, 150, 140, 5, 0, 0], disp=1):
         lengthEntry.delete(0, "end")
         lengthEntry.insert(0, str(lengthScale.get()))
         PosScale.config(to=len-lengthScale.get()/3)
-        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get(), motorVar.get()])
+        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get(),
+                       MassScale.get(), motorVar.get()])
 
     def insertVal(var):
         lengthScale.set(lengthEntry.get())
@@ -2369,7 +2640,8 @@ def OpenInnerTubeParams(fenetre, values=[400, 150, 140, 5, 0, 0], disp=1):
         DiaExtEntry.insert(0, str(DiaExtScale.get()))
         DiaInnScale.config(to=DiaExtScale.get())
         ThScale.config(to=DiaExtScale.get() / 2)
-        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get(), motorVar.get()])
+        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get(),
+                       MassScale.get(), motorVar.get()])
 
     def insertVal1(var):
         DiaExtScale.set(DiaExtEntry.get())
@@ -2380,7 +2652,8 @@ def OpenInnerTubeParams(fenetre, values=[400, 150, 140, 5, 0, 0], disp=1):
         ThEntry.delete(0, "end")
         ThEntry.insert(0, (DiaExtScale.get() - DiaInnScale.get())/2)
         ThScale.set(ThEntry.get())
-        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get(), motorVar.get()])
+        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get(),
+                       MassScale.get(), motorVar.get()])
 
     def insertVal2(var):
         DiaInnScale.set(DiaInnEntry.get())
@@ -2391,7 +2664,8 @@ def OpenInnerTubeParams(fenetre, values=[400, 150, 140, 5, 0, 0], disp=1):
         DiaInnEntry.delete(0, "end")
         DiaInnEntry.insert(0, DiaExtScale.get()-2*ThScale.get())
         DiaInnScale.set(DiaInnEntry.get())
-        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get(), motorVar.get()])
+        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get(),
+                       MassScale.get(), motorVar.get()])
 
     def insertVal3(var):
         ThScale.set(ThEntry.get())
@@ -2399,10 +2673,20 @@ def OpenInnerTubeParams(fenetre, values=[400, 150, 140, 5, 0, 0], disp=1):
     def slide4(var):
         PosEntry.delete(0, "end")
         PosEntry.insert(0, str(PosScale.get()))
-        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get(), motorVar.get()])
+        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get(),
+                       MassScale.get(), motorVar.get()])
 
     def insertVal4(var):
         PosScale.set(PosEntry.get())
+
+    def slide5(var):
+        MassEntry.delete(0, "end")
+        MassEntry.insert(0, str(MassScale.get()))
+        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get(),
+                       MassScale.get(), motorVar.get()])
+
+    def insertVal5(var):
+        MassScale.set(MassEntry.get())
 
     lengthLabel = Label(tab1, text="Length: ")
     lengthLabel.grid(row=1, column=0)
@@ -2454,21 +2738,33 @@ def OpenInnerTubeParams(fenetre, values=[400, 150, 140, 5, 0, 0], disp=1):
     PosScale.grid(row=5, column=2)
     PosScale.set(values[4])
 
+    MassLabel = Label(tab1, text="Weight: ")
+    MassLabel.grid(row=6, column=0)
+    MassEntry = Entry(tab1)
+    MassEntry.grid(row=6, column=1)
+    MassEntry.insert(0, values[5])
+    MassEntry.bind("<Return>", insertVal5)
+    MassScale = Scale(tab1, from_=0, to=3000, orient=HORIZONTAL, command=slide5)
+    MassScale.grid(row=6, column=2)
+    MassScale.set(values[5])
+
     def MotorCarrier():
-        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get(), motorVar.get()])
+        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get(),
+                       MassScale.get(), motorVar.get()])
 
     MotorLabel = Label(tab1, text="This tube holds a motor: ")
-    MotorLabel.grid(row=6, column=0)
+    MotorLabel.grid(row=7, column=0)
     MotorButton = Checkbutton(tab1, variable=motorVar, command=lambda:MotorCarrier())
-    MotorButton.grid(row=6, column=1, sticky=W)
+    MotorButton.grid(row=7, column=1, sticky=W)
 
-    if values[5]:
+    if values[6]:
         MotorButton.select()
     else:
         MotorButton.deselect()
 
     if disp:
-        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get(), motorVar.get()], display=1)
+        DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get()
+                          , MassScale.get(), motorVar.get()], display=1)
 
     def validCB():
         tubeParam.destroy()
@@ -2479,13 +2775,18 @@ def OpenInnerTubeParams(fenetre, values=[400, 150, 140, 5, 0, 0], disp=1):
     tubeParam.mainloop()
 
 def DrawAB(VALUES_AB, canvas):
+    """ Function that draws the Air Brakes on the canvas. Scale 1:3
+
+        Parameters:
+            - VALUES_AB: Air Brakes params [Width, Length, Number of ABs, Openning angle, Position, Weight]
+            - canvas: The canvas on which to draw
+        """
 
     fenetre.update_idletasks()
     length = canvas.winfo_width()
     height = canvas.winfo_height()
 
     angle = VALUES_AB[3]*math.pi/180
-    print(VALUES_AB[3])
 
     Airbrakes1 = canvas.create_rectangle(240/3/2-VALUES_AB[0]/2/3, height/2-VALUES_AB[1]/2/3, 240/3/2+VALUES_AB[0]/2/3,
                                         height/2+VALUES_AB[1]/2/3, width=1, outline='DarkOrange3')
@@ -2503,6 +2804,12 @@ def DrawAB(VALUES_AB, canvas):
     canvas.move(Tube, VALUES_AB[4]/3, 0)
 
 def DrawAirBrakes(VALUES_AB, display=0):
+    """ Function that writes the Air Brakes parameters to file and adds a new substage if necessary
+
+        Parameters:
+            - VALUES_AB: Air Brakes params [Width, Length, Number of ABs, Openning angle, Position, Weight]
+            - display=0: if 1, create a new subpart. Default = 0.
+        """
 
     # Get the index 'stg' of stage : example, first stage has an index stg = 0
     Stg = int(tree.focus()[-1])
@@ -2533,7 +2840,15 @@ def DrawAirBrakes(VALUES_AB, display=0):
 
     DrawFullPiece()
 
-def OpenAirBrakesParams(fenetre, values=[100, 40, 4, 45, 0], disp=1):
+def OpenAirBrakesParams(fenetre, values=[100, 40, 4, 45, 0, 0], disp=1):
+    """ Function that open a new window containing the air brakes parameters and allows to customize them.
+
+        Parameters:
+            - fenetre: parent window.
+            - values: Air Brakes params [Length, width, Number of ABs, Openning angle, Position, Weight]
+            - disp=1: if 1 then create new subpart. Default = 1
+        """
+
     ABParam = Toplevel(fenetre)
     ABParam.title("Air Breaks Parameters")
     ABParam.geometry("500x500")
@@ -2556,7 +2871,8 @@ def OpenAirBrakesParams(fenetre, values=[100, 40, 4, 45, 0], disp=1):
     def slide(var):
         lengthEntry.delete(0, "end")
         lengthEntry.insert(0, str(lengthScale.get()))
-        DrawAirBrakes([lengthScale.get(), widthScale.get(), nbScale.get(), AngleScale.get(), PosScale.get()])
+        DrawAirBrakes([lengthScale.get(), widthScale.get(), nbScale.get(), AngleScale.get(), PosScale.get(),
+                       MassScale.get()])
 
     def insertVal(var):
         lengthScale.set(lengthEntry.get())
@@ -2564,7 +2880,8 @@ def OpenAirBrakesParams(fenetre, values=[100, 40, 4, 45, 0], disp=1):
     def slide1(var):
         widthEntry.delete(0, "end")
         widthEntry.insert(0, str(widthScale.get()))
-        DrawAirBrakes([lengthScale.get(), widthScale.get(), nbScale.get(), AngleScale.get(), PosScale.get()])
+        DrawAirBrakes([lengthScale.get(), widthScale.get(), nbScale.get(), AngleScale.get(), PosScale.get(),
+                       MassScale.get()])
 
     def insertVal1(var):
         widthScale.set(widthEntry.get())
@@ -2572,7 +2889,8 @@ def OpenAirBrakesParams(fenetre, values=[100, 40, 4, 45, 0], disp=1):
     def slide2(var):
         nbEntry.delete(0, "end")
         nbEntry.insert(0, str(nbScale.get()))
-        DrawAirBrakes([lengthScale.get(), widthScale.get(), nbScale.get(), AngleScale.get(), PosScale.get()])
+        DrawAirBrakes([lengthScale.get(), widthScale.get(), nbScale.get(), AngleScale.get(), PosScale.get(),
+                       MassScale.get()])
 
     def insertVal2(var):
         nbScale.set(nbEntry.get())
@@ -2580,7 +2898,8 @@ def OpenAirBrakesParams(fenetre, values=[100, 40, 4, 45, 0], disp=1):
     def slide3(var):
         AngleEntry.delete(0, "end")
         AngleEntry.insert(0, str(AngleScale.get()))
-        DrawAirBrakes([lengthScale.get(), widthScale.get(), nbScale.get(), AngleScale.get(), PosScale.get()])
+        DrawAirBrakes([lengthScale.get(), widthScale.get(), nbScale.get(), AngleScale.get(), PosScale.get(),
+                       MassScale.get()])
 
     def insertVal3(var):
         AngleScale.set(AngleEntry.get())
@@ -2588,10 +2907,20 @@ def OpenAirBrakesParams(fenetre, values=[100, 40, 4, 45, 0], disp=1):
     def slide4(var):
         PosEntry.delete(0, "end")
         PosEntry.insert(0, str(PosScale.get()))
-        DrawAirBrakes([lengthScale.get(), widthScale.get(), nbScale.get(), AngleScale.get(), PosScale.get()])
+        DrawAirBrakes([lengthScale.get(), widthScale.get(), nbScale.get(), AngleScale.get(), PosScale.get(),
+                       MassScale.get()])
 
     def insertVal4(var):
         PosScale.set(PosEntry.get())
+
+    def slide5(var):
+        MassEntry.delete(0, "end")
+        MassEntry.insert(0, str(MassScale.get()))
+        DrawAirBrakes([lengthScale.get(), widthScale.get(), nbScale.get(), AngleScale.get(), PosScale.get(),
+                       MassScale.get()])
+
+    def insertVal5(var):
+        MassScale.set(MassEntry.get())
 
     lengthLabel = Label(tab1, text="Length: ")
     lengthLabel.grid(row=1, column=0)
@@ -2643,8 +2972,19 @@ def OpenAirBrakesParams(fenetre, values=[100, 40, 4, 45, 0], disp=1):
     PosScale.grid(row=5, column=2)
     PosScale.set(values[4])
 
+    MassLabel = Label(tab1, text="Weight: ")
+    MassLabel.grid(row=6, column=0)
+    MassEntry = Entry(tab1)
+    MassEntry.grid(row=6, column=1)
+    MassEntry.insert(0, values[5])
+    MassEntry.bind("<Return>", insertVal5)
+    MassScale = Scale(tab1, from_=0, to=3 * len - 240, orient=HORIZONTAL, command=slide5)
+    MassScale.grid(row=6, column=2)
+    MassScale.set(values[5])
+
     if disp:
-        DrawAirBrakes([lengthScale.get(), widthScale.get(), nbScale.get(), AngleScale.get(), PosScale.get()], display=1)
+        DrawAirBrakes([lengthScale.get(), widthScale.get(), nbScale.get(), AngleScale.get(), PosScale.get(),
+                       MassScale.get()], display=1)
 
     def validCB():
         ABParam.destroy()
@@ -2655,11 +2995,16 @@ def OpenAirBrakesParams(fenetre, values=[100, 40, 4, 45, 0], disp=1):
     ABParam.mainloop()
 
 def DrawL(VALUES_L, canvas):
+    """ Function that draws the Launch Lugs on the canvas. Scale 1:3
+
+        Parameters:
+            - VALUES_L: Lugs params [Length, Diameter, Number of Lugs, Position]
+            - canvas: The canvas on which to draw
+        """
 
     fenetre.update_idletasks()
     length = canvas.winfo_width()
     height = canvas.winfo_height()
-    print(length, VALUES_L[0]/3)
 
     Tube = canvas.create_rectangle(length-VALUES_L[0]/3-1, 3*height/8 - VALUES_L[1]/3, length-1,
                                           3*height/8, width=1, outline='saddle brown')
@@ -2667,6 +3012,12 @@ def DrawL(VALUES_L, canvas):
     canvas.move(Tube, -VALUES_L[3]/3, 0)
 
 def DrawLugs(VALUES_L, display=0):
+    """ Function that writes the Launch Lugs parameters to file and adds a new subsubstage if necessary
+
+        Parameters:
+            - VALUES_L: Lugs params [Length, Diameter, Number of Lugs, Position]
+            - display=0: if 1, create a new subpart. Default = 0.
+        """
 
     # Get the index 'stg' of stage : example, first stage has an index stg = 0
     Stg = int(tree.focus()[-1])
@@ -2698,6 +3049,13 @@ def DrawLugs(VALUES_L, display=0):
     DrawFullPiece()
 
 def OpenLugParams(fenetre, values=[100, 20, 1, 500], disp=1):
+    """ Function that open a new window containing the launch lugs parameters and allows to customize them.
+
+        Parameters:
+            - fenetre: parent window.
+            - values: Lugs params [Length, Diameter, Number of Lugs, Position]
+            - disp=1: if 1 then create new subpart. Default = 1
+        """
     LugParam = Toplevel(fenetre)
     LugParam.title("Lugs Parameters")
     LugParam.geometry("500x500")
@@ -2802,6 +3160,13 @@ def OpenLugParams(fenetre, values=[100, 20, 1, 500], disp=1):
 
 
 def DrawW(VALUES_W, canvas):
+    """ Function that draws Weight on the canvas. Scale 1:3
+
+        Parameters:
+            - VALUES_W: Weight params [Weight, Position]
+            - canvas: The canvas on which to draw
+        """
+
     fenetre.update_idletasks()
     midh = canvas.winfo_height() / 2
     midw = canvas.winfo_width() / 2
@@ -2816,7 +3181,14 @@ def DrawW(VALUES_W, canvas):
     canvas.move(text, VALUES_W[1], 0)
 
 
-def DrawWeight(VALUES_W, display = 0):
+def DrawWeight(VALUES_W, display=0):
+    """ Function that writes the weight parameters to file and adds a new subsubstage if necessary
+
+        Parameters:
+            - VALUES_W: Weight params [Weight, Position]
+            - display=0: if 1, create a new subpart. Default = 0.
+        """
+
     # Get the index 'stg' of stage : example, first stage has an index stg = 0
     Stg = int(tree.focus()[-1])
     stage = get_stage()
@@ -2949,7 +3321,6 @@ def DrawFullPiece():
     canvas = GetCanvas()
     canvas.delete("all")
     list = bodyParts[stage][substage]
-    print(list)
 
     accessoryList = ['mp', 'dp', 'w', 'c', 'a', 'l']
 
@@ -3145,7 +3516,7 @@ def Build_Rocket(values):
         sel = tree.focus()
         tree.focus(tree.get_children(sel)[-2])
         tree.selection_set(tree.get_children(sel)[-2])
-        DrawInnerTube([fin_length, dia1, dia1-20, 10, 0, 1], display=1)
+        DrawInnerTube([fin_length, dia1, dia1-20, 10, 0, 1, 1], display=1)
         parent = tree.parent(tree.parent(tree.focus()))
         tree.focus(parent)
         tree.selection_set(parent)
@@ -3154,7 +3525,7 @@ def Build_Rocket(values):
         sel = tree.focus()
         tree.focus(tree.get_children(sel)[1])
         tree.selection_set(tree.get_children(sel)[1])
-        DrawInnerTube([tube_length/4, dia1, dia1 - 20, 10, tube_length/2/3, 1], display=1)
+        DrawInnerTube([tube_length/4, dia1, dia1 - 20, 10, tube_length/2/3, 1, 1], display=1)
         parent = tree.parent(tree.parent(tree.focus()))
         tree.focus(parent)
         tree.selection_set(parent)
@@ -3172,7 +3543,7 @@ def Build_Rocket(values):
         sel = tree.focus()
         tree.focus(tree.get_children(sel)[1])
         tree.selection_set(tree.get_children(sel)[1])
-        DrawParachute([para_main/10, 10, -tube_length/2/3*4/5, 1, para_main_event], display=1, main=1)
+        DrawParachute([para_main/10, 10, -tube_length/2/3*4/5, 1, 1, para_main_event], display=1, main=1)
         parent = tree.parent(tree.parent(tree.focus()))
         tree.focus(parent)
         tree.selection_set(parent)
@@ -3181,7 +3552,7 @@ def Build_Rocket(values):
         sel = tree.focus()
         tree.focus(tree.get_children(sel)[1])
         tree.selection_set(tree.get_children(sel)[1])
-        DrawParachute([para_drogue, 1, -tube_length/2/3/2, 0, 0], display=1, main=0)
+        DrawParachute([para_drogue, 1, -tube_length/2/3/2, 1, 0, 0], display=1, main=0)
         parent = tree.parent(tree.parent(tree.focus()))
         tree.focus(parent)
         tree.selection_set(parent)
@@ -3190,7 +3561,7 @@ def Build_Rocket(values):
         sel = tree.focus()
         tree.focus(tree.get_children(sel)[1])
         tree.selection_set(tree.get_children(sel)[1])
-        DrawAirBrakes([100, 40, ab_n, ab_phi+270, ab_x-nc_length], display=1)
+        DrawAirBrakes([100, 40, ab_n, ab_phi+270, ab_x-nc_length, 1], display=1)
         parent = tree.parent(tree.parent(tree.focus()))
         tree.focus(parent)
         tree.selection_set(parent)
@@ -3203,6 +3574,8 @@ def Build_Rocket(values):
         parent = tree.parent(tree.parent(tree.focus()))
         tree.focus(parent)
         tree.selection_set(parent)
+
+    get_CM()
 
 
 def SearchRocket():
@@ -3666,7 +4039,6 @@ def bindingDoubleClick(b):
 tree.bind("<Double-1>", bindingDoubleClick)
 
 def bindingSingleClick(b):
-    print(tree.focus())
     UpdateButtonState()
     elem = tree.focus()
     if elem[1] == 'd':
