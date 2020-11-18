@@ -10,6 +10,4 @@ def rot2anglemat(c):
     yaw = - np.arcsin(c[0, 2, :]) * 180 / np.pi
     roll = np.arctan(c[0, 1, :] / c[0, 0, :]) * 180 / np.pi
 
-    angle = [pitch, yaw, roll]
-
-    return angle
+    return [pitch, yaw, roll]

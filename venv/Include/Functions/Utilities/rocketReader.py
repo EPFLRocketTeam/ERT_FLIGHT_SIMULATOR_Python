@@ -25,7 +25,7 @@ def rocketReader(Rocket, rocketFilePath):
         # integer number indicating how many stages (diameter changes) the
         # rocket has. Typically, a straight rocket will have only 3 stages:
         # tip, cone base and tail. A rocket with a boattail has one
-        # dditional stage.
+        # additional stage.
         if data[0] == "stages":
             Rocket.stages = int(data[1])
 

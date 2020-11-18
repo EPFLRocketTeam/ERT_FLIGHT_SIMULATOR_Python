@@ -109,6 +109,10 @@ class Stage:
     def get_thrust(self, t: float):
         return sum([motor.get_thrust(t) for motor in self.motors])
 
+    @property
+    def get_burn_time(self):
+        return sum([motor.burn_time for motor in self.motors])
+
     def __str__(self):
         return self.name
 
