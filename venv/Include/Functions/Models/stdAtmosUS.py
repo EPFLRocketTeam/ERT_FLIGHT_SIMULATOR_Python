@@ -95,6 +95,12 @@ class stdAtmosUS:
     get_viscosity(altitude)
         Returns the air viscosity at a given altitude AMSL in [m], in [Pa].
 
+    get_turb(altitude)
+        Returns the turbulence TODO : complete get_turb(altitude)
+
+    get_turb_model()
+        Returns the model of turbulence, either 'None', 'Gaussian', 'VonKarman', 'Logarithmic'
+
     """
 
     # --------------------
@@ -108,6 +114,8 @@ class stdAtmosUS:
     T0 = 288.15
     A0 = 340.294
     G0 = 9.80665
+    TurbModel = 'None'
+    v_inf = 10
 
     VISCOSITY = ([200, 7.5400e-06],
                  [250, 1.1370e-05],
@@ -193,6 +201,14 @@ class stdAtmosUS:
         """
         return self.viscosity_function(self.get_temperature(altitude))
 
+    def get_turb(self, altitude: float):
+        return 0  # TODO : complete
+
+    def get_turb_model(self):
+        return self.TurbModel
+
+    def get_v_inf(self):
+        return self.v_inf  # todo : check v_inf /!\ magic number
 
 if __name__ == '__main__':
     US_Atmos = stdAtmosUS(1382, 308, 86000, 0.15)

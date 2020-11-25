@@ -61,7 +61,7 @@ class Rocket:
 
         # TODO: Implement or modify the expression of these parameters
         self.cone_mode = 'on'
-        self.ab_n = 3 # TODO: Create an airbrake section in Body or find another way to implement them
+        self.ab_n = 3  # TODO: Create an airbrake section in Body or find another way to implement them
         self.ab_x = 1.390
         self.lug_n = 2
         self.lug_S = 1.32e-4
@@ -94,10 +94,22 @@ class Rocket:
         else:
             self.diameters_position = stage.body.diameters_position
 
+    # TODO : update method
+    @property
     def get_cg(self):
-        pass
+        return 1
 
-    # TODO : Add get_cg, get_inertia, etc.
+    # TODO : update method
+    def get_long_inertia(self, t: float):
+        return t
+
+    # TODO : update method
+    def get_rot_inertia(self, t: float):
+        return t
+
+    @property
+    def get_burn_time(self):
+        return max([stage.get_burn_time(self) for stage in self.stages])
 
     @property
     def get_length(self):

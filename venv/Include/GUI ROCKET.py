@@ -10,7 +10,7 @@ import numpy as np
 import string
 import math
 from Simulator1D import Simulator1D
-from Functions.stdAtmosUS import stdAtmosUS
+from Functions.Models.stdAtmosUS import stdAtmosUS
 from Rocket.Body import Body
 from Rocket.Rocket import Rocket
 from Rocket.Stage import Stage
