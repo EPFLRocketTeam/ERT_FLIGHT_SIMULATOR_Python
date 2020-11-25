@@ -720,6 +720,8 @@ def get_stage():
         parent=tree.parent(tree.parent(selected))
         stage = tree.index(parent)
         return stage
+    else:
+        return 0
 
 def get_substage():
     """ If any, return the substage number of selected element """
@@ -847,26 +849,41 @@ def GetEnvironment(VALUES_E):
 def DispData():
     """ Displays the data of the rocket"""
 
+    global MANUEL, M_mass, M_CM, M_inertie
+
     # Name, Mass, Length, Max Diameter
     Name = 'Eiger'
     Mass = sum(MASS)
     Length = sum(LENGTH)
     Max_Diameter = max(DIAMETER)
+    CG = get_CM()
+    inertia = (Length/2+CG)*Mass
+
+    if MANUEL:
+        Mass = M_mass #TODO: MASS + MOTORS
+        inertia = M_inertie
 
     canvas6.delete('all')
-    canvas6.configure(width=250, height=40, bg='white', highlightthickness=0, bd=0, relief='ridge')
-    canvas6.create_text(125, 20, text='%s \nLength %.2f mm, max.diameter %.2f mm \nMass with motors %.2f g' % (Name,
+    canvas6.configure(width=250, height=60, bg='white', highlightthickness=0, bd=0, relief='ridge')
+    canvas6.create_text(125, 20, text='\n%s \nLength %.2f mm, max.diameter %.2f mm \nMass with motors %.2f g \nInertia %.2f ' % (Name,
                                                                                                                Length,
                                                                                                                Max_Diameter,
-                                                                                                               Mass),
+                                                                                                               Mass, inertia),
                         fill='black', font='Arial 8 italic', justify='left')
-    canvas6.pack(side='left', anchor='nw')
+    canvas6.pack(side='left', anchor='nw', pady=10)
+
+
+
 
     # Stability, Centre de masse, Centre de pression, nombre de Mach
     Stability = 2.28
-    CG = 1927
     CP = 2300
+    CG += Length/2
     Mach = 0.30
+
+    if MANUEL:
+        CG = M_CM
+        draw_CG(CG-Length/2, Length)
 
     canvas7.delete('all')
     canvas7.configure(width=100, height=50, bg='white', highlightthickness=0, bd=0, relief='ridge')
@@ -875,18 +892,27 @@ def DispData():
     canvas7.pack(side='right', anchor='ne')
 
     # Apogee, Max velocity, Max acceleration, Nombre de Mach
-    Apogee = 3048
-    max_v = 207
-    max_a = 89.8
-    Mach_v = 0.82
+    Apogee = "N/A"
+    max_v = "N/A"
+    max_a = "N/A"
+    Mach_v = "N/A"
 
     canvas8.delete('all')
     canvas8.configure(width=200, height=40, bg='white', highlightthickness=0, bd=0, relief='ridge')
     canvas8.create_text(100, 20,
-                        text='Apogee : %d m \nMax. velocity : %d m.s-1   (Mach %d) \nMax. acceleration : %d m.s-2'
+                        text='Apogee : %s \nMax. velocity : %s    (Mach %s) \nMax. acceleration : %s'
                              % (Apogee, max_v, Mach_v, max_a), font='Arial 8 italic', fill='blue', justify='left')
     canvas8.pack(side='left', anchor='sw')
 
+def Get_Tube_CM():
+    length = LENGTH[1]+LENGTH[2]+LENGTH[3]
+    mass = MASS[1]+MASS[2]+MASS[3]
+    cmt = length/2 - LENGTH[1]/2 + MASS_CENTER[1]
+    cmf = LENGTH[1] - length/2 + LENGTH[2]/2 + MASS_CENTER[2]
+    cmb = LENGTH[1] + LENGTH[2] - length/2 + LENGTH[3]/2 + MASS_CENTER[3]
+
+    cm = (cmt*MASS[1]+cmf*MASS[2]+cmb*MASS[3])/mass + length/2
+    return cm
 
 ## Launch Simulator1D.py
 def Launch_Simulator1D():
@@ -939,13 +965,15 @@ def Launch_Simulator1D():
         tubes_francais = Body("cylinder", [VAL_N[1] * 10 ** (-3), VAL_BT[1] * 10 ** (-3), VAL_BT[2] * 10 ** (-3)],
                               [0, (VAL_T[0] + VAL_F[9]) * 10 ** (-3), (VAL_T[0] + VAL_F[9] + VAL_BT[0]) * 10 ** (-3)])
 
-        M3_cone = Stage('Matterhorn III nosecone', gland, 1.26, 0.338, np.array([[VAL_N[2], VAL_N[3], VAL_N[4]],
-                                                                                 [VAL_N[5], VAL_N[6], VAL_N[7]],
-                                                                                 [VAL_N[8], VAL_N[9], VAL_N[10]]]))
+        # TODO: Add Mass and CM to stage
+        M3_cone = Stage('Matterhorn III nosecone', gland, MASS[0]*10**-3, (sum(LENGTH)/2 + MASS_CENTER[0])*10**-3, np.array([[VAL_N[4], VAL_N[5], VAL_N[6]],
+                                                                                 [VAL_N[7], VAL_N[8], VAL_N[9]],
+                                                                                 [VAL_N[10], VAL_N[11], VAL_N[12]]]))
 
-        M3_body = Stage('Matterhorn III body', tubes_francais, 9.6, 0.930, np.array([[VAL_T[2], VAL_T[3], VAL_T[4]],
-                                                                                     [VAL_T[5], VAL_T[6], VAL_T[7]],
-                                                                                     [VAL_T[8], VAL_T[9], VAL_T[10]]]))
+        tube_CM = Get_Tube_CM()
+        M3_body = Stage('Matterhorn III body', tubes_francais, (MASS[1]+MASS[2]+MASS[3])*10**-3, tube_CM*10**-3, np.array([[VAL_T[4], VAL_T[5], VAL_T[6]],
+                                                                                     [VAL_T[7], VAL_T[8], VAL_T[9]],
+                                                                                     [VAL_T[10], VAL_T[11], VAL_T[12]]]))
 
         finDefData = {'number': VAL_F[0],
                       'root_chord': VAL_F[1] * 10 ** (-3),
@@ -970,15 +998,31 @@ def Launch_Simulator1D():
         US_Atmos = stdAtmosUS(VAL_E[0], VAL_E[1], VAL_E[2], VAL_E[3])
 
         # Sim
-        Simulator1D(Matterhorn_III, US_Atmos).get_integration(101, 30)
+        params = Simulator1D(Matterhorn_III, US_Atmos).get_integration(101, 30, plotVar)
 
-        # DispData()
+        # Apogee, Max velocity, Max acceleration, Nombre de Mach
+        Apogee = params[0]
+        max_v = params[1]
+        max_a = params[3]
+        Mach_v = params[2]
+
+        canvas8.delete('all')
+        canvas8.configure(width=200, height=40, bg='white', highlightthickness=0, bd=0, relief='ridge')
+        canvas8.create_text(100, 20,
+                            text='Apogee : %d m \nMax. velocity : %d m.s-1   (Mach %.2f) \nMax. acceleration : %.2f m.s-2'
+                                 % (Apogee, max_v, Mach_v, max_a), font='Arial 8 italic', fill='blue', justify='left')
 
     # Current simulation yields an apogee of 2031.86 m whereas Matlab 1D yields 2022.99 m
     return
 
-def OpenGenerelParams():
+MANUEL = False
+M_mass = 0
+M_CM = 0
+M_inertie = 0
+
+def OpenGenerelParams(close=False):
     """ Open the general parameters window when double clicked on the rocket."""
+    global MANUEL, M_CM, M_inertie, M_mass
 
     # Create new window
     GeneralParam = Toplevel(fenetre)
@@ -997,50 +1041,105 @@ def OpenGenerelParams():
     notebook.add(tab2, text="...")
     notebook.pack(expand=1, fill="both")
 
+    print(MANUEL)
     def callback():
         """ Function to be called when the "Enter params manually" checkbox is checked
             Enables and disables the Entry boxes
         """
+        global MANUEL
         if Var.get():
+            print(Var.get())
+            MANUEL = True
             weightL.config(fg="black")
             weightE.configure(state=NORMAL)
             CGL.configure(fg="black")
             CGE.configure(state=NORMAL)
-            CPL.configure(fg="black")
-            CPE.configure(state=NORMAL)
+            inertiaL.configure(fg="black")
+            inertiaE.configure(state=NORMAL)
+            tree.focus(tree.get_children(tree.focus())[0])
+            DispData()
+            tree.focus(tree.parent(tree.focus()))
         else:
+            MANUEL = False
+            print(Var.get())
             weightL.config(fg="grey")
             weightE.configure(state=DISABLED)
             CGL.configure(fg="grey")
             CGE.configure(state=DISABLED)
-            CPL.configure(fg="grey")
-            CPE.configure(state=DISABLED)
+            inertiaL.configure(fg="grey")
+            inertiaE.configure(state=DISABLED)
+            tree.focus(tree.get_children(tree.focus())[0])
+            DispData()
+            tree.focus(tree.parent(tree.focus()))
 
-    # Checkbox to enter rocket parameter manually
-    Var = BooleanVar()
-    ManualCheckBox = Checkbutton(tab1, text=": Manually Enter Parameters", variable=Var, onvalue=True, offvalue=False,
-                                 command=lambda:callback())
-    ManualCheckBox.grid(row=0, column=0, sticky=W)
+    def insertValW(x):
+        global M_mass
+        M_mass = float(weightE.get())
+        tree.focus(tree.get_children(tree.focus())[0])
+        DispData()
+        tree.focus(tree.parent(tree.focus()))
+
+    def insertValCG(x):
+        global M_CM
+        M_CM = float(CGE.get())
+        tree.focus(tree.get_children(tree.focus())[0])
+        DispData()
+        tree.focus(tree.parent(tree.focus()))
+
+    def insertValInertia(x):
+        global M_inertie
+        M_inertie = float(inertiaE.get())
+        tree.focus(tree.get_children(tree.focus())[0])
+        DispData()
+        tree.focus(tree.parent(tree.focus()))
 
     # General rocket parameters: Weight, center of gravity, center of pressure, Inertia
     weightL = Label(tab1, text="Weight of rocket: ")
     weightL.grid(row=1, column=0)
     weightE = Entry(tab1)
     weightE.grid(row=1, column=1)
+    weightE.insert(0, M_mass)
+    weightE.bind("<Return>", insertValW)
 
     CGL = Label(tab1, text="Center of Gravity: ")
     CGL.grid(row=2, column=0)
     CGE = Entry(tab1)
     CGE.grid(row=2, column=1)
+    CGE.insert(0, M_CM)
+    CGE.bind("<Return>", insertValCG)
 
-    CPL = Label(tab1, text="Center of pressure: ")
-    CPL.grid(row=3, column=0)
-    CPE = Entry(tab1)
-    CPE.grid(row=3, column=1)
 
+    inertiaL = Label(tab1, text="Inertia: ")
+    inertiaL.grid(row=3, column=0)
+    inertiaE = Entry(tab1)
+    inertiaE.grid(row=3, column=1)
+    inertiaE.insert(0, M_inertie)
+    inertiaE.bind("<Return>", insertValInertia)
+
+    # Checkbox to enter rocket parameter manually
+    Var = BooleanVar()
+    Var.set(MANUEL)
+    print(Var.get())
+    ManualCheckBox = Checkbutton(tab1, text=": Manually Enter Parameters", variable=Var, onvalue=True, offvalue=False,
+                                 command=lambda:callback())
+    ManualCheckBox.grid(row=0, column=0, sticky=W)
     callback()
 
+    def Ok_cb():
+        insertValW(0); insertValCG(0); insertValInertia(0)
+        GeneralParam.destroy()
+
+    OK = Button(GeneralParam, text="OK", command=Ok_cb)
+    OK.pack(anchor="e", padx=10, pady=5)
+
+    if close:
+        print("Hello")
+        OK.invoke()
+
+
+
     GeneralParam.mainloop()
+
 
 def get_CM():
     for stage in bodyParts:
@@ -1055,9 +1154,10 @@ def get_CM():
                     for line in NoseCone1:  # taking each line
                         VALUES.append(float(line))
                     Mass = VALUES[2]
-                    Length = VALUES[0]
-                    Dia = VALUES[1]
-                    CM = CM_Ogive(Length, Dia)
+                    LENGTH[0] = VALUES[0]
+                    DIAMETER[0] = VALUES[1]
+                    MASS[0] = VALUES[2]
+                    CM = CM_Ogive(LENGTH[0], DIAMETER[0])
 
                 elif subsubstage == 't':
                     item = 1
@@ -1067,9 +1167,11 @@ def get_CM():
                     for line in Data1:  # taking each line
                         VALUES.append(float(line))
                     Mass = VALUES[2]
-                    Length = VALUES[0]
-                    Dia = VALUES[1]
-                    CM = Length/2
+                    MASS[1] = VALUES[2]
+                    LENGTH[1] = VALUES[0]
+                    DIAMETER[1] = VALUES[1]
+                    CM = 0
+                    print("mass", Mass, "CM", CM)
 
                 elif subsubstage == 'f':
                     item = 2
@@ -1079,9 +1181,10 @@ def get_CM():
                     for line in Data1:  # taking each line
                         VALUES.append(float(line))
                     Mass = VALUES[8]
-                    Length = VALUES[9]
-                    Dia = VALUES[10]
-                    CM = Length/2
+                    MASS[2] = Mass
+                    LENGTH[2] = VALUES[9]
+                    DIAMETER[2] = VALUES[10]
+                    CM = 0
 
                 elif subsubstage == 'b':
                     item = 3
@@ -1091,9 +1194,10 @@ def get_CM():
                     for line in Data1:  # taking each line
                         VALUES.append(float(line))
                     Mass = VALUES[3]
-                    Length = VALUES[0]
-                    Dia = max(VALUES[1], VALUES[2])
-                    CM = Length/2
+                    MASS[3] = Mass
+                    LENGTH[3] = VALUES[0]
+                    DIAMETER[3] = max(VALUES[1], VALUES[2])
+                    CM = 0
 
                 elif subsubstage == 'mp':
                     Data = open('Parameters/param_rocket/Parachute'+p+'Main.txt', 'r')  # Read text file
@@ -1121,7 +1225,7 @@ def get_CM():
                     for line in Data1:  # taking each line
                         VALUES.append(float(line))
                     Total_Mass = Mass + VALUES[5]
-                    Pos = VALUES[4]+VALUES[0]/2
+                    Pos = VALUES[4]
                     CM = Mass*CM/Total_Mass + VALUES[5]*Pos/Total_Mass
                     Mass = Total_Mass
 
@@ -1141,14 +1245,74 @@ def get_CM():
                     for line in Data1:  # taking each line
                         VALUES.append(float(line))
                     Total_Mass = Mass + VALUES[-1]
-                    Pos = VALUES[4]+120
+                    Pos = VALUES[4]
                     CM = Mass*CM/Total_Mass + VALUES[-1]*Pos/Total_Mass
                     Mass = Total_Mass
 
             MASS[item] = Mass
             MASS_CENTER[item] = CM
             print(MASS, MASS_CENTER)
+    len_rocket = sum(LENGTH)
+    mass_rocket = sum(MASS)
+    frac_n, frac_t, frac_f, frac_b = MASS[0]/mass_rocket, MASS[1]/mass_rocket, MASS[2]/mass_rocket, MASS[3]/mass_rocket
+    d_n = -(len_rocket/2 - (LENGTH[0]/2 + MASS_CENTER[0]))
+    d_t = -(len_rocket/2 - LENGTH[0] - (LENGTH[1]/2 + MASS_CENTER[1]))
+    d_f = len_rocket/2 - LENGTH[3] - (LENGTH[2]/2 + MASS_CENTER[2])
+    d_b = len_rocket/2 - (LENGTH[3]/2 + MASS_CENTER[3])
 
+    CG = (frac_n*d_n + frac_t*d_t + frac_f*d_f + frac_b*d_b)
+    draw_CG(CG, len_rocket)
+
+
+    return CG
+
+def draw_CG(CG, len_rocket):
+    pieces = []
+    for i, l in enumerate(LENGTH):
+        if l != 0:
+            pieces.append([i,l])
+
+    size = 0
+    for i in range(len(pieces)):
+        size += pieces[-(i+1)][-1]
+        if len_rocket/2 - CG < size:
+            piece = pieces[-(i+1)][0]
+            print(piece)
+            break
+    print("here", tree.focus())
+    Stg = int(tree.focus()[-1])  # index of canvas in CanvasGeometry
+    stage = get_stage()
+    # get index of canvas in list
+    idx = 0
+    for i in range(len(bodyParts[stage])):
+        tmp2 = []
+        for l in str(CanvasGeometry[Stg][i]):
+            tmp2.append(l)
+        if int(tmp2[-4]) == piece+1:
+            idx = i
+
+    canvas = CanvasGeometry[Stg][idx]
+
+    size = 0
+    for i in range(len(pieces)):
+        size += pieces[-(i+1)][-1]
+        if len_rocket/2 - CG < size:
+            pos = len_rocket/2 - CG - (size - pieces[-(i+1)][1])
+            break
+
+    foc = tree.focus()
+    parent = foc
+    while parent[1] != "d":
+        parent = tree.parent(parent)
+
+    for child in tree.get_children(parent):
+        tree.focus(child)
+        DrawFullPiece()
+    tree.focus(foc)
+
+    canvas_length = canvas.winfo_width()
+    canvas_height = canvas.winfo_height()
+    canvas.create_oval(canvas_length-pos/3 - 10, canvas_height/2 -10, canvas_length - pos/3+10, canvas_height/2+10)
 
 def CM_Ogive(length, dia):
 
@@ -1166,7 +1330,9 @@ def CM_Ogive(length, dia):
     frac = V/Vtot
     frac1 = 1-frac
 
-    CM = length/2 - frac1*(length/2-x1) + frac*(l1-length/2+x)
+
+
+    CM = frac1*((length-l)/2-(length/2-l)) + frac*(-(length/2-l)-x)
 
     return CM
 
@@ -1228,7 +1394,6 @@ def DrawNose(VALUES_N, display=0):
             idx = i
 
     # Gather general data and display
-
     canvas1 = CanvasGeometry[Stg][idx]
 
     # Draw full nose + accessories
@@ -1241,6 +1406,7 @@ def DrawNose(VALUES_N, display=0):
             break
 
     canvas1.grid(row=0, column=tmp)
+    DispData()
 
 
 def OpenNoseParams(fenetre, values=[600, 155, 1000, 0,0,0,0,0,0,0,0,0,0], disp=1):
@@ -1443,6 +1609,7 @@ def DrawTube(VALUES_T, display=0):
 
     # Display the tube
     canvas2.grid(row=0, column=tmp)
+    DispData()
 
 def OpenTubeParams(fenetre, values=[2038, 155, 1000, 0, 0,0,0,0,0,0,0,0,0], disp=1):
     """ Function that open a new window containing the tube parameters and allows to customize them.
@@ -1663,6 +1830,7 @@ def DrawFins(VALUES_F, display=0):
             break
 
     canvas3.grid(row=0, column=tmp) # Plot fins
+    DispData()
 
 def OpenFinsParams(fenetre, values=[3, 282, 123, 216, 115, 30, 0, 40, 300, 350, 155, 0], disp=1):
     """ Function that open a new window containing the fins parameters and allows to customize them.
@@ -2000,6 +2168,7 @@ def DrawBoatTail(VALUES_BT, display=0):
             break
 
     canvas4.grid(row=0, column=tmp) # Display boat tail
+    DispData()
 
 def OpenBoatTailParams(fenetre, values=[41, 155, 133, 300, 0], disp=1):
     """ Function that open a new window containing the boat tail parameters and allows to customize them.
@@ -2293,8 +2462,8 @@ def DrawP(VALUES_P, canvas):
         text = canvas.create_text(midw, midh, text="MP", fill='red')
     else:
         text = canvas.create_text(midw, midh, text="DP", fill='red')
-    canvas.move(parachute, - midw + VALUES_P[2], 0)
-    canvas.move(text, -midw + VALUES_P[2], 0)
+    canvas.move(parachute, VALUES_P[2]/3, 0)
+    canvas.move(text,VALUES_P[2]/3, 0)
 
 
 def DrawParachute(VALUES_P, display=0, main=2):
@@ -2343,6 +2512,7 @@ def DrawParachute(VALUES_P, display=0, main=2):
     Para_Text.close()
 
     DrawFullPiece()
+    DispData()
 
 
 
@@ -2477,7 +2647,7 @@ def OpenParachuteParams(fenetre, values=[350, 1, 0, 0, 1, 2500], disp=1, change=
     PosEntry.grid(row=4, column=1)
     PosEntry.insert(0, values[2])
     PosEntry.bind("<Return>", insertVal1)
-    PosScale = Scale(tab1, from_=0, to=2*len, orient=HORIZONTAL, command=slide1)
+    PosScale = Scale(tab1, from_=-3*len, to=3*len, orient=HORIZONTAL, command=slide1)
     PosScale.grid(row=4, column=2)
     PosScale.set(values[2])
 
@@ -2530,6 +2700,7 @@ def OpenParachuteParams(fenetre, values=[350, 1, 0, 0, 1, 2500], disp=1, change=
     MainParachute(change)
 
     def quitPage():
+        get_CM()
         ParachuteParams.destroy()
         ParachuteParams.update()
 
@@ -2553,8 +2724,8 @@ def DrawIT(VALUES_IT, canvas):
     inner_tube2 = canvas.create_rectangle(length - (VALUES_IT[0])/3, height / 2 - (VALUES_IT[2] / 2)/3, length,
                                           height / 2 + (VALUES_IT[2] / 2)/3, width=1, outline='green', dash='1')
 
-    canvas.move(inner_tube1, -VALUES_IT[4], 0)
-    canvas.move(inner_tube2, -VALUES_IT[4], 0)
+    canvas.move(inner_tube1, VALUES_IT[4]/3-length/2+VALUES_IT[0]/3/2, 0)
+    canvas.move(inner_tube2, VALUES_IT[4]/3-length/2+VALUES_IT[0]/3/2, 0)
 
 
 def DrawInnerTube(VALUES_IT, display=0):
@@ -2593,6 +2764,7 @@ def DrawInnerTube(VALUES_IT, display=0):
     IT_Text.close()
 
     DrawFullPiece()
+    DispData()
 
 
 
@@ -2628,7 +2800,7 @@ def OpenInnerTubeParams(fenetre, values=[400, 150, 140, 5, 0, 0, 0], disp=1):
     def slide(var):
         lengthEntry.delete(0, "end")
         lengthEntry.insert(0, str(lengthScale.get()))
-        PosScale.config(to=len-lengthScale.get()/3)
+        PosScale.config(from_=-3*len/2 + lengthScale.get()/2, to=3*len/2-lengthScale.get()/2)
         DrawInnerTube([lengthScale.get(), DiaExtScale.get(), DiaInnScale.get(), ThScale.get(), PosScale.get(),
                        MassScale.get(), motorVar.get()])
 
@@ -2728,13 +2900,13 @@ def OpenInnerTubeParams(fenetre, values=[400, 150, 140, 5, 0, 0, 0], disp=1):
     ThScale.grid(row=4, column=2)
     ThScale.set(values[3])
 
-    PosLabel = Label(tab1, text="Position relative au bout de la piece: ")
+    PosLabel = Label(tab1, text="Position relative au centre de la piece: ")
     PosLabel.grid(row=5, column=0)
     PosEntry = Entry(tab1)
     PosEntry.grid(row=5, column=1)
     PosEntry.insert(0, values[4])
     PosEntry.bind("<Return>", insertVal4)
-    PosScale = Scale(tab1, from_=0, to=len, orient=HORIZONTAL, command=slide4)
+    PosScale = Scale(tab1, from_=-3*len/2, to=3*len/2, orient=HORIZONTAL, command=slide4)
     PosScale.grid(row=5, column=2)
     PosScale.set(values[4])
 
@@ -2767,6 +2939,7 @@ def OpenInnerTubeParams(fenetre, values=[400, 150, 140, 5, 0, 0, 0], disp=1):
                           , MassScale.get(), motorVar.get()], display=1)
 
     def validCB():
+        get_CM()
         tubeParam.destroy()
         tubeParam.update()
 
@@ -2798,10 +2971,10 @@ def DrawAB(VALUES_AB, canvas):
     Tube = canvas.create_rectangle(0, 3*height/8+1, 240/3,
                                           height*5/8-1, width=1, outline='DarkOrange2')
 
-    canvas.move(Airbrakes1, VALUES_AB[4]/3, 0)
-    canvas.move(Airbrakes2, VALUES_AB[4] / 3, 0)
-    canvas.move(Airbrakes3, VALUES_AB[4] / 3, 0)
-    canvas.move(Tube, VALUES_AB[4]/3, 0)
+    canvas.move(Airbrakes1, length/2 + VALUES_AB[4]/3 -120/3, 0)
+    canvas.move(Airbrakes2, length/2 + VALUES_AB[4] / 3 - 120/3, 0)
+    canvas.move(Airbrakes3, length/2 + VALUES_AB[4] / 3 - 120/3, 0)
+    canvas.move(Tube, length/2 + VALUES_AB[4]/3 - 120/3, 0)
 
 def DrawAirBrakes(VALUES_AB, display=0):
     """ Function that writes the Air Brakes parameters to file and adds a new substage if necessary
@@ -2839,6 +3012,7 @@ def DrawAirBrakes(VALUES_AB, display=0):
     AB_Text.close()
 
     DrawFullPiece()
+    DispData()
 
 def OpenAirBrakesParams(fenetre, values=[100, 40, 4, 45, 0, 0], disp=1):
     """ Function that open a new window containing the air brakes parameters and allows to customize them.
@@ -2968,7 +3142,7 @@ def OpenAirBrakesParams(fenetre, values=[100, 40, 4, 45, 0, 0], disp=1):
     PosEntry.grid(row=5, column=1)
     PosEntry.insert(0, values[4])
     PosEntry.bind("<Return>", insertVal4)
-    PosScale = Scale(tab1, from_=0, to=3*len-240, orient=HORIZONTAL, command=slide4)
+    PosScale = Scale(tab1, from_=-3*len/2+120, to=3*len/2-120, orient=HORIZONTAL, command=slide4)
     PosScale.grid(row=5, column=2)
     PosScale.set(values[4])
 
@@ -2987,6 +3161,7 @@ def OpenAirBrakesParams(fenetre, values=[100, 40, 4, 45, 0, 0], disp=1):
                        MassScale.get()], display=1)
 
     def validCB():
+        get_CM()
         ABParam.destroy()
         ABParam.update()
 
@@ -3006,10 +3181,10 @@ def DrawL(VALUES_L, canvas):
     length = canvas.winfo_width()
     height = canvas.winfo_height()
 
-    Tube = canvas.create_rectangle(length-VALUES_L[0]/3-1, 3*height/8 - VALUES_L[1]/3, length-1,
+    Tube = canvas.create_rectangle(length/2-VALUES_L[0]/2/3, 3*height/8 - VALUES_L[1]/3, length/2+VALUES_L[0]/2/3,
                                           3*height/8, width=1, outline='saddle brown')
 
-    canvas.move(Tube, -VALUES_L[3]/3, 0)
+    canvas.move(Tube, VALUES_L[3]/3, 0)
 
 def DrawLugs(VALUES_L, display=0):
     """ Function that writes the Launch Lugs parameters to file and adds a new subsubstage if necessary
@@ -3047,8 +3222,9 @@ def DrawLugs(VALUES_L, display=0):
     L_Text.close()
 
     DrawFullPiece()
+    DispData()
 
-def OpenLugParams(fenetre, values=[100, 20, 1, 500], disp=1):
+def OpenLugParams(fenetre, values=[100, 20, 1, 0], disp=1):
     """ Function that open a new window containing the launch lugs parameters and allows to customize them.
 
         Parameters:
@@ -3143,7 +3319,7 @@ def OpenLugParams(fenetre, values=[100, 20, 1, 500], disp=1):
     PosEntry.grid(row=4, column=1)
     PosEntry.insert(0, values[3])
     PosEntry.bind("<Return>", insertVal4)
-    PosScale = Scale(tab1, from_=0, to=3*len-lengthScale.get(), orient=HORIZONTAL, command=slide4)
+    PosScale = Scale(tab1, from_=-3*len/2+lengthScale.get()/2, to=3*len/2-lengthScale.get()/2, orient=HORIZONTAL, command=slide4)
     PosScale.grid(row=4, column=2)
     PosScale.set(values[3])
 
@@ -3177,8 +3353,8 @@ def DrawW(VALUES_W, canvas):
 
     text = canvas.create_text(midw, midh, text="W", fill='black')
 
-    canvas.move(weight, VALUES_W[1], 0)
-    canvas.move(text, VALUES_W[1], 0)
+    canvas.move(weight, VALUES_W[1]/3, 0)
+    canvas.move(text, VALUES_W[1]/3, 0)
 
 
 def DrawWeight(VALUES_W, display=0):
@@ -3217,6 +3393,7 @@ def DrawWeight(VALUES_W, display=0):
     Weight_Text.close()
 
     DrawFullPiece()
+    DispData()
 
 
 def OpenWeightParams(fenetre, values=[2000, 0], disp=1):
@@ -3270,7 +3447,7 @@ def OpenWeightParams(fenetre, values=[2000, 0], disp=1):
     PosEntry.grid(row=3, column=1)
     PosEntry.insert(0, values[1])
     PosEntry.bind("<Return>", insertVal2)
-    PosScale = Scale(tab1, from_=-len, to=len, orient=HORIZONTAL, command=slide2)
+    PosScale = Scale(tab1, from_=-3*len, to=3*len, orient=HORIZONTAL, command=slide2)
     PosScale.grid(row=3, column=2)
     PosScale.set(values[1])
 
@@ -3278,6 +3455,7 @@ def OpenWeightParams(fenetre, values=[2000, 0], disp=1):
         DrawWeight([WeightScale.get(), PosScale.get()], display=1)
 
     def quitPage():
+        get_CM()
         WeightParams.destroy()
         WeightParams.update()
 
@@ -3397,10 +3575,12 @@ def DrawFullPiece():
 
 
 def Build_Rocket(values):
+    global  MANUEL, M_CM, M_mass, M_inertie
 
     pl_mass = 0; lug_n, lug_S = 0,0
     hybr = 0; motor = None
     para_main, para_drogue = 0, 0
+    mass, inertia, mass_center = None, None, None
 
     for value in values:
         if value[0] == 'stages':
@@ -3452,7 +3632,7 @@ def Build_Rocket(values):
             mass = float(value[-1])*(10**3)
 
         elif value[0] == 'rocket_I':
-            intertia = float(value[-1])*(10**3)
+            inertia = float(value[-1])*(10**3)
 
         elif value[0] == 'rocket_cm':
             mass_center = float(value[-1])*(10**3)
@@ -3472,9 +3652,6 @@ def Build_Rocket(values):
         elif value[0] == 'hybr':
             fuel = float(value[1])
             hybr = float(value[2])
-
-        elif value[0] == 'rocket_cm':
-            mass_center = float(value[-1]) * (10 ** 3)
 
         elif value[0] == 'motor_fac':
             motor_fac = float(value[-1])
@@ -3507,10 +3684,10 @@ def Build_Rocket(values):
 
     Add_Stage(rocket=1)
 
-    DrawNose([nc_length, dia1, 0, 0, 0,0,0,0,0,0,0,0,0], display=1)
-    DrawTube([tube_length, dia1, 0, 0, 0,0,0,0,0,0,0,0,0], display=1)
-    DrawFins([nb_fins, fin_rc, fin_tc, fin_span, fin_sweep, fin_th, 0, 15, 0, fin_length, dia1, 0], display=1)
-    DrawBoatTail([bt_length, dia1, dia2, mass, 0], display=1)
+    DrawNose([nc_length, dia1, 1, 0, 0,0,0,0,0,0,0,0,0], display=1)
+    DrawTube([tube_length, dia1, 1, 0, 0,0,0,0,0,0,0,0,0], display=1)
+    DrawFins([nb_fins, fin_rc, fin_tc, fin_span, fin_sweep, fin_th, 1, 15, 0, fin_length, dia1, 0], display=1)
+    DrawBoatTail([bt_length, dia1, dia2, mass-3, 0], display=1)
 
     if motor:
         sel = tree.focus()
@@ -3575,7 +3752,19 @@ def Build_Rocket(values):
         tree.focus(parent)
         tree.selection_set(parent)
 
-    get_CM()
+    if mass:
+        MANUEL = True
+        M_mass = mass
+
+    if inertia:
+        MANUEL = True
+        M_inertie = inertia
+
+    if mass_center:
+        MANUEL = True
+        M_CM = mass_center
+
+    DispData()
 
 
 def SearchRocket():
@@ -4026,6 +4215,12 @@ canvas9 = Canvas(frame03)  # change scale
 simu_button = Button(frameAD, text='Launch simulation', bg='red', fg='white', cursor='hand2',
                      relief=RAISED, command=lambda: Launch_Simulator1D())
 simu_button.grid(row=0, column=0, padx=10, pady=10, sticky='nswe')
+
+plotVar = StringVar()
+plotVar.set("All Plots")
+# Launch simulation
+Plot_Options = OptionMenu(frameAD, plotVar, "All Plots", "Whole Flight", "X(t) On Rail", "X(t) Post Rail", "V(X)")
+Plot_Options.grid(row=1, column=0, padx=10, pady=10, sticky='nswe')
 
 # Bouton de sortie
 # stop = Button(fenetre, text="x", bg='RED', fg='white', command=fenetre.quit)
