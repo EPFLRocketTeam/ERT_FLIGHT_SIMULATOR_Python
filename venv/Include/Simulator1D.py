@@ -152,9 +152,9 @@ class Simulator1D:
             axs[1, 1].plot(self.altitude, self.speed)
             axs[1, 1].set_title("Speed(position)")
 
-        for ax in axs.flat:
-            ax.set(xlabel="Time [s]", ylabel="Altitude [m]")
-            ax.label_outer()
+            for ax in axs.flat:
+                ax.set(xlabel="Time [s]", ylabel="Altitude [m]")
+                ax.label_outer()
 
 
         max_speed = max(self.speed)
