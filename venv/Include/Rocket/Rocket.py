@@ -68,7 +68,6 @@ class Rocket:
         # Arbitrary, based on M3 launch lugs in Cernier 23/03/2019; 1.61e-4 for M2
         # TODO: Implement this parameter in the definition of the body and then for the rocket as a whole
 
-
     # ------------------
     # METHODS
     # ------------------
@@ -94,10 +93,10 @@ class Rocket:
         else:
             self.diameters_position = stage.body.diameters_position
 
-    # TODO : update method
-    @property
-    def get_cg(self):
-        return 1
+    # TODO : check method
+    def get_cg(self, t: float):
+        return (sum([stage.empty_cg * stage.empty_mass for stage in self.stages]) +
+                sum([stage.get_mass(t) * stage.motor.get_cg() for stage in self.stages])) / self.get_mass(t)
 
     # TODO : update method
     def get_long_inertia(self, t: float):

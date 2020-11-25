@@ -19,4 +19,4 @@ def quat_evolve(q, w):
                            [w[1], -w[0], 0, w[2]],
                            [-w[0], -w[1], -w[2], 0]])
 
-    return (1 - np.linalg.norm(q)) + 0.5 * correction * q
+    return (1 - np.linalg.norm(q)) * q + np.sum(0.5 * correction * q, 1)

@@ -6,9 +6,16 @@ from Rocket.Fins import Fins
 from Rocket.Motor import Motor
 from Rocket.Rocket import Rocket
 from Rocket.Stage import Stage
+from Functions import Math
+from Functions.Math.quat2rotmat import quat2rotmat
+from Functions.Math.rot2anglemat import rot2anglemat
+from Functions.Math.normalize_vector import normalize_vector
+from Functions.Math.quat_evolve import quat_evolve
+from Functions.Models.wind_model import wind_model
+
 
 if __name__ == "__main__":
-    """
+
     # Measured values
     eiger_nosecone_ogive = Body("tangent ogive", np.array([0, 0.156]), np.array([0, 0.289]), 0, 0)
     eiger_nosecone_straight = Body("cylinder", np.array([0.156, 0.156]), np.array([0, 0.307]), 0.57, 0.206)
@@ -18,6 +25,7 @@ if __name__ == "__main__":
     eiger_payload = Body("cylinder", np.array([0.139, 0.139]), np.array([0, 0.2]), 4, 0.134)  # 0.242 from tip
     """
 
+    """
     gland = Body("tangent ogive", [0, 0.125], [0, 0.505])
 
     tubes_francais = Body("cylinder", [0.125, 0.125, 0.102], [0, 1.85, 1.9])
@@ -51,11 +59,11 @@ if __name__ == "__main__":
     print(max(tubes_francais.diameters))
     print(Matterhorn_III.get_mass(0))
 
-    from Functions.stdAtmosUS import stdAtmosUS
+    from Functions.Models.stdAtmosUS import stdAtmosUS
 
     US_Atmos = stdAtmosUS(1382, 308, 85600, 0.15)
 
-    from Functions.drag import drag
+    from Functions.Models.drag import drag
 
     t = 6.11840823842032
     x = [853.848962337705, 166.003984138695]
@@ -106,3 +114,8 @@ if __name__ == "__main__":
             plt.plot(integration_ivp.y[0], integration_ivp.y[1])
         plt.title("".join(['t0 = ', str(max_time), ', tf = ', str(t0), ', n = ', str(ntps)]))
     plt.show()
+
+    """c = rot2anglemat(quat2rotmat(normalize_vector([-4, 2, 34.6, -89.4])))
+    b = quat_evolve(normalize_vector([-4, 2, 34.6, -89.4]), [56, -0.4, 3.5])
+    a = wind_model(3, 0.005, 10, 'Gaussian', 1000)
+    print(a)"""
