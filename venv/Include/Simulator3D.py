@@ -5,7 +5,9 @@
 import numpy as np
 import numpy.linalg as lin
 import math
+from scipy.integrate import ode, solve_ivp
 
+from Rocket.Stage import Stage
 from Rocket.Rocket import Rocket
 from Rocket.Body import Body
 from Functions.Models.stdAtmosUS import stdAtmosUS
@@ -98,7 +100,6 @@ class Simulator3D:
 
         # Aerodynamic corrective forces
         # Compute center of mass angle of attack
-        # TODO : check v_inf meaning
         v_cm = v - wind_model(t, self.atmosphere.get_turb(x[0] + self.atmosphere.ground_altitude),
                               self.atmosphere.get_v_inf(), self.atmosphere.get_turb_model(), x[2])
         v_cm_mag = np.linalg.norm(v_cm)
@@ -175,10 +176,9 @@ class Simulator3D:
         rho = self.atmosphere.get_density(x[2] + self.atmosphere.ground_altitude)
 
         # Aerodynamic force
-        # TODO : check v_inf meaning
         v_rel = -v + wind_model(t, self.atmosphere.get_turb(x[0] + self.atmosphere.ground_altitude),
                               self.atmosphere.get_v_inf(), self.atmosphere.get_turb_model(), x[2])
-        SCD = 0  # TODO : check SCD meaning
+        SCD = 1  # TODO : check SCD meaning : surface du parachute * coefficient de drag (= cd)
         d = 0.5 * rho * SCD * np.linalg.norm(v_rel) * v_rel
 
         # Gravity force
@@ -186,6 +186,26 @@ class Simulator3D:
         G = g * m
 
         return [v, (d + G) / m]
+
+    def get_integration(self, number_of_steps: float, max_time: float):
+
+        def off_rail(t, y): return y[0] - 5
+
+        off_rail.terminal = True
+        off_rail.direction = 1
+
+        def apogee(t, y): return y[1]
+
+        apogee.terminal = True
+        apogee.direction = -1
+
+        self.integration_ivp = solve_ivp(self.rail, [self.t0, max_time], self.x_0, method='RK45', event=off_rail)
+
+        self.integration_ivp = solve_ivp(self.flight, [self.integration_ivp.t[-1], max_time],
+                                         self.integration_ivp.y[:, -1], method='RK45', events=apogee)
+
+        self.integration_ivp = solve_ivp(self.drogue_parachute, [self.integration_ivp.t[-1], max_time],
+                                         self.integration_ivp.y[:, -1], method='RK45')
 
 
 if __name__ == '__main__':
