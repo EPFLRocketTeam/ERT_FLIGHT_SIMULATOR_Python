@@ -40,13 +40,13 @@ def barrowman_lift(rocket: Rocket, alpha, m, theta):
         print("Warning : in Barrowman calculations Mach number > 1")
         beta = math.sqrt(m ** 2 - 1)
 
-    gamma_c = math.atan(1)
-    a = 1
-    r = 1
-    ktb = 1
-    CNa1 = 1
-    CNa_fins = 1
-    CP_fins = 1  # TODO : change all the above 1s
+    gamma_c = math.atan(((rocket.fin_xs+rocket.fin_ct)/2 - rocket.fin_cr/2)/rocket.fin_s)
+    a = 0.5*(rocket.fin_ct + rocket.fin_cr)*rocket.fin_s
+    r = rocket.diameters[np.where(rocket.stage_z < rocket.fin_xt)[0][-1]]
+    ktb = 1 + r/(r + rocket.fin_s)
+    CNa1 = ktb*2*math.pi*rocket.fin_s**2 / a_ref / (1 + math.sqrt(1+(beta*rocket.fin_s**2 / a / np.cos(gamma_c))**2))
+    CNa_fins = CNa1*sum(np.sin(theta+2*math.pi/rocket.fin_n*(np.arange(rocket.fin_n)))**2)
+    CP_fins = rocket.fin_xt + rocket.fin_xs/3*(rocket.fin_cr+2*rocket.fin_ct)/(rocket.fin_cr+rocket.fin_ct) + 1/6*((rocket.fin_cr+rocket.fin_ct)-(rocket.fin_cr*rocket.fin_ct)/(rocket.fin_cr+rocket.fin_ct))
 
     # Output
     Calpha = np.append(CNa_stage, CNa_fins)
@@ -58,3 +58,4 @@ def barrowman_lift(rocket: Rocket, alpha, m, theta):
     CP[np.where(np.isnan(CP))] = 0
 
     return np.append(Calpha, CP)
+
