@@ -12,6 +12,7 @@ from Rocket.Rocket import Rocket
 from Rocket.Body import Body
 from Functions.Models.stdAtmosUS import stdAtmosUS
 from Functions.Models.drag import drag
+from Functions.Models.Nose_drag import Nose_drag
 from Functions.Models.drag_shuriken import drag_shuriken
 from Functions.Models.wind_model import wind_model
 from Functions.Models.normal_lift import normal_lift
@@ -37,7 +38,7 @@ class Simulator3D:
         self.rocket = rocket
         self.atmosphere = atmosphere
 
-    def rail(self, t, s):
+    def Dynamics_Rail_1DOF(self, t, s):
         T = self.rocket.get_thrust(t)
         m = self.rocket.get_mass(t)
         dMdt = self.rocket.get_dmass_dt(t)
@@ -51,14 +52,14 @@ class Simulator3D:
         Sm = self.rocket.get_max_cross_section_surface
         return [s[1], T / m - g - s[1] * dMdt / m - 0.5 * rho * Sm * s[1] ** 2 * (CD + CD_AB) / m]
 
-    def flight(self, t, s):
+    def Dynamics_6DOF(self, t, s):
         x = s[0:3]
         v = s[3:6]
         q = s[6:10]
         w = s[10:13]
 
         # Normalise quaternion
-        normalize_vector(q)
+        q = normalize_vector(q)
 
         # Rotation matrix from rocket coordinates to Earth coordinates
         c = quat2rotmat(q)
@@ -169,7 +170,7 @@ class Simulator3D:
 
         return [v, 1 / m * (f_tot - v * dMdt), q_dot, w_dot]
 
-    def drogue_parachute(self, t, s, rocket, m):
+    def Dynamics_Parachute_3DOF(self, t, s, rocket, environment, M, main):
         x = s[0:3]
         v = s[3:6]
 
@@ -178,14 +179,206 @@ class Simulator3D:
         # Aerodynamic force
         v_rel = -v + wind_model(t, self.atmosphere.get_turb(x[0] + self.atmosphere.ground_altitude),
                               self.atmosphere.get_v_inf(), self.atmosphere.get_turb_model(), x[2])
-        SCD = 1  # TODO : check SCD meaning : surface du parachute * coefficient de drag (= cd)
-        d = 0.5 * rho * SCD * np.linalg.norm(v_rel) * v_rel
+
+
+        if main:
+            SCD = rocket.para_main_SCD
+        else:
+            SCD = rocket.para_drogue_SCD
+
+
+        D = 0.5 * rho * SCD * np.linalg.norm(v_rel) * v_rel
 
         # Gravity force
         g = 9.81 * np.array(0, 0, -1).transpose()
-        G = g * m
+        G = g * M
 
-        return [v, (d + G) / m]
+
+        return [v, (D + G) / M]
+
+    def Dynamics_3DOF(self, t, s, Rocket, Environment):
+
+        X = s[0:3]
+        V = s[3:6]
+
+        XE = np.array([1, 0, 0]).transpose()
+        YE = np.array([0, 1, 0]).transpose()
+        ZE = np.array([0, 0, 1]).transpose()
+
+        a = self.atmosphere.get_speed_of_sound(X[2]+self.atmosphere.ground_altitude)
+        rho = self.atmosphere.get_density(X[2] + self.atmosphere.ground_altitude)
+        nu = self.atmosphere.get_viscosity(X[2]+self.atmosphere.ground_altitude)
+
+        M = Rocket.get_mass(t)
+
+        #TODO: Get V_...
+        V_rel = V - wind_model(t, self.atmosphere.get_turb(X[0] + self.atmosphere.ground_altitude), self.atmosphere.get_v_inf() ,
+                               self.atmosphere.get_turb_model(), x[2])
+
+        G = -9.81*M*ZE
+
+        CD = drag(Rocket, 0, np.linalg.norm(V_rel), nu, a)
+
+        D = -0.5*rho*Rocket.Sm*CD*V_rel*np.linalg.norm(V_rel)
+
+        X_dot = V
+        V_dot = 1/M*(D+G)
+
+        return X_dot, V_dot
+
+    def Nose_Dynamics_3DOF(self, t, s, Rocket, Environment):
+
+        X = s[0:3]
+        V = s[3:6]
+
+        XE = np.array([1, 0, 0]).transpose()
+        YE = np.array([0, 1, 0]).transpose()
+        ZE = np.array([0, 0, 1]).transpose()
+
+        # atmosphere
+        a = self.atmosphere.get_speed_of_sound(X[2] + self.atmosphere.ground_altitude)
+        rho = self.atmosphere.get_density(X[2] + self.atmosphere.ground_altitude)
+        nu = self.atmosphere.get_viscosity(X[2] + self.atmosphere.ground_altitude)
+
+        M = Rocket.get_mass(t)
+
+        V_rel = V - wind_model(t, self.atmosphere.get_turb(X[0] + self.atmosphere.ground_altitude),
+                               self.atmosphere.get_v_inf(),
+                               self.atmosphere.get_turb_model(), x[2])
+
+        CD = Nose_drag(Rocket, 0, np.linalg.norm(V_rel), nu, a)
+        D = -0.5 * rho * Rocket.Sm * CD * V_rel * np.linalg.norm(V_rel)
+
+        X_dot = V
+        V_dot = 1 / M * (D + G)
+
+        return X_dot, V_dot
+
+    def Nose_Dynamics_6DOF(self, t, s):
+
+        X = s[0:3]
+        V = s[3:6]
+        Q = s[6:10]
+        W = s[10:13]
+
+        # Check quaternion norm
+        Q = normalize_vector(Q)
+
+
+        # Rotation matrix from rocket coordinates to Earth coordinates
+        C = quat2rotmat(Q)
+        angle = rot2anglemat(C)
+
+        # Rocket principle frame vectors expressed in earth coordinates
+        YA = C*np.array([1, 0, 0]).transpose()
+        PA = C*np.array([0, 1, 0]).transpose()
+        RA = C*np.array([0, 0, 1]).transpose()
+
+        # Earth coordinates vectors expressed in earth's frame
+        XE = np.array([1, 0, 0]).transpose()
+        YE = np.array([0, 1, 0]).transpose()
+        ZE = np.array([0, 0, 1]).transpose()
+
+        # Rocket inertia
+        M = self.rocket.get_mass(t)
+        dMdt = self.rocket.get_dmass_dt(t)
+        CM = self.rocket.get_cg(t)
+        Sm = self.rocket.get_max_cross_section_surface
+        I_L = self.rocket.get_long_inertia(t)
+        I_R = self.rocket.get_rot_inertia(t)
+        I = C.transpose() * ([[I_L, 0, 0],
+                              [0, I_L, 0],
+                              [0, 0, I_R]]) * C
+
+        g = 9.81
+
+        # atmosphere
+        a = self.atmosphere.get_speed_of_sound(X[2] + self.atmosphere.ground_altitude)
+        rho = self.atmosphere.get_density(X[2] + self.atmosphere.ground_altitude)
+        nu = self.atmosphere.get_viscosity(X[2] + self.atmosphere.ground_altitude)
+
+        # Thrust
+        # Oriented along roll axis of rocket frame, expressed, in earth coordinates
+        T = self.rocket.get_thrust(t) * RA
+
+        G = -g*M*ZE
+
+        # Compute center of mass angle of attack
+        Vcm = V - wind_model(t, self.atmosphere.get_turb(X[0] + self.atmosphere.ground_altitude),
+                               self.atmosphere.get_v_inf(),
+                               self.atmosphere.get_turb_model(), x[2])
+
+        Vcm_mag = np.linalg.norm(Vcm)
+        alpha_cm = math.atan2(np.linalg.norm(np.cross(ra, v_cm)), np.dot(ra, v_cm))
+
+        # Mach number
+        Mach = np.linalg.norm(Vcm_mag) / a
+
+        # Normal lift coefficient and center of pressure
+        CNa, Xcp, CNa_bar, CP_bar = normal_lift(self.rocket, alpha_cm, 1.1, Mach, angle[2], 1)
+
+        # Stability margin
+        margin = Xcp - CM
+
+        # Compute rocket angle of attack
+        if np.linalg.norm(w) != 0:
+            w_norm = w / np.linalg.norm(w)
+        else:
+            w_norm = np.zeros(3, 1)
+
+        Vrel = v_cm + margin * math.sin(math.acos(np.dot(ra, w_norm))) * np.cross(ra, w)
+        Vmag = np.linalg.norm(Vrel)
+        Vnorm = normalize_vector(Vrel)
+
+        # Angle of attack
+        Vcross = np.cross(ra, Vnorm)
+        Vcross_norm = normalize_vector(Vcross)
+        alpha = math.atan2(np.linalg.norm(np.cross(RA, Vnorm)), np.dot(RA, Vnorm))
+        delta = math.atan2(np.linalg.norm(np.cross(RA, ZE)), np.dot(RA, ZE))
+
+        # Normal force
+        NA = np.cross(RA, Vcross)
+        if np.linalg.norm(NA) == 0:
+            N = np.array([0, 0, 0]).transpose
+        else:
+            N = 0.5 * rho * Sm * CNa * alpha * Vmag ** 2 * NA / np.linalg.norm(NA)
+
+        # Drag
+        # Drag coefficient
+        CD = drag(self.rocket, alpha, Vmag, nu, a)  # TODO : * cd_fac (always 1 ?)
+        ab_phi = Rocket.ab_phi  # TODO : find a way to deal with airbrakes, /!\ magic number
+        if t > self.rocket.get_burn_time:
+            CD = CD + drag_shuriken(self.rocket, ab_phi, alpha, Vmag, nu)
+
+        # Drag force
+        D = -0.5 * rho * Sm * CD * Vmag ** 2 * Vnorm
+
+        # Total forces
+        motor_fac = Rocket.motor_fac  # TODO : always 1 ?
+        F_tot = T * motor_fac + G + N + D
+
+        # Moment estimation
+
+        # Aerodynamic corrective moment
+        MN = np.linalg.norm(N) * margin * Vcross_norm
+
+        # Aerodynamic damping moment
+        w_pitch = W - np.dot(W, RA) * RA
+        cdm = pitch_damping_moment(self.rocket, rho, CNa_bar, CP_bar, dMdt, CM, np.linalg.norm(w_pitch), Vmag)
+        MD = -0.5 * rho * cdm * Sm * Vmag ** 2 * normalize_vector(w_pitch)
+
+        m_tot = MN + MD
+
+        # State derivatives
+        q_dot = quat_evolve(q, w)
+        w_dot = lin.lstsq(I, m_tot)
+
+        Rocket.tmp_Nose_Alpha = alpha
+        Rocket.tmp_Nose_Delta = delta
+
+        return V, 1/M*(F_tot+V*dMdt), quat_evolve(Q, W), lin.lstsq(I, m_tot)
+
+
 
     def get_integration(self, number_of_steps: float, max_time: float):
 
