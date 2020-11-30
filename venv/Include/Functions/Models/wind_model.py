@@ -27,6 +27,27 @@ def wind_model(t, I, V_inf, Model, h_alt):
                 wind_.append(U)
             else:
                 U = interpolate.interp1d(t_wind_, wind_, t, 'linear')
+
+        elif Model == "VonKarman":
+            if t > t_wind_[-1]:
+                t_wind_.append(t)
+                turb_std = I * V_inf
+                z0 = 0.001
+                zi = 1000*z0**0.18
+
+                # TODO: complete model
+                wind_.append(U)
+            else:
+                U = interpolate.interp1d(t_wind_, wind_, t, 'linear')
+
+        elif Model == "Logarithmic":
+            z0 = 0.0024
+            h_ground = 1.5
+            U = V_inf*(np.log(h_alt/z0)/np.log(h_ground/z0))
+            wind_.append(U)
+
+
+
         else:
             raise Exception("wind_model ", Model, " is unknowkn")
 

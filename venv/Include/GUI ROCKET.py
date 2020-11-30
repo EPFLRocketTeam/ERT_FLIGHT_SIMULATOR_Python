@@ -16,8 +16,9 @@ from Rocket.Rocket import Rocket
 from Rocket.Stage import Stage
 import os
 
-print(sum(np.sin(0+2*math.pi/3*(np.arange(3)))**2))
-math.sin(np.arange(3)*2*math.pi/3)**2
+a = np.array([2,3])
+b = np.array([3,4])
+print(a*b)
 
 # Ouvre une fenetre with title and icon
 fenetre = Tk()
