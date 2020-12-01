@@ -523,11 +523,199 @@ class Simulator3D:
         # integration
         self.integration_ivp = solve_ivp(self.Dynamics_Parachute_3DOF, tspan, S0, event=MainEvent)
 
-    
+        T3 = self.integration_ivp.t
+        S3 = self.integration_ivp.y
+        T3E = self.integration_ivp.t_events
+        S3E = self.integration_ivp.y_events
+        I3E = np.where(T3 == T3E)
 
+        return T3, S3, T3E, S3E, I3E
+
+    def MainParaSim(self, T0, X0, V0):
+        # Initial conditions
+        S0 = np.array([X0, V0]).transpose()
+
+        # empty mass
+        M = self.rocket.rocket_m - self.rocket.pl_mass
+
+        # time span
+        tspan = np.array([T0, 500])
+
+        def CrashEvent(t, y):
+            return (y[0] > 0) -0.5
+
+        CrashEvent.terminal = True
+        CrashEvent.direction = -1
+
+        # integration
+        self.integration_ivp = solve_ivp(self.Dynamics_Parachute_3DOF, tspan, S0, event=CrashEvent)
+
+        T4 = self.integration_ivp.t
+        S4 = self.integration_ivp.y
+        T4E = self.integration_ivp.t_events
+        S4E = self.integration_ivp.y_events
+        I4E = np.where(T4 == T4E)
+
+        return T4, S4, T4E, S4E, I4E
+
+
+    def CrashSim(self, T0, X0, V0):
+
+        # Initial conditions
+        S0 = np.array([X0, V0]).transpose()
+
+        # time span
+        tspan = np.array([T0, 100])
+
+        def CrashEvent(t, y):
+            return (y[0] > 0) -0.5
+
+        CrashEvent.terminal = True
+        CrashEvent.direction = -1
+
+        # integration
+        self.integration_ivp = solve_ivp(self.Dynamics_Parachute_3DOF, tspan, S0, event=CrashEvent)
+
+        T5 = self.integration_ivp.t
+        S5 = self.integration_ivp.y
+        T5E = self.integration_ivp.t_events
+        S5E = self.integration_ivp.y_events
+        I5E = np.where(T5 == T5E)
+
+        return T5, S5, T5E, S5E, I5E
+
+    def Nose_CrashSim_3DOF(self, T0, X0, V0):
+        # Initial conditions
+        S0 = np.array([X0, V0]).transpose()
+
+        # time span
+        tspan = np.array([T0, 100])
+
+        def CrashEvent(t, y):
+            return (y[0] > 0) - 0.5
+
+        CrashEvent.terminal = True
+        CrashEvent.direction = -1
+
+        # integration
+        self.integration_ivp = solve_ivp(self.Nose_Dynamics_3DOF, tspan, S0, event=CrashEvent)
+
+        T6 = self.integration_ivp.t
+        S6 = self.integration_ivp.y
+        T6E = self.integration_ivp.t_events
+        S6E = self.integration_ivp.y_events
+        I6E = np.where(T6 == T6E)
+
+        return T6, S6, T6E, S6E, I6E
+
+    def Nose_CrashSim_6DOF(self, tspan, arg2, arg3=None, arg4=None, arg5=None):
+
+        if arg3 is not None and arg4 is not None and arg5 is not None:
+
+            # Set initial conditions based on the exact value of the state vector
+            X0 = arg2
+            V0 = arg3
+            Q0 = arg4
+            W0 = arg5
+            S0 = np.array([X0, V0, Q0, W0]).transpose()
+
+        else:
+            print("ERROR: In flight simulator, function accepts either 3 or 6 arguments")
+
+        def CrashEvent(t, y):
+            return (y[0] > 0) - 0.5
+
+        CrashEvent.terminal = True
+        CrashEvent.direction = -1
+
+        self.integration_ivp = solve_ivp(self.Nose_Dynamics_6DOF, tspan, S0, event=CrashEvent)
+
+        T6 = self.integration_ivp.t
+        S6 = self.integration_ivp.y
+        T6E = self.integration_ivp.t_events
+        S6E = self.integration_ivp.y_events
+        I6E = np.where(T6 == T6E)
+
+        return T6, S6, T6E, S6E, I6E
+
+
+    def PayloadCrashSim(self, T0, X0, V0):
+
+        # Initial conditions
+        S0 = np.array([X0, V0]).transpose()
+
+        # time span
+        tspan = np.array([T0, 100])
+
+        def CrashEvent(t, y):
+            return (y[0] > 0) - 0.5
+
+        CrashEvent.terminal = True
+        CrashEvent.direction = -1
+
+        # integration
+        self.integration_ivp = solve_ivp(self.Payload_Dynamics_3DOF, tspan, S0, event=CrashEvent)
+
+        T7 = self.integration_ivp.t
+        S7 = self.integration_ivp.y
+        T7E = self.integration_ivp.t_events
+        S7E = self.integration_ivp.y_events
+        I7E = np.where(T7 == T7E)
+
+        return T7, S7, T7E, S7E, I7E
 
 
 
 if __name__ == '__main__':
     # Rocket definition
     gland = Body("tangent ogive", [0, 0.125], [0, 0.505])
+
+    MyRocket = Rocket()
+    MyEnvironment = stdAtmosUS()
+
+    MyRocket.stages = 4
+    MyRocket.diameters = [0, 0.156, 0.156, 0.135]
+    MyRocket.fin_n = 3
+    MyRocket.fin_xt = 3.83
+    MyRocket.fin_s = 0.2
+    MyRocket.fin_cr = 0.28
+    MyRocket.fin_ct = 0.125
+    MyRocket.fin_xs = 0.107
+    MyRocket.fin_t = 0.004
+    MyRocket.lug_n = 2
+    MyRocket.lug_S = 0.00057
+    MyRocket.rocket_m = 35.2
+    MyRocket.rocket_I = 47
+    MyRocket.rocket_cm = 2.14
+    MyRocket.ab_x= 2.05
+    MyRocket.ab_n = 0
+    MyRocket.ab_phi = -232
+    MyRocket.pl_mass = 4.0
+    MyRocket.para_main_SCD = 23.14
+    MyRocket.para_drogue_SCD = 1.75
+    MyRocket.para_main_event = 400
+    MyRocket.motor_ID = M2400T.txt
+    MyRocket.motor_fac = 1
+    MyRocket.cone_mode = on
+    MyRocket.cp_fac = 1
+    MyRocket.CNa_fac = 1
+    MyRocket.CD_fac = 1
+
+    MyEnvironment.Temperature_Ground = 290,15
+    MyEnvironment.Pressure_Ground = 84972.484
+    MyEnvironment.Humidity_Ground = 0.51031
+    MyEnvironment.Start_Altitude = 1567.6
+    MyEnvironment.Start_Latitude  = 46.90479
+    MyEnvironment.Start_Longitude = 8.07575
+    MyEnvironment.dTdh = -9.5
+    MyEnvironment.V_inf = 0
+    MyEnvironment.V_Azimuth = 0
+    MyEnvironment.Turb_I = 0.00
+    MyEnvironment.Turb_model = None
+    MyEnvironment.Rail_Length = 5
+    MyEnvironment.Rail_Angle = 1
+    MyEnvironment.Rail_Azimuth = 225
+    MyEnvironment.multilayerwind 7 10 2 60 0.0 100 2 80 0.01  250 2 80 0.01 500 0.5 60 0.03 750 3 70 0.03 1000 2 70 0.03 1500 1.5 120 0.03
+    MyEnvironment.numberLayer = 7
+
+
