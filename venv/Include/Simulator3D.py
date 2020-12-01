@@ -18,6 +18,7 @@ from Functions.Models.wind_model import wind_model
 from Functions.Models.normal_lift import normal_lift
 from Functions.Models.pitch_damping_moment import pitch_damping_moment
 from Functions.Math.normalize_vector import normalize_vector
+from Functions.Math.rotmat import rotmat
 from Functions.Math.quat2rotmat import quat2rotmat
 from Functions.Math.rot2anglemat import rot2anglemat
 from Functions.Math.quat_evolve import quat_evolve
@@ -436,6 +437,12 @@ class Simulator3D:
 
     def RailSim(self):
 
+        def off_rail(t, y): return y[0] - 5
+
+        off_rail.terminal = True
+        off_rail.direction = 1
+
+
         # Initial Conditions
         X0 = np.array([0,0]).transpose()
 
@@ -444,9 +451,81 @@ class Simulator3D:
 
         # Options
 
-        #
+        #intergration
+        self.integration_ivp = solve_ivp(self.Dynamics_Rail_1DOF, tspan, X0, event=off_rail)
 
+        T1 = self.integration_ivp.t
+        S1 = self.integration_ivp.y
         return T1, S1
+
+    def FlightSim(self, tspan, arg2, arg3=None, arg4=None, arg5=None):
+
+        if arg3 is None and arg4 is None and arg5 is None:
+            # Compute initial conditions based on rail output values
+            V = arg2
+
+            # Rail vector
+            C_rail = rotmat(self.Environment.Rail_Azimuth, 3)*rotmat(self.Environment.Rail_Angle, 2)*rotmat(self.Environment.Rail_Azimuth, 3).transpose()
+            RV = C_rail*np.array([0,0,1]).transpose()
+
+            # Initial Conditions
+            X0 = RV*self.Environment.Rail_Length
+            V0 = RV*V
+            Q0 = rot2quat(C_rail.transpose())
+            W0 = np.array([0,0,0]).transpose()
+            S0 = np.array([X0, V0, Q0, W0]).transpose()
+
+        elif arg3 is not None and arg4 is not None and arg5 is not None:
+
+            # Set initial conditions based on the exact value of the state vector
+            X0 = arg2
+            V0 = arg3
+            Q0 = arg4
+            W0 = arg5
+            S0 = np.array([X0, V0, Q0, W0]).transpose()
+
+        else:
+            print("ERROR: In flight simulator, function accepts either 3 or 6 arguments")
+
+        def apogee(t, y):
+            return y[1]
+
+        apogee.terminal = True
+        apogee.direction = -1
+
+        self.integration_ivp = solve_ivp(self.Dynamics_6DOF, tspan, S0, event=apogee, rtol=10**(-6), atol=10**(-6))
+
+        T2 = self.integration_ivp.t
+        S2 = self.integration_ivp.y
+        T2E = self.integration_ivp.t_events
+        S2E = self.integration_ivp.y_events
+        I2E = np.where(T2 == T2E)
+
+        return T2, S2, T2E, S2E, I2E
+
+    def DrogueParaSim(self, T0, X0, V0):
+
+        # Initial conditions
+        S0 = np.array([X0, V0]).transpose()
+
+        # empty mass
+        M = self.rocket.rocket_m - self.rocket.pl_mass
+
+        # time span
+        tspan =  np.array([T0, 500])
+
+        def MainEvent(t, y, rocket):
+            return y[0]>rocket.para_main_event - 0.5
+
+        MainEvent.terminal = True
+        MainEvent.direction = -1
+
+        # integration
+        self.integration_ivp = solve_ivp(self.Dynamics_Parachute_3DOF, tspan, S0, event=MainEvent)
+
+    
+
+
 
 
 if __name__ == '__main__':
