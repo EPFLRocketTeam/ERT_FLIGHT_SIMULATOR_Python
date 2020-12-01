@@ -378,6 +378,37 @@ class Simulator3D:
 
         return V, 1/M*(F_tot+V*dMdt), quat_evolve(Q, W), lin.lstsq(I, m_tot)
 
+    def Payload_Dynamics_3DOF(self, t, s, Rocket, Environment):
+
+        X = s[0:3]
+        V = s[3:6]
+
+        XE = np.array([1, 0, 0]).transpose()
+        YE = np.array([0, 1, 0]).transpose()
+        ZE = np.array([0, 0, 1]).transpose()
+
+        # atmosphere
+        a = self.atmosphere.get_speed_of_sound(X[2] + self.atmosphere.ground_altitude)
+        rho = self.atmosphere.get_density(X[2] + self.atmosphere.ground_altitude)
+        nu = self.atmosphere.get_viscosity(X[2] + self.atmosphere.ground_altitude)
+
+        M = Rocket.get_mass(t)
+
+        V_rel = V - wind_model(t, self.atmosphere.get_turb(X[0] + self.atmosphere.ground_altitude),
+                               self.atmosphere.get_v_inf(),
+                               self.atmosphere.get_turb_model(), x[2])
+
+        G = -9.81*M*ZE
+
+        SCD = 2.56*10**(-2)
+        D = -0.5*rho*SCD*V_rel*norm(V_rel)
+
+        X_dot = V
+        V_dot = 1/M*(D+G)
+
+        return X_dot, V_dot
+
+
 
 
     def get_integration(self, number_of_steps: float, max_time: float):
@@ -399,6 +430,23 @@ class Simulator3D:
 
         self.integration_ivp = solve_ivp(self.drogue_parachute, [self.integration_ivp.t[-1], max_time],
                                          self.integration_ivp.y[:, -1], method='RK45')
+
+
+
+
+    def RailSim(self):
+
+        # Initial Conditions
+        X0 = np.array([0,0]).transpose()
+
+        # Time span
+        tspan = np.array([0,5])
+
+        # Options
+
+        #
+
+        return T1, S1
 
 
 if __name__ == '__main__':
