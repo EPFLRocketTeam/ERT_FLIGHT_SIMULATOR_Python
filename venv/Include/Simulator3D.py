@@ -16,12 +16,12 @@ from Functions.Models.Nose_drag import Nose_drag
 from Functions.Models.drag_shuriken import drag_shuriken
 from Functions.Models.wind_model import wind_model
 from Functions.Models.normal_lift import normal_lift
-from Functions.Models.pitch_damping_moment import pitch_damping_moment
 from Functions.Math.normalize_vector import normalize_vector
 from Functions.Math.rotmat import rotmat
 from Functions.Math.quat2rotmat import quat2rotmat
 from Functions.Math.rot2anglemat import rot2anglemat
 from Functions.Math.quat_evolve import quat_evolve
+from Functions.Math.rot2quat import rot2quat
 from Functions.Models.pitch_damping_moment import pitch_damping_moment
 
 
@@ -29,6 +29,9 @@ class Simulator3D:
     """
 
     """
+
+    global SimAuxResults
+
 
     def __init__(self, rocket: Rocket, atmosphere: stdAtmosUS):
         self.x_0 = np.array([0, 0])
@@ -179,21 +182,18 @@ class Simulator3D:
 
         # Aerodynamic force
         v_rel = -v + wind_model(t, self.atmosphere.get_turb(x[0] + self.atmosphere.ground_altitude),
-                              self.atmosphere.get_v_inf(), self.atmosphere.get_turb_model(), x[2])
-
+                                self.atmosphere.get_v_inf(), self.atmosphere.get_turb_model(), x[2])
 
         if main:
             SCD = rocket.para_main_SCD
         else:
             SCD = rocket.para_drogue_SCD
 
-
         D = 0.5 * rho * SCD * np.linalg.norm(v_rel) * v_rel
 
         # Gravity force
         g = 9.81 * np.array(0, 0, -1).transpose()
         G = g * M
-
 
         return [v, (D + G) / M]
 
@@ -206,24 +206,25 @@ class Simulator3D:
         YE = np.array([0, 1, 0]).transpose()
         ZE = np.array([0, 0, 1]).transpose()
 
-        a = self.atmosphere.get_speed_of_sound(X[2]+self.atmosphere.ground_altitude)
+        a = self.atmosphere.get_speed_of_sound(X[2] + self.atmosphere.ground_altitude)
         rho = self.atmosphere.get_density(X[2] + self.atmosphere.ground_altitude)
-        nu = self.atmosphere.get_viscosity(X[2]+self.atmosphere.ground_altitude)
+        nu = self.atmosphere.get_viscosity(X[2] + self.atmosphere.ground_altitude)
 
         M = Rocket.get_mass(t)
 
-        #TODO: Get V_...
-        V_rel = V - wind_model(t, self.atmosphere.get_turb(X[0] + self.atmosphere.ground_altitude), self.atmosphere.get_v_inf() ,
-                               self.atmosphere.get_turb_model(), x[2])
+        # TODO: Get V_...
+        V_rel = V - wind_model(t, self.atmosphere.get_turb(X[0] + self.atmosphere.ground_altitude),
+                               self.atmosphere.get_v_inf(),
+                               self.atmosphere.get_turb_model(), X[2])
 
-        G = -9.81*M*ZE
+        G = -9.81 * M * ZE
 
         CD = drag(Rocket, 0, np.linalg.norm(V_rel), nu, a)
 
-        D = -0.5*rho*Rocket.Sm*CD*V_rel*np.linalg.norm(V_rel)
+        D = -0.5 * rho * Rocket.Sm * CD * V_rel * np.linalg.norm(V_rel)
 
         X_dot = V
-        V_dot = 1/M*(D+G)
+        V_dot = 1 / M * (D + G)
 
         return X_dot, V_dot
 
@@ -245,8 +246,9 @@ class Simulator3D:
 
         V_rel = V - wind_model(t, self.atmosphere.get_turb(X[0] + self.atmosphere.ground_altitude),
                                self.atmosphere.get_v_inf(),
-                               self.atmosphere.get_turb_model(), x[2])
+                               self.atmosphere.get_turb_model(), X[2])
 
+        G = -9.81 * M * ZE
         CD = Nose_drag(Rocket, 0, np.linalg.norm(V_rel), nu, a)
         D = -0.5 * rho * Rocket.Sm * CD * V_rel * np.linalg.norm(V_rel)
 
@@ -265,15 +267,14 @@ class Simulator3D:
         # Check quaternion norm
         Q = normalize_vector(Q)
 
-
         # Rotation matrix from rocket coordinates to Earth coordinates
         C = quat2rotmat(Q)
         angle = rot2anglemat(C)
 
         # Rocket principle frame vectors expressed in earth coordinates
-        YA = C*np.array([1, 0, 0]).transpose()
-        PA = C*np.array([0, 1, 0]).transpose()
-        RA = C*np.array([0, 0, 1]).transpose()
+        YA = C * np.array([1, 0, 0]).transpose()
+        PA = C * np.array([0, 1, 0]).transpose()
+        RA = C * np.array([0, 0, 1]).transpose()
 
         # Earth coordinates vectors expressed in earth's frame
         XE = np.array([1, 0, 0]).transpose()
@@ -302,15 +303,15 @@ class Simulator3D:
         # Oriented along roll axis of rocket frame, expressed, in earth coordinates
         T = self.rocket.get_thrust(t) * RA
 
-        G = -g*M*ZE
+        G = -g * M * ZE
 
         # Compute center of mass angle of attack
         Vcm = V - wind_model(t, self.atmosphere.get_turb(X[0] + self.atmosphere.ground_altitude),
-                               self.atmosphere.get_v_inf(),
-                               self.atmosphere.get_turb_model(), x[2])
+                             self.atmosphere.get_v_inf(),
+                             self.atmosphere.get_turb_model(), X[2])
 
         Vcm_mag = np.linalg.norm(Vcm)
-        alpha_cm = math.atan2(np.linalg.norm(np.cross(ra, v_cm)), np.dot(ra, v_cm))
+        alpha_cm = math.atan2(np.linalg.norm(np.cross(RA, Vcm)), np.dot(RA, Vcm))
 
         # Mach number
         Mach = np.linalg.norm(Vcm_mag) / a
@@ -322,17 +323,17 @@ class Simulator3D:
         margin = Xcp - CM
 
         # Compute rocket angle of attack
-        if np.linalg.norm(w) != 0:
-            w_norm = w / np.linalg.norm(w)
+        if np.linalg.norm(W) != 0:
+            w_norm = W / np.linalg.norm(W)
         else:
             w_norm = np.zeros(3, 1)
 
-        Vrel = v_cm + margin * math.sin(math.acos(np.dot(ra, w_norm))) * np.cross(ra, w)
+        Vrel = Vcm + margin * math.sin(math.acos(np.dot(RA, w_norm))) * np.cross(RA, W)
         Vmag = np.linalg.norm(Vrel)
         Vnorm = normalize_vector(Vrel)
 
         # Angle of attack
-        Vcross = np.cross(ra, Vnorm)
+        Vcross = np.cross(RA, Vnorm)
         Vcross_norm = normalize_vector(Vcross)
         alpha = math.atan2(np.linalg.norm(np.cross(RA, Vnorm)), np.dot(RA, Vnorm))
         delta = math.atan2(np.linalg.norm(np.cross(RA, ZE)), np.dot(RA, ZE))
@@ -371,13 +372,13 @@ class Simulator3D:
         m_tot = MN + MD
 
         # State derivatives
-        q_dot = quat_evolve(q, w)
+        q_dot = quat_evolve(Q, W)
         w_dot = lin.lstsq(I, m_tot)
 
         Rocket.tmp_Nose_Alpha = alpha
         Rocket.tmp_Nose_Delta = delta
 
-        return V, 1/M*(F_tot+V*dMdt), quat_evolve(Q, W), lin.lstsq(I, m_tot)
+        return V, 1 / M * (F_tot + V * dMdt), quat_evolve(Q, W), lin.lstsq(I, m_tot)
 
     def Payload_Dynamics_3DOF(self, t, s, Rocket, Environment):
 
@@ -397,20 +398,17 @@ class Simulator3D:
 
         V_rel = V - wind_model(t, self.atmosphere.get_turb(X[0] + self.atmosphere.ground_altitude),
                                self.atmosphere.get_v_inf(),
-                               self.atmosphere.get_turb_model(), x[2])
+                               self.atmosphere.get_turb_model(), X[2])
 
-        G = -9.81*M*ZE
+        G = -9.81 * M * ZE
 
-        SCD = 2.56*10**(-2)
-        D = -0.5*rho*SCD*V_rel*norm(V_rel)
+        SCD = 2.56 * 10 ** (-2)
+        D = -0.5 * rho * SCD * V_rel * np.linalg.norm(V_rel)
 
         X_dot = V
-        V_dot = 1/M*(D+G)
+        V_dot = 1 / M * (D + G)
 
         return X_dot, V_dot
-
-
-
 
     def get_integration(self, number_of_steps: float, max_time: float):
 
@@ -432,9 +430,6 @@ class Simulator3D:
         self.integration_ivp = solve_ivp(self.drogue_parachute, [self.integration_ivp.t[-1], max_time],
                                          self.integration_ivp.y[:, -1], method='RK45')
 
-
-
-
     def RailSim(self):
 
         def off_rail(t, y): return y[0] - 5
@@ -442,16 +437,15 @@ class Simulator3D:
         off_rail.terminal = True
         off_rail.direction = 1
 
-
         # Initial Conditions
-        X0 = np.array([0,0]).transpose()
+        X0 = np.array([0, 0]).transpose()
 
         # Time span
-        tspan = np.array([0,5])
+        tspan = np.array([0, 5])
 
         # Options
 
-        #intergration
+        # intergration
         self.integration_ivp = solve_ivp(self.Dynamics_Rail_1DOF, tspan, X0, event=off_rail)
 
         T1 = self.integration_ivp.t
@@ -465,14 +459,15 @@ class Simulator3D:
             V = arg2
 
             # Rail vector
-            C_rail = rotmat(self.Environment.Rail_Azimuth, 3)*rotmat(self.Environment.Rail_Angle, 2)*rotmat(self.Environment.Rail_Azimuth, 3).transpose()
-            RV = C_rail*np.array([0,0,1]).transpose()
+            C_rail = rotmat(self.Environment.Rail_Azimuth, 3) * rotmat(self.Environment.Rail_Angle, 2) * rotmat(
+                self.Environment.Rail_Azimuth, 3).transpose()
+            RV = C_rail * np.array([0, 0, 1]).transpose()
 
             # Initial Conditions
-            X0 = RV*self.Environment.Rail_Length
-            V0 = RV*V
+            X0 = RV * self.Environment.Rail_Length
+            V0 = RV * V
             Q0 = rot2quat(C_rail.transpose())
-            W0 = np.array([0,0,0]).transpose()
+            W0 = np.array([0, 0, 0]).transpose()
             S0 = np.array([X0, V0, Q0, W0]).transpose()
 
         elif arg3 is not None and arg4 is not None and arg5 is not None:
@@ -493,7 +488,7 @@ class Simulator3D:
         apogee.terminal = True
         apogee.direction = -1
 
-        self.integration_ivp = solve_ivp(self.Dynamics_6DOF, tspan, S0, event=apogee, rtol=10**(-6), atol=10**(-6))
+        self.integration_ivp = solve_ivp(self.Dynamics_6DOF, tspan, S0, event=apogee, rtol=10 ** (-6), atol=10 ** (-6))
 
         T2 = self.integration_ivp.t
         S2 = self.integration_ivp.y
@@ -512,10 +507,10 @@ class Simulator3D:
         M = self.rocket.rocket_m - self.rocket.pl_mass
 
         # time span
-        tspan =  np.array([T0, 500])
+        tspan = np.array([T0, 500])
 
         def MainEvent(t, y, rocket):
-            return y[0]>rocket.para_main_event - 0.5
+            return y[0] > rocket.para_main_event - 0.5
 
         MainEvent.terminal = True
         MainEvent.direction = -1
@@ -542,7 +537,7 @@ class Simulator3D:
         tspan = np.array([T0, 500])
 
         def CrashEvent(t, y):
-            return (y[0] > 0) -0.5
+            return (y[0] > 0) - 0.5
 
         CrashEvent.terminal = True
         CrashEvent.direction = -1
@@ -558,7 +553,6 @@ class Simulator3D:
 
         return T4, S4, T4E, S4E, I4E
 
-
     def CrashSim(self, T0, X0, V0):
 
         # Initial conditions
@@ -568,7 +562,7 @@ class Simulator3D:
         tspan = np.array([T0, 100])
 
         def CrashEvent(t, y):
-            return (y[0] > 0) -0.5
+            return (y[0] > 0) - 0.5
 
         CrashEvent.terminal = True
         CrashEvent.direction = -1
@@ -638,7 +632,6 @@ class Simulator3D:
 
         return T6, S6, T6E, S6E, I6E
 
-
     def PayloadCrashSim(self, T0, X0, V0):
 
         # Initial conditions
@@ -665,13 +658,12 @@ class Simulator3D:
         return T7, S7, T7E, S7E, I7E
 
 
-
 if __name__ == '__main__':
     # Rocket definition
     gland = Body("tangent ogive", [0, 0.125], [0, 0.505])
 
     MyRocket = Rocket()
-    MyEnvironment = stdAtmosUS()
+    MyEnvironment = stdAtmosUS(1382, 308, 85600, 0.15)
 
     MyRocket.stages = 4
     MyRocket.diameters = [0, 0.156, 0.156, 0.135]
@@ -687,25 +679,25 @@ if __name__ == '__main__':
     MyRocket.rocket_m = 35.2
     MyRocket.rocket_I = 47
     MyRocket.rocket_cm = 2.14
-    MyRocket.ab_x= 2.05
+    MyRocket.ab_x = 2.05
     MyRocket.ab_n = 0
     MyRocket.ab_phi = -232
     MyRocket.pl_mass = 4.0
     MyRocket.para_main_SCD = 23.14
     MyRocket.para_drogue_SCD = 1.75
     MyRocket.para_main_event = 400
-    MyRocket.motor_ID = M2400T.txt
+    MyRocket.motor_ID = 'M2400T.txt'
     MyRocket.motor_fac = 1
-    MyRocket.cone_mode = on
+    MyRocket.cone_mode = 'on'
     MyRocket.cp_fac = 1
     MyRocket.CNa_fac = 1
     MyRocket.CD_fac = 1
 
-    MyEnvironment.Temperature_Ground = 290,15
+    MyEnvironment.Temperature_Ground = 290, 15
     MyEnvironment.Pressure_Ground = 84972.484
     MyEnvironment.Humidity_Ground = 0.51031
     MyEnvironment.Start_Altitude = 1567.6
-    MyEnvironment.Start_Latitude  = 46.90479
+    MyEnvironment.Start_Latitude = 46.90479
     MyEnvironment.Start_Longitude = 8.07575
     MyEnvironment.dTdh = -9.5
     MyEnvironment.V_inf = 0
@@ -715,7 +707,5 @@ if __name__ == '__main__':
     MyEnvironment.Rail_Length = 5
     MyEnvironment.Rail_Angle = 1
     MyEnvironment.Rail_Azimuth = 225
-    MyEnvironment.multilayerwind 7 10 2 60 0.0 100 2 80 0.01  250 2 80 0.01 500 0.5 60 0.03 750 3 70 0.03 1000 2 70 0.03 1500 1.5 120 0.03
+    # MyEnvironment.multilayerwind 7 10 2 60 0.0 100 2 80 0.01  250 2 80 0.01 500 0.5 60 0.03 750 3 70 0.03 1000 2 70 0.03 1500 1.5 120 0.03
     MyEnvironment.numberLayer = 7
-
-

@@ -7,6 +7,7 @@ from Functions.Models.barrowman_lift import barrowman_lift
 from Functions.Models.robert_galejs_lift import robert_galejs_lift
 import numpy as np
 
+
 def normal_lift(rocket: Rocket, alpha, k, m, theta, Galejs):
     """
         NORMALLIFT computes the normal force intensity applied to the center of
