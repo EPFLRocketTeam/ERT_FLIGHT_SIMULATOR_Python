@@ -6,6 +6,7 @@ import numpy as np
 import numpy.linalg as lin
 import math
 from scipy.integrate import ode, solve_ivp
+from dataclasses import dataclass
 
 from Rocket.Stage import Stage
 from Rocket.Rocket import Rocket
@@ -30,8 +31,26 @@ class Simulator3D:
 
     """
 
-    global SimAuxResults
+    @dataclass
+    class SimAuxResults:
+        Margin: np.array(0)
+        Alpha: np.array
+        Cn_alpha: np.array
+        Xcp: np.array
+        Cd: np.array
+        Mass: np.array
+        CM: np.array
+        Il: np.array
+        Ir: np.array
+        Delta: np.array
+        Nose_Alpha: np.array
+        Nose_delta: np.array
 
+    global tmp_Margin, tmp_Alpha, tmp_Cn_alpha, tmp_Xcp, tmp_Cd, tmp_Mass, tmp_CM, tmp_Il, tmp_Ir, tmp_Delta
+    global tmp_Nose_Alpha, tmp_Nose_Delta
+
+    global simAuxResults
+    simAuxResults = SimAuxResults(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
     def __init__(self, rocket: Rocket, atmosphere: stdAtmosUS):
         self.x_0 = np.array([0, 0])
@@ -54,6 +73,7 @@ class Simulator3D:
         CD_AB = 0  # TODO: Insert reference to drag_shuriken or other
         g = self.atmosphere.G0
         Sm = self.rocket.get_max_cross_section_surface
+
         return [s[1], T / m - g - s[1] * dMdt / m - 0.5 * rho * Sm * s[1] ** 2 * (CD + CD_AB) / m]
 
     def Dynamics_6DOF(self, t, s):
@@ -172,6 +192,17 @@ class Simulator3D:
         q_dot = quat_evolve(q, w)
         w_dot = lin.lstsq(I, m_tot)
 
+        tmp_Margin = margin / np.max(self.rocket.diameters)
+        tmp_Alpha = alpha
+        tmp_Cn_alpha = CNa
+        tmp_Xcp = Xcp
+        tmp_Cd = cd
+        tmp_Mass = m
+        tmp_CM = cg
+        tmp_Il = I_L
+        tmp_Ir = I_R
+        tmp_Delta = delta
+
         return [v, 1 / m * (f_tot - v * dMdt), q_dot, w_dot]
 
     def Dynamics_Parachute_3DOF(self, t, s, rocket, environment, M, main):
@@ -197,7 +228,7 @@ class Simulator3D:
 
         return [v, (D + G) / M]
 
-    def Dynamics_3DOF(self, t, s, Rocket, Environment):
+    def Dynamics_3DOF(self, t, s, Environment):
 
         X = s[0:3]
         V = s[3:6]
@@ -210,7 +241,7 @@ class Simulator3D:
         rho = self.atmosphere.get_density(X[2] + self.atmosphere.ground_altitude)
         nu = self.atmosphere.get_viscosity(X[2] + self.atmosphere.ground_altitude)
 
-        M = Rocket.get_mass(t)
+        M = self.rocket.get_mass(t)
 
         # TODO: Get V_...
         V_rel = V - wind_model(t, self.atmosphere.get_turb(X[0] + self.atmosphere.ground_altitude),
@@ -219,16 +250,16 @@ class Simulator3D:
 
         G = -9.81 * M * ZE
 
-        CD = drag(Rocket, 0, np.linalg.norm(V_rel), nu, a)
+        CD = drag(self.rocket, 0, np.linalg.norm(V_rel), nu, a)
 
-        D = -0.5 * rho * Rocket.Sm * CD * V_rel * np.linalg.norm(V_rel)
+        D = -0.5 * rho * self.rocket.get_max_cross_section_surface * CD * V_rel * np.linalg.norm(V_rel)
 
         X_dot = V
         V_dot = 1 / M * (D + G)
 
         return X_dot, V_dot
 
-    def Nose_Dynamics_3DOF(self, t, s, Rocket, Environment):
+    def Nose_Dynamics_3DOF(self, t, s, Environment):
 
         X = s[0:3]
         V = s[3:6]
@@ -242,15 +273,15 @@ class Simulator3D:
         rho = self.atmosphere.get_density(X[2] + self.atmosphere.ground_altitude)
         nu = self.atmosphere.get_viscosity(X[2] + self.atmosphere.ground_altitude)
 
-        M = Rocket.get_mass(t)
+        M = self.rocket.get_mass(t)
 
         V_rel = V - wind_model(t, self.atmosphere.get_turb(X[0] + self.atmosphere.ground_altitude),
                                self.atmosphere.get_v_inf(),
                                self.atmosphere.get_turb_model(), X[2])
 
         G = -9.81 * M * ZE
-        CD = Nose_drag(Rocket, 0, np.linalg.norm(V_rel), nu, a)
-        D = -0.5 * rho * Rocket.Sm * CD * V_rel * np.linalg.norm(V_rel)
+        CD = Nose_drag(self.rocket, 0, np.linalg.norm(V_rel), nu, a)
+        D = -0.5 * rho * self.rocket.get_max_cross_section_surface * CD * V_rel * np.linalg.norm(V_rel)
 
         X_dot = V
         V_dot = 1 / M * (D + G)
@@ -348,7 +379,7 @@ class Simulator3D:
         # Drag
         # Drag coefficient
         CD = drag(self.rocket, alpha, Vmag, nu, a)  # TODO : * cd_fac (always 1 ?)
-        ab_phi = Rocket.ab_phi  # TODO : find a way to deal with airbrakes, /!\ magic number
+        ab_phi = self.rocket.ab_phi  # TODO : find a way to deal with airbrakes, /!\ magic number
         if t > self.rocket.get_burn_time:
             CD = CD + drag_shuriken(self.rocket, ab_phi, alpha, Vmag, nu)
 
@@ -356,7 +387,7 @@ class Simulator3D:
         D = -0.5 * rho * Sm * CD * Vmag ** 2 * Vnorm
 
         # Total forces
-        motor_fac = Rocket.motor_fac  # TODO : always 1 ?
+        motor_fac = self.rocket.motor_fac  # TODO : always 1 ?
         F_tot = T * motor_fac + G + N + D
 
         # Moment estimation
@@ -375,12 +406,12 @@ class Simulator3D:
         q_dot = quat_evolve(Q, W)
         w_dot = lin.lstsq(I, m_tot)
 
-        Rocket.tmp_Nose_Alpha = alpha
-        Rocket.tmp_Nose_Delta = delta
+        tmp_Nose_Alpha = alpha
+        tmp_Nose_Delta = delta
 
         return V, 1 / M * (F_tot + V * dMdt), quat_evolve(Q, W), lin.lstsq(I, m_tot)
 
-    def Payload_Dynamics_3DOF(self, t, s, Rocket, Environment):
+    def Payload_Dynamics_3DOF(self, t, s, Environment):
 
         X = s[0:3]
         V = s[3:6]
@@ -394,7 +425,7 @@ class Simulator3D:
         rho = self.atmosphere.get_density(X[2] + self.atmosphere.ground_altitude)
         nu = self.atmosphere.get_viscosity(X[2] + self.atmosphere.ground_altitude)
 
-        M = Rocket.get_mass(t)
+        M = self.rocket.get_mass(t)
 
         V_rel = V - wind_model(t, self.atmosphere.get_turb(X[0] + self.atmosphere.ground_altitude),
                                self.atmosphere.get_v_inf(),
@@ -409,26 +440,6 @@ class Simulator3D:
         V_dot = 1 / M * (D + G)
 
         return X_dot, V_dot
-
-    def get_integration(self, number_of_steps: float, max_time: float):
-
-        def off_rail(t, y): return y[0] - 5
-
-        off_rail.terminal = True
-        off_rail.direction = 1
-
-        def apogee(t, y): return y[1]
-
-        apogee.terminal = True
-        apogee.direction = -1
-
-        self.integration_ivp = solve_ivp(self.rail, [self.t0, max_time], self.x_0, method='RK45', event=off_rail)
-
-        self.integration_ivp = solve_ivp(self.flight, [self.integration_ivp.t[-1], max_time],
-                                         self.integration_ivp.y[:, -1], method='RK45', events=apogee)
-
-        self.integration_ivp = solve_ivp(self.drogue_parachute, [self.integration_ivp.t[-1], max_time],
-                                         self.integration_ivp.y[:, -1], method='RK45')
 
     def RailSim(self):
 
@@ -509,7 +520,7 @@ class Simulator3D:
         # time span
         tspan = np.array([T0, 500])
 
-        def MainEvent(t, y, rocket):
+        def MainEvent(t, y, rocket):  # todo : check
             return y[0] > rocket.para_main_event - 0.5
 
         MainEvent.terminal = True
@@ -657,6 +668,43 @@ class Simulator3D:
 
         return T7, S7, T7E, S7E, I7E
 
+    def FlightOutputFunc(self, T, S, flag):
+        status = 0
+
+        if simAuxResults.Margin:
+            np.append(simAuxResults.Margin, tmp_Margin)
+        if simAuxResults.Alpha:
+            np.append(simAuxResults.Alpha, tmp_Alpha)
+        if simAuxResults.Cn_alpha:
+            np.append(simAuxResults.Cn_alpha, tmp_Cn_alpha)
+        if simAuxResults.Xcp:
+            np.append(simAuxResults.Xcp, tmp_Xcp)
+        if simAuxResults.Cd:
+            np.append(simAuxResults.Cd, tmp_Cd)
+        if simAuxResults.Mass:
+            np.append(simAuxResults.Mass, tmp_Mass)
+        if simAuxResults.CM:
+            np.append(simAuxResults.CM, tmp_CM)
+        if simAuxResults.Il:
+            np.append(simAuxResults.Il, tmp_Il)
+        if simAuxResults.Ir:
+            np.append(simAuxResults.Ir, tmp_Ir)
+        if simAuxResults.Delta:
+            np.append(simAuxResults.Delta, tmp_Delta)
+        if simAuxResults.Nose_Alpha:
+            np.append(simAuxResults.Nose_Alpha, tmp_Nose_Alpha)
+        if simAuxResults.Nose_delta:
+            np.append(simAuxResults.Nose_delta, tmp_Nose_Delta)
+        return status
+
+    def CrashOutputFunc(self, T, S, flag):
+        status = 0
+
+        if simAuxResults.Nose_Alpha:
+            np.append(simAuxResults.Nose_Alpha, tmp_Nose_Alpha)
+        if simAuxResults.Nose_delta:
+            np.append(simAuxResults.Nose_delta, tmp_Nose_Delta)
+        return status
 
 if __name__ == '__main__':
     # Rocket definition

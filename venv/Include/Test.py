@@ -93,9 +93,34 @@ if __name__ == "__main__":
     Matterhorn_III.add_stage(M3_cone)
     Matterhorn_III.add_stage(M3_body)
 
-    print(len(Matterhorn_III.stages))
     print(Matterhorn_III.diameters_position)
     print(Matterhorn_III.diameters)
+    
+    Matterhorn_III.fin_n = 3
+    Matterhorn_III.fin_xt = 3.83
+    Matterhorn_III.fin_s = 0.2
+    Matterhorn_III.fin_cr = 0.28
+    Matterhorn_III.fin_ct = 0.125
+    Matterhorn_III.fin_xs = 0.107
+    Matterhorn_III.fin_t = 0.004
+    Matterhorn_III.lug_n = 2
+    Matterhorn_III.lug_S = 0.00057
+    Matterhorn_III.rocket_m = 35.2
+    Matterhorn_III.rocket_I = 47
+    Matterhorn_III.rocket_cm = 2.14
+    Matterhorn_III.ab_x = 2.05
+    Matterhorn_III.ab_n = 0
+    Matterhorn_III.ab_phi = -232
+    Matterhorn_III.pl_mass = 4.0
+    Matterhorn_III.para_main_SCD = 23.14
+    Matterhorn_III.para_drogue_SCD = 1.75
+    Matterhorn_III.para_main_event = 400
+    Matterhorn_III.motor_ID = 'M2400T.txt'
+    Matterhorn_III.motor_fac = 1
+    Matterhorn_III.cone_mode = 'on'
+    Matterhorn_III.cp_fac = 1
+    Matterhorn_III.CNa_fac = 1
+    Matterhorn_III.CD_fac = 1
 
-    # (a, b) = robert_galejs_lift(Matterhorn_III, 0.8, 270)
-    # print(a, b)
+    (a, b) = barrowman_lift(Matterhorn_III, 0, 0.6, 1)
+    print(a, b)

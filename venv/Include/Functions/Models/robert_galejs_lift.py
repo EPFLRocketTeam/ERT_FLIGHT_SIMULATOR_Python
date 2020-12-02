@@ -16,14 +16,27 @@ def robert_galejs_lift(rocket, alpha, k):
     # Stages
     Ap_stage = np.zeros(len(rocket.stages))
     Xp_stage = np.zeros(len(rocket.stages))
-    for i in range(len(rocket.stages)):
+    """for i in range(len(rocket.stages)):
         Ap_stage[i] = ((rocket.diameters[i + 1] + rocket.diameters[i + 2]) / 2
                        * (rocket.diameters_position[i + 2] - rocket.diameters_position[i + 1]))
         Xp_stage[i] = (rocket.diameters_position[i + 1] + 1 / 3 *
                        (rocket.diameters_position[i + 2] - rocket.diameters_position[i + 1]) *
                        (rocket.diameters[i + 1] + 2 * rocket.diameters[i + 2]) / (rocket.diameters[i + 1] +
-                       rocket.diameters[i + 2]))
-
+                       rocket.diameters[i + 2]))"""
+    Ap_stage[0] = ((rocket.diameters[1] + rocket.diameters[3]) / 2
+                       * (rocket.diameters_position[3] - rocket.diameters_position[1]))
+    Ap_stage[1] = ((rocket.diameters[3] + rocket.diameters[4]) / 2
+                       * (rocket.diameters_position[4] - rocket.diameters_position[3]))
+    Xp_stage[0] = (rocket.diameters_position[1] + 1 / 3 *
+                   (rocket.diameters_position[3] - rocket.diameters_position[1]) *
+                   (rocket.diameters[1] + 2 * rocket.diameters[3]) / (rocket.diameters[1] +
+                                                                              rocket.diameters[3]))
+    Xp_stage[1] = (rocket.diameters_position[3] + 1 / 3 *
+                   (rocket.diameters_position[4] - rocket.diameters_position[3]) *
+                   (rocket.diameters[3] + 2 * rocket.diameters[4]) / (rocket.diameters[3] +
+                                                                      rocket.diameters[4]))
+    print(Ap_stage)
+    print(Xp_stage)
     # Output
     Ap = Ap_stage
     Xp = Xp_stage
@@ -32,5 +45,6 @@ def robert_galejs_lift(rocket, alpha, k):
         Xp = np.append(Xp_cone, Xp)
 
     Calpha2 = 4 / math.pi / rocket.diameters[1]**2 * k * Ap * alpha
+    print(Calpha2)
 
     return Calpha2, Xp
