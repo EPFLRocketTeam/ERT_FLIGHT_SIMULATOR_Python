@@ -65,7 +65,7 @@ def barrowman_lift(rocket: Rocket, alpha, m, theta):
 
     gamma_c = math.atan(((rocket.fin_xs+rocket.fin_ct)/2 - rocket.fin_cr/2)/rocket.fin_s)
     a = 0.5*(rocket.fin_ct + rocket.fin_cr)*rocket.fin_s
-    r = rocket.diameters[np.where(rocket.diameters_position < rocket.fin_xt)[0][-1]]
+    r = rocket.diameters[next(i for i in range(len(rocket.diameters)-1, 0, -1) if rocket.diameters_position[i] < rocket.fin_xt)]/2
     ktb = 1 + r/(r + rocket.fin_s)
     CNa1 = ktb*2*math.pi*rocket.fin_s**2 / a_ref / (1 + math.sqrt(1+(beta*rocket.fin_s**2 / a / np.cos(gamma_c))**2))
     CNa_fins = CNa1*sum(np.sin(theta+2*math.pi/rocket.fin_n*(np.arange(rocket.fin_n)))**2)
@@ -78,5 +78,4 @@ def barrowman_lift(rocket: Rocket, alpha, m, theta):
         Calpha = np.append(CNa_cone, Calpha)
         CP = np.append(CP_cone, CP)
 
-    return np.append(Calpha, CP)
-
+    return Calpha, CP
