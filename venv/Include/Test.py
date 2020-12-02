@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from scipy.integrate import ode
 
 from Rocket.Body import Body
@@ -12,110 +13,89 @@ from Functions.Math.rot2anglemat import rot2anglemat
 from Functions.Math.normalize_vector import normalize_vector
 from Functions.Math.quat_evolve import quat_evolve
 from Functions.Models.wind_model import wind_model
-
+from Functions.Models.robert_galejs_lift import robert_galejs_lift
+from Functions.Models.barrowman_lift import barrowman_lift
+from Functions.Math.rot2quat import rot2quat
 
 if __name__ == "__main__":
 
-    # Measured values
-    eiger_nosecone_ogive = Body("tangent ogive", np.array([0, 0.156]), np.array([0, 0.289]), 0, 0)
-    eiger_nosecone_straight = Body("cylinder", np.array([0.156, 0.156]), np.array([0, 0.307]), 0.57, 0.206)
-    #
-    eiger_nosecone_slide_in = Body("cylinder", np.array([0.156, 0.156]), np.array([0, 0.294]), 0.543, 0.147)
-    # CATIA values
-    eiger_payload = Body("cylinder", np.array([0.139, 0.139]), np.array([0, 0.2]), 4, 0.134)  # 0.242 from tip
-    """
+    NoseCone = open('Parameters/param_rocket/NoseCone.txt', 'r')  # Read text file
+    NoseCone1 = NoseCone.readlines()
+    VAL_N = []
+    for line in NoseCone1:  # taking each line
+        conv_float = float(line)
+        VAL_N.append(conv_float)
 
-    """
-    gland = Body("tangent ogive", [0, 0.125], [0, 0.505])
+    Tube = open('Parameters/param_rocket/Tube.txt', 'r')
+    Tube1 = Tube.readlines()
+    VAL_T = []
+    for line in Tube1:  # taking each line
+        conv_float = float(line)
+        VAL_T.append(conv_float)
 
-    tubes_francais = Body("cylinder", [0.125, 0.125, 0.102], [0, 1.85, 1.9])
+    Fins = open('Parameters/param_rocket/Fins.txt', 'r')
+    Fins1 = Fins.readlines()
+    VAL_F = []
+    for i, line in enumerate(Fins1):  # taking each line
+        if i == 0:
+            conv_int = int(float(line))
+            VAL_F.append(conv_int)
+        else:
+            conv_float = float(line)
+            VAL_F.append(conv_float)
 
-    M3_cone = Stage('Matterhorn III nosecone', gland, 1.26, 0.338, np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]]))
+    BoatTail = open('Parameters/param_rocket/BoatTail.txt', 'r')
+    BoatTail1 = BoatTail.readlines()
+    VAL_BT = []
+    for line in BoatTail1:  # taking each line
+        conv_float = float(line)
+        VAL_BT.append(conv_float)
 
-    M3_body = Stage('Matterhorn III body', tubes_francais, 9.6, 0.930,
-                    np.array([[2.72, 0, 0], [0, 2.72, 0], [0, 0, 0]]))
+    Motor = open('Parameters/param_motor/Motor.txt', 'r')
+    Motor1 = Motor.readlines()
 
-    finDefData = {'number': 3,
-                  'root_chord': 0.236,
-                  'tip_chord': 0.118,
-                  'span': 0.128,
-                  'sweep': 0.06,
-                  'thickness': 0.003,
-                  'phase': 0,
-                  'body_top_offset': 1.585,
-                  'total_mass': 0.3}
+    Env = open('Parameters/param_env/Env.txt', 'r')
+    Env1 = Env.readlines()
+    VAL_E = []
+    for line in Env1:  # taking each line
+        conv_float = float(line)
+        VAL_E.append(conv_float)
+
+    # Rocket definition
+    gland = Body('tangent ogive', [0, VAL_N[1] * 10 ** (-3)], [0, (VAL_N[0]) * 10 ** (-3)])
+
+    tubes_francais = Body("cylinder", [VAL_N[1] * 10 ** (-3), VAL_BT[1] * 10 ** (-3), VAL_BT[2] * 10 ** (-3)],
+                          [0, (VAL_T[0] + VAL_F[9]) * 10 ** (-3), (VAL_T[0] + VAL_F[9] + VAL_BT[0]) * 10 ** (-3)])
+
+    # TODO: Add Mass and CM to stage
+    M3_cone = Stage('Matterhorn III nosecone', gland, 1.26, 0.338, np.array([[VAL_N[2], VAL_N[3], VAL_N[4]],
+                                                                             [VAL_N[5], VAL_N[6], VAL_N[7]],
+                                                                             [VAL_N[8], VAL_N[9], VAL_N[10]]]))
+    M3_body = Stage('Matterhorn III body', tubes_francais, 9.6, 0.930, np.array([[VAL_T[2], VAL_T[3], VAL_T[4]],
+                                                                                 [VAL_T[5], VAL_T[6], VAL_T[7]],
+                                                                                 [VAL_T[8], VAL_T[9], VAL_T[10]]]))
+    finDefData = {'number': VAL_F[0],
+                  'root_chord': VAL_F[1] * 10 ** (-3),
+                  'tip_chord': VAL_F[2] * 10 ** (-3),
+                  'span': VAL_F[3] * 10 ** (-3),
+                  'sweep': VAL_F[4] * 10 ** (-3),
+                  'thickness': VAL_F[5] * 10 ** (-3),
+                  'phase': VAL_F[6],
+                  'body_top_offset': (VAL_T[0] + VAL_F[7]) * 10 ** (-3),
+                  'total_mass': VAL_F[8] * 10 ** (-3)}
 
     M3_body.add_fins(finDefData)
 
-    M3_body.add_motor('Motors/AT_L850.eng')
+    M3_body.add_motor('Motors/%s.eng' % (Motor1[0]))
 
     Matterhorn_III = Rocket()
 
     Matterhorn_III.add_stage(M3_cone)
     Matterhorn_III.add_stage(M3_body)
 
-    print(Matterhorn_III)
+    print(len(Matterhorn_III.stages))
+    print(Matterhorn_III.diameters_position)
+    print(Matterhorn_III.diameters)
 
-    print(max(tubes_francais.diameters))
-    print(Matterhorn_III.get_mass(0))
-
-    from Functions.Models.stdAtmosUS import stdAtmosUS
-
-    US_Atmos = stdAtmosUS(1382, 308, 85600, 0.15)
-
-    from Functions.Models.drag import drag
-
-    t = 6.11840823842032
-    x = [853.848962337705, 166.003984138695]
-    T = Matterhorn_III.get_thrust(t)
-    M = Matterhorn_III.get_mass(t)
-    dMdt = Matterhorn_III.get_dmass_dt(t)
-    rho = US_Atmos.get_density(x[0] + US_Atmos.ground_altitude)
-    nu = US_Atmos.get_viscosity(x[0] + US_Atmos.ground_altitude)
-    a = US_Atmos.get_speed_of_sound(x[0] + US_Atmos.ground_altitude)
-    # TODO: Add drag influences (done?)
-    CD = drag(Matterhorn_III, 0, x[1], nu, a)
-    print('t = ', t)
-    print('x = ', x)
-    print('Thrust = ', T)
-    print('Rocket mass = ', M)
-    print('dMdt = ', dMdt)
-    print('Air density = ', rho)
-    print('Air viscosity = ', nu)
-    print('Speed of sound = ', a)
-    print('CD = ', CD)
-
-    from scipy.integrate import solve_ivp
-    import matplotlib.pyplot as plt
-
-
-    def xdot(t, x):
-        dir = -1
-        return [dir * mu * (x[0] - 1 / 3 * x[0] ** 3 - x[1]), dir * 1 / mu * x[0]]
-
-
-    x_0 = [-2, 0]
-    t0 = 0
-    max_time = 10000
-
-    nTps = [101, 1001, 10001, 100001]
-    fig = plt.figure(figsize=(6, 4))
-    for i in range(4):
-        ntps = nTps[i]
-        tspan = np.linspace(max_time, t0, ntps)
-        plt.subplot(2, 2, i+1)
-
-        for mu in [1, 2, 3, 4, 5]:
-            integration_ivp = solve_ivp(xdot, [max_time, t0], x_0, method='RK45')
-
-            print('mu = ')
-            print(mu)
-
-            plt.plot(integration_ivp.y[0], integration_ivp.y[1])
-        plt.title("".join(['t0 = ', str(max_time), ', tf = ', str(t0), ', n = ', str(ntps)]))
-    plt.show()
-
-    """c = rot2anglemat(quat2rotmat(normalize_vector([-4, 2, 34.6, -89.4])))
-    b = quat_evolve(normalize_vector([-4, 2, 34.6, -89.4]), [56, -0.4, 3.5])
-    a = wind_model(3, 0.005, 10, 'Gaussian', 1000)
-    print(a)"""
+    # (a, b) = robert_galejs_lift(Matterhorn_III, 0.8, 270)
+    # print(a, b)
