@@ -30,15 +30,16 @@ def normal_lift(rocket: Rocket, alpha, k, m, theta, Galejs):
 
     """
 
-    (CNa_barrowman, Xp_barrowman) = barrowman_lift(rocket, alpha, m, theta)
-
+    CNa_barrowman, Xp_barrowman = barrowman_lift(rocket, alpha, m, theta)
     # Factor for montecarlo simulation
     # useful ?
+    Xp_barrowman = Xp_barrowman*rocket.cp_fac
+    CNa_barrowman = CNa_barrowman*rocket.CNa_fac
 
     if Galejs:
-        (CNa_galejs, Xp_galejs) = robert_galejs_lift(rocket, alpha, k)
-        CNa = np.sum(CNa_barrowman, CNa_galejs)
-        Xp = np.sum(CNa_barrowman*Xp_barrowman, CNa_galejs*Xp_galejs) / CNa
+        CNa_galejs, Xp_galejs = robert_galejs_lift(rocket, alpha, k)
+        CNa = np.sum(CNa_barrowman) + np.sum(CNa_galejs)
+        Xp = (np.sum(CNa_barrowman*Xp_barrowman) + np.sum(CNa_galejs*Xp_galejs)) / CNa
     else:
         CNa = np.sum(CNa_barrowman)
         Xp = np.sum(CNa_barrowman*Xp_barrowman) / CNa

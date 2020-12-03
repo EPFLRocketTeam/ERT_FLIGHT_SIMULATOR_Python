@@ -402,10 +402,6 @@ class Simulator3D:
 
         m_tot = MN + MD
 
-        # State derivatives
-        q_dot = quat_evolve(Q, W)
-        w_dot = lin.lstsq(I, m_tot)
-
         tmp_Nose_Alpha = alpha
         tmp_Nose_Delta = delta
 

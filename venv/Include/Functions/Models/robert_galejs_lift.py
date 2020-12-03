@@ -35,8 +35,7 @@ def robert_galejs_lift(rocket, alpha, k):
                    (rocket.diameters_position[4] - rocket.diameters_position[3]) *
                    (rocket.diameters[3] + 2 * rocket.diameters[4]) / (rocket.diameters[3] +
                                                                       rocket.diameters[4]))
-    print(Ap_stage)
-    print(Xp_stage)
+
     # Output
     Ap = Ap_stage
     Xp = Xp_stage
@@ -45,6 +44,5 @@ def robert_galejs_lift(rocket, alpha, k):
         Xp = np.append(Xp_cone, Xp)
 
     Calpha2 = 4 / math.pi / rocket.diameters[1]**2 * k * Ap * alpha
-    print(Calpha2)
 
     return Calpha2, Xp
