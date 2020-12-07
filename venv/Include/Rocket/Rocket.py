@@ -93,10 +93,23 @@ class Rocket:
         else:
             self.diameters_position = stage.body.diameters_position
 
+    def add_lugs(self, lugs: list):
+        self.lug_n = lugs[0]
+        self.lug_S = lugs[1]
+
+    def add_cg_empty_rocket(self, cg: float):
+        self.cg = cg
+
     # TODO : check method
     def get_cg(self, t: float):
-        return (sum([stage.empty_cg * stage.empty_mass for stage in self.stages]) +
-                sum([stage.get_mass(t) * stage.motor.get_cg() for stage in self.stages])) / self.get_mass(t)
+
+        sum1 = sum([stage.empty_cg * stage.empty_mass for stage in self.stages])
+        sum2 = 0
+        for stage in self.stages:
+            if stage.motors is not []:
+                sum2 += sum([stage.get_mass(t)*motor.get_cg for motor in stage.motors])
+        return (sum1 + sum2)/self.get_mass(t)
+
 
     # TODO : update method
     def get_long_inertia(self, t: float):
@@ -107,12 +120,19 @@ class Rocket:
         return t
 
     @property
+    def get_nb_stages(self):
+        return len(self.diameters)
+
+    @property
     def get_burn_time(self):
         return max([stage.get_burn_time(self) for stage in self.stages])
 
     @property
     def get_length(self):
         return max(self.diameters_position)
+
+    def get_empty_mass(self):
+        return sum([stage.get_empty_mass() for stage in self.stages])
 
     def get_mass(self, t: float):
         return sum([stage.get_mass(t) for stage in self.stages])
@@ -130,6 +150,30 @@ class Rocket:
     @property
     def get_max_cross_section_surface(self):
         return max([stage.body.max_cross_section_surface for stage in self.stages])
+
+    @property
+    def get_fin_xt(self):
+        for stage in self.stages:
+            if stage.fins:
+                return stage.fins[0].body_top_offset
+
+    @property
+    def get_fin_cr(self):
+        for stage in self.stages:
+            if stage.fins:
+                return stage.fins[0].root_chord
+
+    @property
+    def get_fin_ct(self):
+        for stage in self.stages:
+            if stage.fins:
+                return stage.fins[0].tip_chord
+
+    @property
+    def get_fin_xs(self):
+        for stage in self.stages:
+            if stage.fins:
+                return stage.fins[0].sweep
 
     @property
     def get_fin_chord(self):

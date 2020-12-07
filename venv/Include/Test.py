@@ -61,11 +61,18 @@ if __name__ == "__main__":
         conv_float = float(line)
         VAL_E.append(conv_float)
 
+    Lugs = open('Parameters/param_env/Env.txt', 'r')
+    Lugs1 = Lugs.readlines()
+    VAL_L = []
+    for line in Lugs1:  # taking each line
+        conv_float = float(line)
+        VAL_L.append(conv_float)
+
     # Rocket definition
     gland = Body('tangent ogive', [0, VAL_N[1] * 10 ** (-3)], [0, (VAL_N[0]) * 10 ** (-3)])
 
-    tubes_francais = Body("cylinder", [VAL_N[1] * 10 ** (-3), VAL_BT[1] * 10 ** (-3), VAL_BT[2] * 10 ** (-3)],
-                          [0, (VAL_T[0] + VAL_F[9]) * 10 ** (-3), (VAL_T[0] + VAL_F[9] + VAL_BT[0]) * 10 ** (-3)])
+    tubes_francais = Body("cylinder", [VAL_BT[1] * 10 ** (-3), VAL_BT[2] * 10 ** (-3)],
+                          [ (VAL_N[0] + VAL_T[0] + VAL_F[9]) * 10 ** (-3), (VAL_N[0] + VAL_T[0] + VAL_F[9] + VAL_BT[0]) * 10 ** (-3)])
 
     # TODO: Add Mass and CM to stage
     M3_cone = Stage('Matterhorn III nosecone', gland, 1.26, 0.338, np.array([[VAL_N[2], VAL_N[3], VAL_N[4]],
@@ -73,7 +80,7 @@ if __name__ == "__main__":
                                                                              [VAL_N[8], VAL_N[9], VAL_N[10]]]))
     M3_body = Stage('Matterhorn III body', tubes_francais, 9.6, 0.930, np.array([[VAL_T[2], VAL_T[3], VAL_T[4]],
                                                                                  [VAL_T[5], VAL_T[6], VAL_T[7]],
-                                                                                 [VAL_T[8], VAL_T[9], VAL_T[10]]]))
+                                                                                 [VAL_T[8], VAL_T[9], VAL_T[10]]])) # TODO: Change empty mass and empty CG mass without fins
     finDefData = {'number': VAL_F[0],
                   'root_chord': VAL_F[1] * 10 ** (-3),
                   'tip_chord': VAL_F[2] * 10 ** (-3),
@@ -81,20 +88,25 @@ if __name__ == "__main__":
                   'sweep': VAL_F[4] * 10 ** (-3),
                   'thickness': VAL_F[5] * 10 ** (-3),
                   'phase': VAL_F[6],
-                  'body_top_offset': (VAL_T[0] + VAL_F[7]) * 10 ** (-3),
+                  'body_top_offset': (VAL_N[0] + VAL_T[0] + VAL_F[7]) * 10 ** (-3),
                   'total_mass': VAL_F[8] * 10 ** (-3)}
 
     M3_body.add_fins(finDefData)
-
     M3_body.add_motor('Motors/%s.eng' % (Motor1[0]))
+
+    ab_data = [VAL_T[0]/2 + VAL_AB[4], VAL_AB[2], VAL_AB[3]]
+    M3_body.add_airbrakes(ab_data)
 
     Matterhorn_III = Rocket()
 
     Matterhorn_III.add_stage(M3_cone)
     Matterhorn_III.add_stage(M3_body)
+    Matterhorn_III.add_lugs([VAL_L[2], VAL_L[0]]) # TODO: Add lug surface
 
     print(Matterhorn_III.diameters_position)
     print(Matterhorn_III.diameters)
+    print(Matterhorn_III.get_fin_number)
+    print(Matterhorn_III.get_empty_mass())
     
     Matterhorn_III.fin_n = 3
     Matterhorn_III.fin_xt = 3.83

@@ -95,6 +95,17 @@ class Stage:
         self.motor_paths.append(motor_path)
         self.motors.append(Motor(motor_path))
 
+    def add_airbrakes(self, ab_data:list):
+        self.ab_x = ab_data[0]
+        self.ab_n = ab_data[1]
+        self.ab_phi = ab_data[2]
+
+    def get_empty_mass(self):
+        tmp_mass = 0
+        if self.fins is not []:
+            tmp_mass += sum([fin_set.total_mass for fin_set in self.fins])
+        return self.empty_mass + tmp_mass
+
     def get_mass(self, t: float):
         tmp_mass = 0
         if self.fins is not []:
