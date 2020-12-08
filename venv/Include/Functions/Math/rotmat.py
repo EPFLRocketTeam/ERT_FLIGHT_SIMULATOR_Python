@@ -3,10 +3,12 @@
 # EPFL Rocket Team, 1015 Lausanne, Switzerland
 
 import numpy as np
+import math
 
 
 def rotmat(a, ax):
 
+    a = a*math.pi/180
     if ax == 1 :
         C = np.array([[1, 0        , 0         ],
                       [0, np.cos(a), -np.sin(a)],

@@ -153,7 +153,19 @@ if __name__ == "__main__":
 
     SimObj = Simulator3D(Matterhorn_III, US_Atmos)
 
+    # -----------------------------------
+    # Rail Sim
+    # -----------------------------------
+
     T1, S1 = SimObj.RailSim()
+    print("Launch rail departure velocity: ", S1[1][-1])
+    print("Launch rail departure time: ", T1[-1])
+
+    # -----------------------------------
+    # Flight Sim
+    # -----------------------------------
+
+    T2_1, S2_1, T2_1E, S2_1E, I2_1E = SimObj.FlightSim([T1[-1], SimObj.rocket.get_burn_time()], S1[1][-1])
 
     plt.plot(T1, S1[0])
     plt.xlabel("Time [s]");
@@ -161,7 +173,6 @@ if __name__ == "__main__":
     plt.title("Position(time), on rail")
     plt.show()
 
-    print(T1, S1)
 
 
     Matterhorn_III.fin_n = 3
@@ -190,6 +201,4 @@ if __name__ == "__main__":
     Matterhorn_III.CNa_fac = 1
     Matterhorn_III.CD_fac = 1
 
-
-    (a, b) = barrowman_lift(Matterhorn_III, 0, 0.0663, -0.0044)
     print(a, b)

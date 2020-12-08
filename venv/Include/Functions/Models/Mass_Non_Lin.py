@@ -4,7 +4,7 @@ from Functions.Models.Thrust import Thrust
 
 def Mass_Non_Lin(t: float, Rocket: Rocket):
 
-    if t>Rocket.get_burn_time:
+    if t>Rocket.get_burn_time():
         mass = Rocket.get_empty_mass() + Rocket.get_motor_mass() - Rocket.get_propel_mass()
         dmassdt = 0
     else:

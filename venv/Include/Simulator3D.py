@@ -61,7 +61,7 @@ class Simulator3D:
         self.time = [self.t0]
 
         self.rocket = rocket
-        self.atmosphere = atmosphere
+        self.Environment = atmosphere
 
     def Dynamics_Rail_1DOF(self, t, s):
 
@@ -73,12 +73,12 @@ class Simulator3D:
 
         # Environment
         g = 9.81
-        a = self.atmosphere.get_speed_of_sound(s[0] + self.atmosphere.ground_altitude)
-        rho = self.atmosphere.get_density(s[0] + self.atmosphere.ground_altitude)
-        nu = self.atmosphere.get_viscosity(s[0] + self.atmosphere.ground_altitude)
+        a = self.Environment.get_speed_of_sound(s[0] + self.Environment.ground_altitude)
+        rho = self.Environment.get_density(s[0] + self.Environment.ground_altitude)
+        nu = self.Environment.get_viscosity(s[0] + self.Environment.ground_altitude)
 
         # Gravity
-        G = -g*np.cos(self.atmosphere.Rail_Angle)*Mass
+        G = -g*np.cos(self.Environment.Rail_Angle)*Mass
 
         T = Thrust(t, self.rocket)
 
@@ -129,23 +129,26 @@ class Simulator3D:
                               [0, I_L, 0],
                               [0, 0, I_R]]) * c
 
+        print("M", m, "dmdt", dMdt, "cg", cg, "Sm", Sm, "I_l", I_L, "I_R", I_R, "I", I, "c", c)
+
         # Environment
         g = 9.81  # Gravity [m/s^2]
-        rho = self.atmosphere.get_density(x[0] + self.atmosphere.ground_altitude)
-        nu = self.atmosphere.get_viscosity(x[0] + self.atmosphere.ground_altitude)
-        a = self.atmosphere.get_speed_of_sound(x[0] + self.atmosphere.ground_altitude)
+        rho = self.Environment.get_density(x[0] + self.Environment.ground_altitude)
+        nu = self.Environment.get_viscosity(x[0] + self.Environment.ground_altitude)
+        a = self.Environment.get_speed_of_sound(x[0] + self.Environment.ground_altitude)
 
         # Thrust
         # Oriented along roll axis of rocket frame, expressed, in earth coordinates
         T = self.rocket.get_thrust(t) * ra
 
+        print("T", T)
         # Gravity
         G = -g * m * ze
 
         # Aerodynamic corrective forces
         # Compute center of mass angle of attack
-        v_cm = v - wind_model(t, self.atmosphere.get_turb(x[0] + self.atmosphere.ground_altitude),
-                              self.atmosphere.get_v_inf(), self.atmosphere.get_turb_model(), x[2])
+        v_cm = v - wind_model(t, self.Environment.get_turb(x[0] + self.Environment.ground_altitude),
+                              self.Environment.get_V_inf(), self.Environment.get_turb_model(), x[2]) # TODO : V_dir
         v_cm_mag = np.linalg.norm(v_cm)
         alpha_cm = math.atan2(np.linalg.norm(np.cross(ra, v_cm)), np.dot(ra, v_cm))
 
@@ -228,11 +231,11 @@ class Simulator3D:
         x = s[0:3]
         v = s[3:6]
 
-        rho = self.atmosphere.get_density(x[2] + self.atmosphere.ground_altitude)
+        rho = self.Environment.get_density(x[2] + self.Environment.ground_altitude)
 
         # Aerodynamic force
-        v_rel = -v + wind_model(t, self.atmosphere.get_turb(x[0] + self.atmosphere.ground_altitude),
-                                self.atmosphere.get_v_inf(), self.atmosphere.get_turb_model(), x[2])
+        v_rel = -v + wind_model(t, self.Environment.get_turb(x[0] + self.Environment.ground_altitude),
+                                self.Environment.get_V_inf(), self.Environment.get_turb_model(), x[2])
 
         if main:
             SCD = rocket.para_main_SCD
@@ -256,16 +259,16 @@ class Simulator3D:
         YE = np.array([0, 1, 0]).transpose()
         ZE = np.array([0, 0, 1]).transpose()
 
-        a = self.atmosphere.get_speed_of_sound(X[2] + self.atmosphere.ground_altitude)
-        rho = self.atmosphere.get_density(X[2] + self.atmosphere.ground_altitude)
-        nu = self.atmosphere.get_viscosity(X[2] + self.atmosphere.ground_altitude)
+        a = self.Environment.get_speed_of_sound(X[2] + self.Environment.ground_altitude)
+        rho = self.Environment.get_density(X[2] + self.Environment.ground_altitude)
+        nu = self.Environment.get_viscosity(X[2] + self.Environment.ground_altitude)
 
         M = self.rocket.get_mass(t)
 
         # TODO: Get V_...
-        V_rel = V - wind_model(t, self.atmosphere.get_turb(X[0] + self.atmosphere.ground_altitude),
-                               self.atmosphere.get_v_inf(),
-                               self.atmosphere.get_turb_model(), X[2])
+        V_rel = V - wind_model(t, self.Environment.get_turb(X[0] + self.Environment.ground_altitude),
+                               self.Environment.get_V_inf(),
+                               self.Environment.get_turb_model(), X[2])
 
         G = -9.81 * M * ZE
 
@@ -288,15 +291,15 @@ class Simulator3D:
         ZE = np.array([0, 0, 1]).transpose()
 
         # atmosphere
-        a = self.atmosphere.get_speed_of_sound(X[2] + self.atmosphere.ground_altitude)
-        rho = self.atmosphere.get_density(X[2] + self.atmosphere.ground_altitude)
-        nu = self.atmosphere.get_viscosity(X[2] + self.atmosphere.ground_altitude)
+        a = self.Environment.get_speed_of_sound(X[2] + self.Environment.ground_altitude)
+        rho = self.Environment.get_density(X[2] + self.Environment.ground_altitude)
+        nu = self.Environment.get_viscosity(X[2] + self.Environment.ground_altitude)
 
         M = self.rocket.get_mass(t)
 
-        V_rel = V - wind_model(t, self.atmosphere.get_turb(X[0] + self.atmosphere.ground_altitude),
-                               self.atmosphere.get_v_inf(),
-                               self.atmosphere.get_turb_model(), X[2])
+        V_rel = V - wind_model(t, self.Environment.get_turb(X[0] + self.Environment.ground_altitude),
+                               self.Environment.get_V_inf(),
+                               self.Environment.get_turb_model(), X[2])
 
         G = -9.81 * M * ZE
         CD = Nose_drag(self.rocket, 0, np.linalg.norm(V_rel), nu, a)
@@ -345,9 +348,9 @@ class Simulator3D:
         g = 9.81
 
         # atmosphere
-        a = self.atmosphere.get_speed_of_sound(X[2] + self.atmosphere.ground_altitude)
-        rho = self.atmosphere.get_density(X[2] + self.atmosphere.ground_altitude)
-        nu = self.atmosphere.get_viscosity(X[2] + self.atmosphere.ground_altitude)
+        a = self.Environment.get_speed_of_sound(X[2] + self.Environment.ground_altitude)
+        rho = self.Environment.get_density(X[2] + self.Environment.ground_altitude)
+        nu = self.Environment.get_viscosity(X[2] + self.Environment.ground_altitude)
 
         # Thrust
         # Oriented along roll axis of rocket frame, expressed, in earth coordinates
@@ -356,9 +359,9 @@ class Simulator3D:
         G = -g * M * ZE
 
         # Compute center of mass angle of attack
-        Vcm = V - wind_model(t, self.atmosphere.get_turb(X[0] + self.atmosphere.ground_altitude),
-                             self.atmosphere.get_v_inf(),
-                             self.atmosphere.get_turb_model(), X[2])
+        Vcm = V - wind_model(t, self.Environment.get_turb(X[0] + self.Environment.ground_altitude),
+                             self.Environment.get_v_inf(),
+                             self.Environment.get_turb_model(), X[2])
 
         Vcm_mag = np.linalg.norm(Vcm)
         alpha_cm = math.atan2(np.linalg.norm(np.cross(RA, Vcm)), np.dot(RA, Vcm))
@@ -436,15 +439,15 @@ class Simulator3D:
         ZE = np.array([0, 0, 1]).transpose()
 
         # atmosphere
-        a = self.atmosphere.get_speed_of_sound(X[2] + self.atmosphere.ground_altitude)
-        rho = self.atmosphere.get_density(X[2] + self.atmosphere.ground_altitude)
-        nu = self.atmosphere.get_viscosity(X[2] + self.atmosphere.ground_altitude)
+        a = self.Environment.get_speed_of_sound(X[2] + self.Environment.ground_altitude)
+        rho = self.Environment.get_density(X[2] + self.Environment.ground_altitude)
+        nu = self.Environment.get_viscosity(X[2] + self.Environment.ground_altitude)
 
         M = self.rocket.get_mass(t)
 
-        V_rel = V - wind_model(t, self.atmosphere.get_turb(X[0] + self.atmosphere.ground_altitude),
-                               self.atmosphere.get_v_inf(),
-                               self.atmosphere.get_turb_model(), X[2])
+        V_rel = V - wind_model(t, self.Environment.get_turb(X[0] + self.Environment.ground_altitude),
+                               self.Environment.get_v_inf(),
+                               self.Environment.get_turb_model(), X[2])
 
         G = -9.81 * M * ZE
 
@@ -487,14 +490,14 @@ class Simulator3D:
             # Rail vector
             C_rail = rotmat(self.Environment.Rail_Azimuth, 3) * rotmat(self.Environment.Rail_Angle, 2) * rotmat(
                 self.Environment.Rail_Azimuth, 3).transpose()
-            RV = C_rail * np.array([0, 0, 1]).transpose()
+            RV = C_rail.dot(np.array([0, 0, 1]).transpose())
 
             # Initial Conditions
             X0 = RV * self.Environment.Rail_Length
             V0 = RV * V
             Q0 = rot2quat(C_rail.transpose())
             W0 = np.array([0, 0, 0]).transpose()
-            S0 = np.array([X0, V0, Q0, W0]).transpose()
+            S0 = np.concatenate((X0,V0,Q0,W0), axis=0)
 
         elif arg3 is not None and arg4 is not None and arg5 is not None:
 

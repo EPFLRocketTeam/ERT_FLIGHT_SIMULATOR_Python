@@ -5,7 +5,7 @@ from scipy.interpolate import interp1d
 def Thrust(tt, rocket: Rocket):
     thrust = []
     if type(tt) == float or type(tt) == np.float64:
-        if tt > rocket.get_burn_time:
+        if tt > rocket.get_burn_time():
             T = 0
         elif tt < 0:
             T = 0
@@ -15,7 +15,7 @@ def Thrust(tt, rocket: Rocket):
         return T
     else:
         for t in tt:
-            if t > rocket.get_burn_time:
+            if t > rocket.get_burn_time():
                 T = 0
             elif t<0:
                 T = 0

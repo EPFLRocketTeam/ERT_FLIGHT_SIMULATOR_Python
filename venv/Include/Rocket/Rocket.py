@@ -286,6 +286,8 @@ class Rocket:
                 pm = stage.get_propel_mass()
                 return pm
 
+    def get_burn_time(self):
+        return sum([stage.get_burn_time for stage in self.stages])
 
     def __str__(self):
         return self.stages.__str__()

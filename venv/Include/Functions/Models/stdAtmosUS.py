@@ -116,10 +116,10 @@ class stdAtmosUS:
     G0 = 9.80665
     Turb_model = 'None'
     V_inf = 10
-    Rail_Angle = 1
+    Rail_Angle = 0
     Rail_Length = 5
     V_Azimuth = 0
-    Rail_Azimuth = 225
+    Rail_Azimuth = 180
 
 
 
