@@ -22,17 +22,20 @@ def barrowman_lift(rocket: Rocket, alpha, m, theta):
     # Body
     CNa_stage = np.zeros(len(rocket.stages))
     CP_stage = np.zeros(len(rocket.stages))
-    """for i in range(len(rocket.stages)):
+    for i in range(len(rocket.stages)):
         if alpha == 0:
             CNa_stage[i] = (rocket.diameters[i + 2] ** 2 - rocket.diameters[i + 1] ** 2) * math.pi / a_ref / 2
         else:
             CNa_stage[i] = ((rocket.diameters[i + 2] ** 2 - rocket.diameters[i + 1] ** 2)
                             * math.pi / a_ref / 2 * math.sin(alpha) / alpha)
-        CP_stage[i] = (rocket.diameters_position[i + 1] + 1 / 3 *
-                       (rocket.diameters_position[i + 2] - rocket.diameters_position[i + 1]) *
-                       (1 + (1 - rocket.diameters[i + 1] / rocket.diameters[i + 2]) / (
-                                   1 - (rocket.diameters[i + 1] / rocket.diameters[i + 2]) ** 2)))"""
-    if alpha == 0:
+        if rocket.diameters[i+1] != rocket.diameters[i+2]:
+            CP_stage[i] = (rocket.diameters_position[i + 1] + 1 / 3 *
+                           (rocket.diameters_position[i + 2] - rocket.diameters_position[i + 1]) *
+                           (1 + (1 - rocket.diameters[i + 1] / rocket.diameters[i + 2]) / (
+                                       1 - (rocket.diameters[i + 1] / rocket.diameters[i + 2]) ** 2)))
+        else:
+            CP_stage[i] = None
+    """if alpha == 0:
         CNa_stage[0] = (rocket.diameters[3] ** 2 - rocket.diameters[2] ** 2) * math.pi / a_ref / 2
         CNa_stage[1] = (rocket.diameters[4] ** 2 - rocket.diameters[3] ** 2) * math.pi / a_ref / 2
     else:
@@ -54,7 +57,7 @@ def barrowman_lift(rocket: Rocket, alpha, m, theta):
         CP_stage[1] = (rocket.diameters_position[3] + 1 / 3 *
                    (rocket.diameters_position[4] - rocket.diameters_position[3]) *
                    (1 + (1 - rocket.diameters[3] / rocket.diameters[4]) / (
-                           1 - (rocket.diameters[3] / rocket.diameters[4]) ** 2)))
+                           1 - (rocket.diameters[3] / rocket.diameters[4]) ** 2)))"""
 
     # Fins
     if m < 1:
@@ -63,9 +66,14 @@ def barrowman_lift(rocket: Rocket, alpha, m, theta):
         print("Warning : in Barrowman calculations Mach number > 1")
         beta = math.sqrt(m ** 2 - 1)
 
+
     gamma_c = math.atan(((rocket.fin_xs+rocket.fin_ct)/2 - rocket.fin_cr/2)/rocket.fin_s)
     a = 0.5*(rocket.fin_ct + rocket.fin_cr)*rocket.fin_s
-    r = rocket.diameters[next(i for i in range(len(rocket.diameters)-1, 0, -1) if rocket.diameters_position[i] < rocket.fin_xt)]/2
+    idx=0
+    for i, pos in enumerate(rocket.diameters_position):
+        if pos < rocket.get_fin_xt:
+            idx=i
+    r = rocket.diameters[idx]/2
     ktb = 1 + r/(r + rocket.fin_s)
     CNa1 = ktb*2*math.pi*rocket.fin_s**2 / a_ref / (1 + math.sqrt(1+(beta*rocket.fin_s**2 / a / np.cos(gamma_c))**2))
     CNa_fins = CNa1*sum(np.sin(theta+2*math.pi/rocket.fin_n*(np.arange(rocket.fin_n)))**2)
@@ -77,5 +85,7 @@ def barrowman_lift(rocket: Rocket, alpha, m, theta):
     if rocket.cone_mode == 'on':
         Calpha = np.append(CNa_cone, Calpha)
         CP = np.append(CP_cone, CP)
+
+    print(CNa_stage)
 
     return Calpha, CP

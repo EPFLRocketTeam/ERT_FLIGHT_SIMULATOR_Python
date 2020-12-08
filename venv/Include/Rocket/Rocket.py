@@ -65,6 +65,9 @@ class Rocket:
         self.ab_x = 1.390
         self.lug_n = 2
         self.lug_S = 1.32e-4
+        self.cp_fac = 1
+        self.CNa_fac = 1
+        self.CD_fac = 1
         # Arbitrary, based on M3 launch lugs in Cernier 23/03/2019; 1.61e-4 for M2
         # TODO: Implement this parameter in the definition of the body and then for the rocket as a whole
 
@@ -110,6 +113,23 @@ class Rocket:
                 sum2 += sum([stage.get_mass(t)*motor.get_cg for motor in stage.motors])
         return (sum1 + sum2)/self.get_mass(t)
 
+    def get_motor_fac(self):
+        for stage in self.stages:
+            if stage.motors:
+                return stage.motors[0].get_motor_fac()
+
+    def set_motor_fac(self, motor_fac: float):
+        for stage in self.stages:
+            if stage.motors:
+                for motor in stage.motors:
+                    motor.set_motor_fac(motor_fac)
+
+    def set_payload_mass(self, pl_mass: float):
+        self.pl_mass = pl_mass
+
+    def get_payload_mass(self):
+        return self.pl_mass
+
 
     # TODO : update method
     def get_long_inertia(self, t: float):
@@ -125,7 +145,7 @@ class Rocket:
 
     @property
     def get_burn_time(self):
-        return max([stage.get_burn_time(self) for stage in self.stages])
+        return max([stage.get_burn_time for stage in self.stages])
 
     @property
     def get_length(self):
@@ -199,6 +219,7 @@ class Rocket:
         for stage in self.stages:
             if stage.fins:
                 diameter_at_position_function = interp1d(stage.body.diameters_position, stage.body.diameters)
+                print(stage.body.diameters_position, stage.body.diameters, stage.fins[0].body_top_offset + stage.fins[0].root_chord/2)
                 return diameter_at_position_function(stage.fins[0].body_top_offset + stage.fins[0].root_chord / 2)
             # TODO: Find a way to organize this when multiple fin sets per body are involved or when the diameter...
             #  is changing and fins are offsetted (e.g. Hydra)
@@ -221,6 +242,50 @@ class Rocket:
         for stage in self.stages:
             if stage.fins:
                 return stage.fins[0].number
+
+    @property
+    def set_cp_fac(self, cp_fac:float):
+        self.cp_fac = cp_fac
+
+    @property
+    def set_CNa_fac(self, CNa_fac: float):
+        self.CNa_fac = CNa_fac
+
+    @property
+    def set_CD_fac(self, CD_fac: float):
+        self.CD_fac = CD_fac
+
+    def get_thrust_time(self):
+        for stage in self.stages:
+
+            if len(stage.motors) > 0:
+                tt = stage.get_thrust_time()
+                return tt
+
+    def get_thrust_force(self):
+        for stage in self.stages:
+            if len(stage.motors) > 0:
+                tf = stage.get_thrust_force()
+                return tf
+
+    def get_motor_mass(self):
+        for stage in self.stages:
+            if len(stage.motors) > 0:
+                mm = stage.get_motor_mass()
+                return mm
+
+    def get_thrust_to_mass(self):
+        for stage in self.stages:
+            if len(stage.motors) > 0:
+                t2m = stage.get_thrust_to_mass()
+                return t2m
+
+    def get_propel_mass(self):
+        for stage in self.stages:
+            if len(stage.motors) > 0:
+                pm = stage.get_propel_mass()
+                return pm
+
 
     def __str__(self):
         return self.stages.__str__()

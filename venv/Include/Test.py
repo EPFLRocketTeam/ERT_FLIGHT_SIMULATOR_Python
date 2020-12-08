@@ -1,6 +1,7 @@
 import numpy as np
 import math
 from scipy.integrate import ode
+import matplotlib.pyplot as plt
 
 from Rocket.Body import Body
 from Rocket.Fins import Fins
@@ -16,6 +17,8 @@ from Functions.Models.wind_model import wind_model
 from Functions.Models.robert_galejs_lift import robert_galejs_lift
 from Functions.Models.barrowman_lift import barrowman_lift
 from Functions.Math.rot2quat import rot2quat
+from Functions.Models.stdAtmosUS import stdAtmosUS
+from Simulator3D import Simulator3D
 
 if __name__ == "__main__":
 
@@ -61,18 +64,53 @@ if __name__ == "__main__":
         conv_float = float(line)
         VAL_E.append(conv_float)
 
-    Lugs = open('Parameters/param_env/Env.txt', 'r')
+    Lugs = open('Parameters/param_rocket/LugsTube.txt', 'r')
     Lugs1 = Lugs.readlines()
     VAL_L = []
     for line in Lugs1:  # taking each line
         conv_float = float(line)
         VAL_L.append(conv_float)
 
-    # Rocket definition
-    gland = Body('tangent ogive', [0, VAL_N[1] * 10 ** (-3)], [0, (VAL_N[0]) * 10 ** (-3)])
+    AB = open('Parameters/param_rocket/AirBrakesTube.txt', 'r')
+    AB1 = AB.readlines()
+    VAL_AB = []
+    for line in AB1:  # taking each line
+        conv_float = float(line)
+        VAL_AB.append(conv_float)
 
-    tubes_francais = Body("cylinder", [VAL_BT[1] * 10 ** (-3), VAL_BT[2] * 10 ** (-3)],
-                          [ (VAL_N[0] + VAL_T[0] + VAL_F[9]) * 10 ** (-3), (VAL_N[0] + VAL_T[0] + VAL_F[9] + VAL_BT[0]) * 10 ** (-3)])
+    weight = open('Parameters/param_rocket/WeightTube.txt', 'r')
+    weight1 = weight.readlines()
+    VAL_W = []
+    for line in weight1:  # taking each line
+        conv_float = float(line)
+        VAL_W.append(conv_float)
+
+    MP = open('Parameters/param_rocket/ParachuteTubeMain.txt', 'r')
+    MP1 = MP.readlines()
+    VAL_MP = []
+    for line in MP1:  # taking each line
+        conv_float = float(line)
+        VAL_MP.append(conv_float)
+
+    DP = open('Parameters/param_rocket/ParachuteTubeDrogue.txt', 'r')
+    DP1 = DP.readlines()
+    VAL_DP = []
+    for line in DP1:  # taking each line
+        conv_float = float(line)
+        VAL_DP.append(conv_float)
+
+    weight = open('Parameters/param_rocket/WeightTube.txt', 'r')
+    weight1 = weight.readlines()
+    VAL_W = []
+    for line in weight1:  # taking each line
+        conv_float = float(line)
+        VAL_W.append(conv_float)
+
+    # Rocket definition
+    gland = Body('tangent ogive', [0], [0])
+
+    tubes_francais = Body("cylinder", [VAL_N[1] * 10 ** (-3), VAL_BT[1] * 10 ** (-3), VAL_BT[2] * 10 ** (-3)],
+                          [VAL_N[0] * 10 **(-3),  (VAL_N[0] + VAL_T[0] + VAL_F[9]) * 10 ** (-3), (VAL_N[0] + VAL_T[0] + VAL_F[9] + VAL_BT[0]) * 10 ** (-3)])
 
     # TODO: Add Mass and CM to stage
     M3_cone = Stage('Matterhorn III nosecone', gland, 1.26, 0.338, np.array([[VAL_N[2], VAL_N[3], VAL_N[4]],
@@ -94,6 +132,12 @@ if __name__ == "__main__":
     M3_body.add_fins(finDefData)
     M3_body.add_motor('Motors/%s.eng' % (Motor1[0]))
 
+    main_parachute_params = [bool(VAL_MP[4]), VAL_MP[5], VAL_MP[5]]
+    M3_body.add_parachute(main_parachute_params)
+
+    drogue_parachute_params = [bool(VAL_DP[4]), VAL_DP[5], VAL_DP[5]]
+    M3_body.add_parachute(drogue_parachute_params)
+
     ab_data = [VAL_T[0]/2 + VAL_AB[4], VAL_AB[2], VAL_AB[3]]
     M3_body.add_airbrakes(ab_data)
 
@@ -103,11 +147,23 @@ if __name__ == "__main__":
     Matterhorn_III.add_stage(M3_body)
     Matterhorn_III.add_lugs([VAL_L[2], VAL_L[0]]) # TODO: Add lug surface
 
-    print(Matterhorn_III.diameters_position)
-    print(Matterhorn_III.diameters)
-    print(Matterhorn_III.get_fin_number)
-    print(Matterhorn_III.get_empty_mass())
-    
+    Matterhorn_III.set_payload_mass(VAL_W[0])
+
+    US_Atmos = stdAtmosUS(VAL_E[0], VAL_E[1], VAL_E[2], VAL_E[3])
+
+    SimObj = Simulator3D(Matterhorn_III, US_Atmos)
+
+    T1, S1 = SimObj.RailSim()
+
+    plt.plot(T1, S1[0])
+    plt.xlabel("Time [s]");
+    plt.ylabel("Altitude [m]")
+    plt.title("Position(time), on rail")
+    plt.show()
+
+    print(T1, S1)
+
+
     Matterhorn_III.fin_n = 3
     Matterhorn_III.fin_xt = 3.83
     Matterhorn_III.fin_s = 0.2
@@ -134,5 +190,6 @@ if __name__ == "__main__":
     Matterhorn_III.CNa_fac = 1
     Matterhorn_III.CD_fac = 1
 
-    (a, b) = barrowman_lift(Matterhorn_III, 0, 0.6, 1)
+
+    (a, b) = barrowman_lift(Matterhorn_III, 0, 0.0663, -0.0044)
     print(a, b)

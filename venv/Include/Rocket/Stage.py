@@ -6,6 +6,7 @@
 from Rocket.Body import Body
 from Rocket.Fins import Fins
 from Rocket.Motor import Motor
+from Rocket.Parachute import Parachute
 
 
 class Stage:
@@ -68,6 +69,8 @@ class Stage:
         self.fins = []
         self.motor_paths = []
         self.motors = []
+        self.parachutes = []
+
 
         # self.diameters = self.body.diameters
         # self.diameters_position = self.body.diameters_position
@@ -94,6 +97,14 @@ class Stage:
         """
         self.motor_paths.append(motor_path)
         self.motors.append(Motor(motor_path))
+
+    def add_parachute(self, parachute_parameters: list):
+        self.parachutes.append(Parachute(parachute_parameters[0], parachute_parameters[1], parachute_parameters[2]))
+
+
+    def set_motor_fac(self, motor_fac: float):
+        for motor in self.motors:
+            motor.set_motor_fac(motor_fac)
 
     def add_airbrakes(self, ab_data:list):
         self.ab_x = ab_data[0]
@@ -123,6 +134,21 @@ class Stage:
     @property
     def get_burn_time(self):
         return sum([motor.burn_time for motor in self.motors])
+
+    def get_thrust_time(self):
+        return self.motors[0].get_thrust_time()
+
+    def get_thrust_force(self):
+        return self.motors[0].get_thrust_force()
+
+    def get_motor_mass(self):
+        return self.motors[0].total_mass
+
+    def get_thrust_to_mass(self):
+        return self.motors[0].thrust_to_mass
+
+    def get_propel_mass(self):
+        return self.motors[0].propellant_mass
 
     def __str__(self):
         return self.name

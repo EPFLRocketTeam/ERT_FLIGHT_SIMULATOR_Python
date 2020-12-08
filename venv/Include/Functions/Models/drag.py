@@ -173,9 +173,13 @@ def drag(Rocket, alpha, Uinf, nu, a):
 
     # 5.1.2.4 Body drag at low AoA (eq 139, p. 404)
     CDB_alpha = 2 * deltak * S0 / Sm * alpha * math.sin(alpha)
-    tmp_stages = [x0, Rocket.diameters_position[np.where(np.diff(Rocket.diameters_position) == 0)[0][0]]]
-    tmp_diameters = [interp1d(Rocket.diameters_position, Rocket.diameters)(x0),
-                     Rocket.diameters[np.where(np.diff(Rocket.diameters_position) == 0)[0][0]]]
+    tmp_stages = [x0]
+    tmp_diameters = [float(interp1d(Rocket.diameters_position, Rocket.diameters)(x0))]
+    for i,z in enumerate(Rocket.diameters_position):
+        if z > x0:
+            tmp_stages.append(z)
+            tmp_diameters.append(Rocket.diameters[i])
+
 
     # 5.1.2.4 Body drag at high AoA (eq 142, p. 406)
     CDB_alpha = CDB_alpha + 2 * alpha ** 2 * math.sin(alpha) / Sm * etak * 1.2 * sum(
@@ -234,5 +238,6 @@ def drag(Rocket, alpha, Uinf, nu, a):
     elif M > 2 and not (M <= 0.9):
         warnings.warn("WARNING: In drag calculation, Mach number exceeds validity range.",
                       DeprecationWarning, stacklevel=1)
+
 
     return CD

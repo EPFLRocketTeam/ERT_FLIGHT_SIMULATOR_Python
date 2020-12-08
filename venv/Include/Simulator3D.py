@@ -24,6 +24,8 @@ from Functions.Math.rot2anglemat import rot2anglemat
 from Functions.Math.quat_evolve import quat_evolve
 from Functions.Math.rot2quat import rot2quat
 from Functions.Models.pitch_damping_moment import pitch_damping_moment
+from Functions.Models.Mass_Non_Lin import Mass_Non_Lin
+from Functions.Models.Thrust import Thrust
 
 
 class Simulator3D:
@@ -62,19 +64,36 @@ class Simulator3D:
         self.atmosphere = atmosphere
 
     def Dynamics_Rail_1DOF(self, t, s):
-        T = self.rocket.get_thrust(t)
-        m = self.rocket.get_mass(t)
-        dMdt = self.rocket.get_dmass_dt(t)
+
+        x = s[0]
+        v = s[1]
+
+        # Rocket inertia
+        Mass, dMdt = Mass_Non_Lin(t, self.rocket)
+
+        # Environment
+        g = 9.81
+        a = self.atmosphere.get_speed_of_sound(s[0] + self.atmosphere.ground_altitude)
         rho = self.atmosphere.get_density(s[0] + self.atmosphere.ground_altitude)
         nu = self.atmosphere.get_viscosity(s[0] + self.atmosphere.ground_altitude)
-        a = self.atmosphere.get_speed_of_sound(s[0] + self.atmosphere.ground_altitude)
-        # TODO: Add drag influences (done?)
-        CD = drag(self.rocket, 0, s[1], nu, a)
-        CD_AB = 0  # TODO: Insert reference to drag_shuriken or other
-        g = self.atmosphere.G0
-        Sm = self.rocket.get_max_cross_section_surface
 
-        return [s[1], T / m - g - s[1] * dMdt / m - 0.5 * rho * Sm * s[1] ** 2 * (CD + CD_AB) / m]
+        # Gravity
+        G = -g*np.cos(self.atmosphere.Rail_Angle)*Mass
+
+        T = Thrust(t, self.rocket)
+
+        # TODO: Add drag influences (done?)
+        CD = drag(self.rocket, 0, v, nu, a)
+        D = -0.5*rho*self.rocket.get_max_cross_section_surface*CD*v**2
+
+        F_tot = G + T*self.rocket.get_motor_fac() + D
+
+        x_dot = v
+        v_dot = 1/Mass * (F_tot - v*dMdt)
+
+        CD_AB = 0  # TODO: Insert reference to drag_shuriken or other
+
+        return x_dot, v_dot
 
     def Dynamics_6DOF(self, t, s):
         x = s[0:3]
@@ -453,7 +472,7 @@ class Simulator3D:
         # Options
 
         # intergration
-        self.integration_ivp = solve_ivp(self.Dynamics_Rail_1DOF, tspan, X0, event=off_rail)
+        self.integration_ivp = solve_ivp(self.Dynamics_Rail_1DOF, tspan, X0, events=off_rail)
 
         T1 = self.integration_ivp.t
         S1 = self.integration_ivp.y
@@ -702,54 +721,4 @@ class Simulator3D:
             np.append(simAuxResults.Nose_delta, tmp_Nose_Delta)
         return status
 
-if __name__ == '__main__':
-    # Rocket definition
-    gland = Body("tangent ogive", [0, 0.125], [0, 0.505])
 
-    MyRocket = Rocket()
-    MyEnvironment = stdAtmosUS(1382, 308, 85600, 0.15)
-
-    MyRocket.stages = 4
-    MyRocket.diameters = [0, 0.156, 0.156, 0.135]
-    MyRocket.fin_n = 3
-    MyRocket.fin_xt = 3.83
-    MyRocket.fin_s = 0.2
-    MyRocket.fin_cr = 0.28
-    MyRocket.fin_ct = 0.125
-    MyRocket.fin_xs = 0.107
-    MyRocket.fin_t = 0.004
-    MyRocket.lug_n = 2
-    MyRocket.lug_S = 0.00057
-    MyRocket.rocket_m = 35.2
-    MyRocket.rocket_I = 47
-    MyRocket.rocket_cm = 2.14
-    MyRocket.ab_x = 2.05
-    MyRocket.ab_n = 0
-    MyRocket.ab_phi = -232
-    MyRocket.pl_mass = 4.0
-    MyRocket.para_main_SCD = 23.14
-    MyRocket.para_drogue_SCD = 1.75
-    MyRocket.para_main_event = 400
-    MyRocket.motor_ID = 'M2400T.txt'
-    MyRocket.motor_fac = 1
-    MyRocket.cone_mode = 'on'
-    MyRocket.cp_fac = 1
-    MyRocket.CNa_fac = 1
-    MyRocket.CD_fac = 1
-
-    MyEnvironment.Temperature_Ground = 290, 15
-    MyEnvironment.Pressure_Ground = 84972.484
-    MyEnvironment.Humidity_Ground = 0.51031
-    MyEnvironment.Start_Altitude = 1567.6
-    MyEnvironment.Start_Latitude = 46.90479
-    MyEnvironment.Start_Longitude = 8.07575
-    MyEnvironment.dTdh = -9.5
-    MyEnvironment.V_inf = 0
-    MyEnvironment.V_Azimuth = 0
-    MyEnvironment.Turb_I = 0.00
-    MyEnvironment.Turb_model = None
-    MyEnvironment.Rail_Length = 5
-    MyEnvironment.Rail_Angle = 1
-    MyEnvironment.Rail_Azimuth = 225
-    # MyEnvironment.multilayerwind 7 10 2 60 0.0 100 2 80 0.01  250 2 80 0.01 500 0.5 60 0.03 750 3 70 0.03 1000 2 70 0.03 1500 1.5 120 0.03
-    MyEnvironment.numberLayer = 7

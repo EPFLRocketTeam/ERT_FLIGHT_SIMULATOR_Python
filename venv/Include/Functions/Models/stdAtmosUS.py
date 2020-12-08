@@ -114,8 +114,14 @@ class stdAtmosUS:
     T0 = 288.15
     A0 = 340.294
     G0 = 9.80665
-    TurbModel = 'None'
-    v_inf = 10
+    Turb_model = 'None'
+    V_inf = 10
+    Rail_Angle = 1
+    Rail_Length = 5
+    V_Azimuth = 0
+    Rail_Azimuth = 225
+
+
 
     VISCOSITY = ([200, 7.5400e-06],
                  [250, 1.1370e-05],
@@ -205,10 +211,10 @@ class stdAtmosUS:
         return 0  # TODO : complete
 
     def get_turb_model(self):
-        return self.TurbModel
+        return self.Turb_model
 
-    def get_v_inf(self):
-        return self.v_inf  # todo : check v_inf /!\ magic number
+    def get_V_inf(self):
+        return self.V_inf  # todo : check v_inf /!\ magic number
 
 if __name__ == '__main__':
     US_Atmos = stdAtmosUS(1382, 308, 86000, 0.15)

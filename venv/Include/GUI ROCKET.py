@@ -16,8 +16,8 @@ from Rocket.Rocket import Rocket
 from Rocket.Stage import Stage
 import os
 
-a = np.array([[2,3], [3,4]])
-print(a)
+a = np.array([1, 2, 3, 4])
+b = np.where(a>2)
 
 # Ouvre une fenetre with title and icon
 fenetre = Tk()

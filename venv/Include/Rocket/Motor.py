@@ -152,9 +152,17 @@ class Motor:
 
         self.thrust_to_mass = self.propellant_mass / self.total_impulse
 
+        self.motor_fac = 1
+
     # --------------------
     # METHODS
     # --------------------
+
+    def set_motor_fac(self, motor_fac: float):
+        self.motor_fac = motor_fac
+
+    def get_motor_fac(self):
+        return self.motor_fac
 
     def get_thrust(self, t: float) -> float:
         """
@@ -293,6 +301,12 @@ class Motor:
         :return: motor total inertia, in [kg.m^2]
         """
         return self.get_propellant_inertia(t) + self.get_casing_inertia() + self.get_motor_inertia(t, d)
+
+    def get_thrust_time(self):
+        return self.thrust_time
+
+    def get_thrust_force(self):
+        return self.thrust_force
 
 
 if __name__ == '__main__':
