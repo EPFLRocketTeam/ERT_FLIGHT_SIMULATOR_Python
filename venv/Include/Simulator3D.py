@@ -109,9 +109,9 @@ class Simulator3D:
         angle = rot2anglemat(c)
 
         # Rocket principle frame vectors expressed in Earth coordinates
-        ya = c * np.array([1, 0, 0]).transpose()  # Yaw axis
-        pa = c * np.array([0, 1, 0]).transpose()  # Pitch axis
-        ra = c * np.array([0, 0, 1]).transpose()  # Roll axis
+        ya = c.dot(np.array([1, 0, 0]).transpose())  # Yaw axis
+        pa = c.dot(np.array([0, 1, 0]).transpose())  # Pitch axis
+        ra = c.dot(np.array([0, 0, 1]).transpose())  # Roll axis
 
         # Earth coordinates vectors expressed in Earth's frame
         xe = np.array([1, 0, 0]).transpose()
@@ -125,9 +125,9 @@ class Simulator3D:
         Sm = self.rocket.get_max_cross_section_surface
         I_L = self.rocket.get_long_inertia(t)
         I_R = self.rocket.get_rot_inertia(t)
-        I = c.transpose() * ([[I_L, 0, 0],
+        I = c.transpose().dot([[I_L, 0, 0],
                               [0, I_L, 0],
-                              [0, 0, I_R]]) * c
+                              [0, 0, I_R]]).dot(c)
 
         print("M", m, "dmdt", dMdt, "cg", cg, "Sm", Sm, "I_l", I_L, "I_R", I_R, "I", I, "c", c)
 
@@ -141,7 +141,7 @@ class Simulator3D:
         # Oriented along roll axis of rocket frame, expressed, in earth coordinates
         T = self.rocket.get_thrust(t) * ra
 
-        print("T", T)
+        print("RA", ya.shape)
         # Gravity
         G = -g * m * ze
 

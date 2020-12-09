@@ -165,7 +165,7 @@ if __name__ == "__main__":
     # Flight Sim
     # -----------------------------------
 
-    T2_1, S2_1, T2_1E, S2_1E, I2_1E = SimObj.FlightSim([T1[-1], SimObj.rocket.get_burn_time()], S1[1][-1])
+    #T2_1, S2_1, T2_1E, S2_1E, I2_1E = SimObj.FlightSim([T1[-1], SimObj.rocket.get_burn_time()], S1[1][-1])
 
     plt.plot(T1, S1[0])
     plt.xlabel("Time [s]");
