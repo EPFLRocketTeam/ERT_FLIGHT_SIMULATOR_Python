@@ -3,8 +3,9 @@
 # Date : 30 March 2019
 # EPFL Rocket Team, 1015 Lausanne, Switzerland
 
-from math import exp, sqrt
+from math import exp, sqrt, sin, cos
 from scipy.interpolate import interp1d
+import numpy as np
 
 
 class stdAtmosUS:
@@ -117,9 +118,10 @@ class stdAtmosUS:
     Turb_model = 'None'
     V_inf = 10
     Rail_Angle = 0
-    Rail_Length = 5
-    V_Azimuth = 0
-    Rail_Azimuth = 180
+    Rail_Length = 7
+    V_Azimuth = 150
+    Rail_Azimuth = 181
+    V_dir = np.array([np.cos(V_Azimuth*np.pi/180), np.sin(V_Azimuth*np.pi/180), 0.0])
 
 
 

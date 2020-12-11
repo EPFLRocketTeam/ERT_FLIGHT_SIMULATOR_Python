@@ -26,6 +26,7 @@ from Functions.Math.rot2quat import rot2quat
 from Functions.Models.pitch_damping_moment import pitch_damping_moment
 from Functions.Models.Mass_Non_Lin import Mass_Non_Lin
 from Functions.Models.Thrust import Thrust
+from Functions.Models.Mass_Properties import Mass_Properties
 
 
 class Simulator3D:
@@ -119,17 +120,16 @@ class Simulator3D:
         ze = np.array([0, 0, 1]).transpose()
 
         # Rocket inertia and properties
-        m = self.rocket.get_mass(t)
-        dMdt = self.rocket.get_dmass_dt(t)
-        cg = self.rocket.get_cg(t)
+        mass_properties = Mass_Properties(t, self.rocket, "NonLinear")
+        m = mass_properties[0]
+        dMdt = mass_properties[1]
+        cg = mass_properties[2]
+        I_L = mass_properties[4]
+        I_R = mass_properties[6]
         Sm = self.rocket.get_max_cross_section_surface
-        I_L = self.rocket.get_long_inertia(t)
-        I_R = self.rocket.get_rot_inertia(t)
         I = c.transpose().dot([[I_L, 0, 0],
                               [0, I_L, 0],
                               [0, 0, I_R]]).dot(c)
-
-        print("M", m, "dmdt", dMdt, "cg", cg, "Sm", Sm, "I_l", I_L, "I_R", I_R, "I", I, "c", c)
 
         # Environment
         g = 9.81  # Gravity [m/s^2]
@@ -141,25 +141,29 @@ class Simulator3D:
         # Oriented along roll axis of rocket frame, expressed, in earth coordinates
         T = self.rocket.get_thrust(t) * ra
 
-        print("RA", ya.shape)
         # Gravity
         G = -g * m * ze
 
+        print(self.Environment.V_dir)
         # Aerodynamic corrective forces
         # Compute center of mass angle of attack
         v_cm = v - wind_model(t, self.Environment.get_turb(x[0] + self.Environment.ground_altitude),
-                              self.Environment.get_V_inf(), self.Environment.get_turb_model(), x[2]) # TODO : V_dir
+                              self.Environment.get_V_inf()*self.Environment.V_dir, self.Environment.get_turb_model(), x[2]) # TODO : V_dir
         v_cm_mag = np.linalg.norm(v_cm)
         alpha_cm = math.atan2(np.linalg.norm(np.cross(ra, v_cm)), np.dot(ra, v_cm))
 
         # Mach number
         Mach = np.linalg.norm(v_cm_mag) / a
 
+        print(v_cm, v_cm_mag, alpha_cm, Mach)
+
         # Normal lift coefficient and center of pressure
         CNa, Xcp, CNa_bar, CP_bar = normal_lift(self.rocket, alpha_cm, 1.1, Mach, angle[2], 1)
 
         # Stability margin
         margin = Xcp - cg
+
+        #print(G, v_cm, v_cm_mag, alpha_cm, Mach, CNa, Xcp, CNa_bar, CP_bar, margin)
 
         # Compute rocket angle of attack
         if np.linalg.norm(w) != 0:

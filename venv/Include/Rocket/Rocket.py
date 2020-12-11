@@ -52,6 +52,7 @@ class Rocket:
             print(self.stages)
 
         self.diameters = []
+
         if np.any(stages):
             self.diameters = [diameter for diameter in [stage.body.diameters for stage in self.stages]]
 
@@ -68,6 +69,7 @@ class Rocket:
         self.cp_fac = 1
         self.CNa_fac = 1
         self.CD_fac = 1
+        self.isHybrid = 0
         # Arbitrary, based on M3 launch lugs in Cernier 23/03/2019; 1.61e-4 for M2
         # TODO: Implement this parameter in the definition of the body and then for the rocket as a whole
 
@@ -84,6 +86,9 @@ class Rocket:
         """
         self.stages.append(stage)
 
+
+        """for dia in stage.body.diameters:
+            self.diameters.append(dia)"""
         if np.any(self.diameters):
             self.diameters.extend(stage.body.diameters)
         else:
@@ -95,6 +100,9 @@ class Rocket:
             self.diameters_position.extend(corrected_diameter_position)
         else:
             self.diameters_position = stage.body.diameters_position
+
+        print("iiiii", self.diameters)
+        self.L = self.diameters_position[-1]
 
     def add_lugs(self, lugs: list):
         self.lug_n = lugs[0]
@@ -130,6 +138,8 @@ class Rocket:
     def get_payload_mass(self):
         return self.pl_mass
 
+    def set_rocket_inertia(self, intertia):
+        self.rocket_I = intertia
 
     # TODO : update method
     def get_long_inertia(self, t: float):
@@ -145,7 +155,7 @@ class Rocket:
 
     @property
     def get_burn_time(self):
-        return max([stage.get_burn_time for stage in self.stages])
+        return sum([stage.get_burn_time for stage in self.stages])
 
     @property
     def get_length(self):
@@ -219,7 +229,6 @@ class Rocket:
         for stage in self.stages:
             if stage.fins:
                 diameter_at_position_function = interp1d(stage.body.diameters_position, stage.body.diameters)
-                print(stage.body.diameters_position, stage.body.diameters, stage.fins[0].body_top_offset + stage.fins[0].root_chord/2)
                 return diameter_at_position_function(stage.fins[0].body_top_offset + stage.fins[0].root_chord / 2)
             # TODO: Find a way to organize this when multiple fin sets per body are involved or when the diameter...
             #  is changing and fins are offsetted (e.g. Hydra)
@@ -286,8 +295,29 @@ class Rocket:
                 pm = stage.get_propel_mass()
                 return pm
 
+    def get_motor_length(self):
+        for stage in self.stages:
+            if len(stage.motors) > 0:
+                motor_length = stage.get_motor_length()
+                return motor_length
+
+    def get_motor_dia(self):
+        for stage in self.stages:
+            if len(stage.motors) > 0:
+                motor_dia = stage.get_motor_dia()
+                return motor_dia
+
+    def get_motor_casing_mass(self):
+        for stage in self.stages:
+            if len(stage.motors) > 0:
+                casing_mass = stage.get_motor_casing_mass()
+                return casing_mass
+
     def get_burn_time(self):
         return sum([stage.get_burn_time for stage in self.stages])
+
+    def set_hybrid(self, isHybrid):
+        self.isHybrid = isHybrid
 
     def __str__(self):
         return self.stages.__str__()

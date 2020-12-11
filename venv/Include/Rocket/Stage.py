@@ -150,6 +150,15 @@ class Stage:
     def get_propel_mass(self):
         return self.motors[0].propellant_mass
 
+    def get_motor_length(self):
+        return self.motors[0].length
+
+    def get_motor_dia(self):
+        return self.motors[0].diameter
+
+    def get_motor_casing_mass(self):
+        return self.motors[0].casing_mass
+
     def __str__(self):
         return self.name
 
