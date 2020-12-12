@@ -86,9 +86,6 @@ class Rocket:
         """
         self.stages.append(stage)
 
-
-        """for dia in stage.body.diameters:
-            self.diameters.append(dia)"""
         if np.any(self.diameters):
             self.diameters.extend(stage.body.diameters)
         else:
@@ -101,7 +98,6 @@ class Rocket:
         else:
             self.diameters_position = stage.body.diameters_position
 
-        print("iiiii", self.diameters)
         self.L = self.diameters_position[-1]
 
     def add_lugs(self, lugs: list):
@@ -228,7 +224,7 @@ class Rocket:
     def get_mid_fin_diameter(self):
         for stage in self.stages:
             if stage.fins:
-                diameter_at_position_function = interp1d(stage.body.diameters_position, stage.body.diameters)
+                diameter_at_position_function = interp1d(self.diameters_position, self.diameters)
                 return diameter_at_position_function(stage.fins[0].body_top_offset + stage.fins[0].root_chord / 2)
             # TODO: Find a way to organize this when multiple fin sets per body are involved or when the diameter...
             #  is changing and fins are offsetted (e.g. Hydra)

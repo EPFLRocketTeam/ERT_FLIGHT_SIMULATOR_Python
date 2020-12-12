@@ -107,10 +107,10 @@ if __name__ == "__main__":
         VAL_W.append(conv_float)
 
     # Rocket definition
-    gland = Body('tangent ogive', [0], [0])
+    gland = Body('tangent ogive', [0, 0.156], [0, 0.242])
 
-    tubes_francais = Body("cylinder", [0.156, 0.156, 0.135],
-                          [0.242,  4.11, 4.16])
+    tubes_francais = Body("cylinder", [0.156, 0.135],
+                          [4.11-0.242, 4.16-0.242])
 
     # TODO: Add Mass and CM to stage
     M3_cone = Stage('Matterhorn III nosecone', gland, 5, 0.338, np.array([[VAL_N[2], VAL_N[3], VAL_N[4]],
@@ -138,14 +138,14 @@ if __name__ == "__main__":
     drogue_parachute_params = [bool(VAL_DP[4]), VAL_DP[5], VAL_DP[5]]
     M3_body.add_parachute(drogue_parachute_params)
 
-    ab_data = [VAL_T[0]/2 + VAL_AB[4], VAL_AB[2], VAL_AB[3]]
+    ab_data = [VAL_T[0]/2 + VAL_AB[4], 0, VAL_AB[3]]
     M3_body.add_airbrakes(ab_data)
 
     Matterhorn_III = Rocket()
 
     Matterhorn_III.add_stage(M3_cone)
     Matterhorn_III.add_stage(M3_body)
-    Matterhorn_III.add_lugs([VAL_L[2], VAL_L[0]]) # TODO: Add lug surface
+    Matterhorn_III.add_lugs([VAL_L[2], 5.7*10**(-4)]) # TODO: Add lug surface
 
     Matterhorn_III.set_payload_mass(VAL_W[0])
     Matterhorn_III.add_cg_empty_rocket(2.14)
@@ -168,39 +168,20 @@ if __name__ == "__main__":
     # -----------------------------------
 
     T2_1, S2_1, T2_1E, S2_1E, I2_1E = SimObj.FlightSim([T1[-1], SimObj.rocket.get_burn_time()], S1[1][-1])
+    T2_2, S2_2, T2_2E, S2_2E, I2_2E = SimObj.FlightSim([T2_1[-1], 40], [S2_1[i][-1] for i in range(3)], [S2_1[i][-1] for i in range(3,6)], [S2_1[i][-1] for i in range(6,10)], [S2_1[i][-1] for i in range(10,13)])
 
-    plt.plot(T1, S1[0])
+    plt.plot(T2_2, S2_2[2])
     plt.xlabel("Time [s]");
     plt.ylabel("Altitude [m]")
     plt.title("Position(time), on rail")
     plt.show()
 
+    T2 = np.concatenate([T2_1, T2_2[1:]])
+    S2 = []
+    for i, s in enumerate(S2_2):
+        S2.append(np.concatenate([S2_1[i], s[1:]]))
+
+    T_1_2 = np.concatenate([T1, T2])
+    # TODO : S1 ..........................
 
 
-    Matterhorn_III.fin_n = 3
-    Matterhorn_III.fin_xt = 3.83
-    Matterhorn_III.fin_s = 0.2
-    Matterhorn_III.fin_cr = 0.28
-    Matterhorn_III.fin_ct = 0.125
-    Matterhorn_III.fin_xs = 0.107
-    Matterhorn_III.fin_t = 0.004
-    Matterhorn_III.lug_n = 2
-    Matterhorn_III.lug_S = 0.00057
-    Matterhorn_III.rocket_m = 35.2
-    Matterhorn_III.rocket_I = 47
-    Matterhorn_III.rocket_cm = 2.14
-    Matterhorn_III.ab_x = 2.05
-    Matterhorn_III.ab_n = 0
-    Matterhorn_III.ab_phi = -232
-    Matterhorn_III.pl_mass = 4.0
-    Matterhorn_III.para_main_SCD = 23.14
-    Matterhorn_III.para_drogue_SCD = 1.75
-    Matterhorn_III.para_main_event = 400
-    Matterhorn_III.motor_ID = 'M2400T.txt'
-    Matterhorn_III.motor_fac = 1
-    Matterhorn_III.cone_mode = 'on'
-    Matterhorn_III.cp_fac = 1
-    Matterhorn_III.CNa_fac = 1
-    Matterhorn_III.CD_fac = 1
-
-    print(a, b)

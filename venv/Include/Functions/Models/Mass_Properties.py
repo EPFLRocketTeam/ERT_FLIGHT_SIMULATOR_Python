@@ -27,7 +27,6 @@ def Mass_Properties(t: float, rocket: Rocket, Opt):
                 dMdt = propel_mass/burn_time
                 M = rocket_m + motor_mass - t * dMdt
         elif Opt == "NonLinear":
-            print("t = ", t)
             if t == 0:
                 dMdt = thrust_to_mass*Thrust(t, rocket)
                 M = rocket_m
@@ -38,7 +37,6 @@ def Mass_Properties(t: float, rocket: Rocket, Opt):
                 tt = np.linspace(0, t, 500)
                 current_impulse = np.trapz(Thrust(tt, rocket), tt)
                 M = rocket_m + motor_mass - thrust_to_mass * current_impulse
-                print("rocket_m", rocket_m, "motor_mass", motor_mass, "thrust to mass", thrust_to_mass)
                 dMdt = thrust_to_mass * Thrust(t, rocket)
         else:
             print("ERROR: Opt parameter should be Linear or NonLinear")

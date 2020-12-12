@@ -23,18 +23,18 @@ def robert_galejs_lift(rocket, alpha, k):
                        (rocket.diameters_position[i + 2] - rocket.diameters_position[i + 1]) *
                        (rocket.diameters[i + 1] + 2 * rocket.diameters[i + 2]) / (rocket.diameters[i + 1] +
                        rocket.diameters[i + 2]))"""
-    Ap_stage[0] = ((rocket.diameters[1] + rocket.diameters[3]) / 2
-                       * (rocket.diameters_position[3] - rocket.diameters_position[1]))
-    Ap_stage[1] = ((rocket.diameters[3] + rocket.diameters[4]) / 2
-                       * (rocket.diameters_position[4] - rocket.diameters_position[3]))
+    Ap_stage[0] = ((rocket.diameters[1] + rocket.diameters[2]) / 2
+                       * (rocket.diameters_position[2] - rocket.diameters_position[1]))
+    Ap_stage[1] = ((rocket.diameters[2] + rocket.diameters[3]) / 2
+                       * (rocket.diameters_position[3] - rocket.diameters_position[2]))
     Xp_stage[0] = (rocket.diameters_position[1] + 1 / 3 *
-                   (rocket.diameters_position[3] - rocket.diameters_position[1]) *
-                   (rocket.diameters[1] + 2 * rocket.diameters[3]) / (rocket.diameters[1] +
-                                                                              rocket.diameters[3]))
-    Xp_stage[1] = (rocket.diameters_position[3] + 1 / 3 *
-                   (rocket.diameters_position[4] - rocket.diameters_position[3]) *
-                   (rocket.diameters[3] + 2 * rocket.diameters[4]) / (rocket.diameters[3] +
-                                                                      rocket.diameters[4]))
+                   (rocket.diameters_position[2] - rocket.diameters_position[1]) *
+                   (rocket.diameters[1] + 2 * rocket.diameters[2]) / (rocket.diameters[1] +
+                                                                              rocket.diameters[2]))
+    Xp_stage[1] = (rocket.diameters_position[2] + 1 / 3 *
+                   (rocket.diameters_position[3] - rocket.diameters_position[2]) *
+                   (rocket.diameters[2] + 2 * rocket.diameters[3]) / (rocket.diameters[2] +
+                                                                      rocket.diameters[3]))
 
     # Output
     Ap = Ap_stage

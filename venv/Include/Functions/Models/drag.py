@@ -58,6 +58,7 @@ def drag(Rocket, alpha, Uinf, nu, a):
     Rc_crit = 5.14e6
     # Critical values of the Reynolds number are selected as shown in Fig. 51, p.464
 
+
     # -------------------------------------------------------------------------
     # 3. Skin Friction Coefficients
     # -------------------------------------------------------------------------
@@ -100,6 +101,8 @@ def drag(Rocket, alpha, Uinf, nu, a):
          zip(Rocket.diameters[1:-1], Rocket.diameters[2:], Rocket.diameters_position[2:],
              Rocket.diameters_position[1:-1])])
 
+
+
     """sum(
         (Rocket.diameters[1:-1] + Rocket.diameters[2:]) * (Rocket.diameters_position[2:] - Rocket.diameters_position[1:-1]) * np.sqrt(
             1 + ((Rocket.diameters[1:-1] - Rocket.diameters[2:]) / 2 / (
@@ -120,6 +123,7 @@ def drag(Rocket, alpha, Uinf, nu, a):
         CDf_B = Cf_lam_B * CDf_B  # body drag for laminar flow
     else:
         CDf_B = Cf_turb_B * CDf_B  # body drag for turbulent flow
+
 
     # 4.2.2 Base drag (eq 162, p 431)
     CDb = 0.029 * (Rocket.diameters[-1] / dm) ** 3 / np.sqrt(CDf_B)
@@ -172,7 +176,7 @@ def drag(Rocket, alpha, Uinf, nu, a):
     S0 = np.pi * (interp1d(Rocket.diameters_position, Rocket.diameters)(x0)) ** 2 / 4
 
     # 5.1.2.4 Body drag at low AoA (eq 139, p. 404)
-    CDB_alpha = 2 * deltak * S0 / Sm * alpha * math.sin(alpha)
+    CDB_alpha = 2 * deltak * S0 / Sm * alpha * np.sin(alpha)
     tmp_stages = [x0]
     tmp_diameters = [float(interp1d(Rocket.diameters_position, Rocket.diameters)(x0))]
     for i,z in enumerate(Rocket.diameters_position):
@@ -182,7 +186,7 @@ def drag(Rocket, alpha, Uinf, nu, a):
 
 
     # 5.1.2.4 Body drag at high AoA (eq 142, p. 406)
-    CDB_alpha = CDB_alpha + 2 * alpha ** 2 * math.sin(alpha) / Sm * etak * 1.2 * sum(
+    CDB_alpha = CDB_alpha + 2 * alpha ** 2 * np.sin(alpha) / Sm * etak * 1.2 * sum(
         [(a + b) / 2 * (c - d) for a, b, c, d
          in zip(tmp_diameters[:-1], tmp_diameters[1:], tmp_stages[1:], tmp_stages[:-1])])
     """sum(
@@ -213,7 +217,7 @@ def drag(Rocket, alpha, Uinf, nu, a):
     # 7. Drag of tumbeling body (c.f. OpenRocket Documentation section 3.5)
     # -------------------------------------------------------------------------
     fin_efficiency = np.array([0.5, 1, 1.5, 1.41, 1.81, 1.73, 1.9, 1.85])
-    CD_t_fin = 1.42 * fin_efficiency[Rocket.get_fin_number]
+    CD_t_fin = 1.42 * fin_efficiency[Rocket.get_fin_number-1]
     CD_t_body = 0.56
 
     CD_t = (SE * CD_t_fin + CD_t_body * dm * (Rocket.diameters_position[-1] - Rocket.diameters_position[1])) / Sm

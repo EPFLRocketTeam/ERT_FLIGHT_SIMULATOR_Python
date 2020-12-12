@@ -102,6 +102,8 @@ class Simulator3D:
         q = s[6:10]
         w = s[10:13]
 
+
+
         # Normalise quaternion
         q = normalize_vector(q)
 
@@ -144,7 +146,6 @@ class Simulator3D:
         # Gravity
         G = -g * m * ze
 
-        print(self.Environment.V_dir)
         # Aerodynamic corrective forces
         # Compute center of mass angle of attack
         v_cm = v - wind_model(t, self.Environment.get_turb(x[0] + self.Environment.ground_altitude),
@@ -155,21 +156,18 @@ class Simulator3D:
         # Mach number
         Mach = np.linalg.norm(v_cm_mag) / a
 
-        print(v_cm, v_cm_mag, alpha_cm, Mach)
-
         # Normal lift coefficient and center of pressure
         CNa, Xcp, CNa_bar, CP_bar = normal_lift(self.rocket, alpha_cm, 1.1, Mach, angle[2], 1)
 
         # Stability margin
         margin = Xcp - cg
 
-        #print(G, v_cm, v_cm_mag, alpha_cm, Mach, CNa, Xcp, CNa_bar, CP_bar, margin)
-
         # Compute rocket angle of attack
         if np.linalg.norm(w) != 0:
             w_norm = w / np.linalg.norm(w)
         else:
-            w_norm = np.zeros(3, 1)
+            w_norm = np.zeros((3, 1))
+
 
         v_rel = v_cm + margin * math.sin(math.acos(np.dot(ra, w_norm))) * np.cross(ra, w)
         v_mag = np.linalg.norm(v_rel)
@@ -190,10 +188,11 @@ class Simulator3D:
 
         # Drag
         # Drag coefficient
-        cd = drag(self.rocket, alpha, v_mag, nu, a)  # TODO : * cd_fac (always 1 ?)
+        cd = drag(self.rocket, alpha, v_mag, nu, a)*self.rocket.CD_fac  # TODO : * cd_fac (always 1 ?)
         ab_phi = -230  # TODO : find a way to deal with airbrakes, /!\ magic number
-        if t > self.rocket.get_burn_time:
+        if t > self.rocket.get_burn_time():
             cd = cd + drag_shuriken(self.rocket, ab_phi, alpha, v_mag, nu)
+        print(cd)
 
         # Drag force
         d = -0.5 * rho * Sm * cd * v_mag ** 2 * v_norm
@@ -214,9 +213,13 @@ class Simulator3D:
 
         m_tot = mn + md
 
+        # Translational dynamics
+        X_dot = v
+        V_dot = 1/m*(f_tot - v*dMdt)
+
         # State derivatives
         q_dot = quat_evolve(q, w)
-        w_dot = lin.lstsq(I, m_tot)
+        w_dot = np.linalg.lstsq(I, m_tot)[0]
 
         tmp_Margin = margin / np.max(self.rocket.diameters)
         tmp_Alpha = alpha
@@ -229,7 +232,9 @@ class Simulator3D:
         tmp_Ir = I_R
         tmp_Delta = delta
 
-        return [v, 1 / m * (f_tot - v * dMdt), q_dot, w_dot]
+        S_dot = np.concatenate((X_dot, V_dot, q_dot, w_dot))
+
+        return S_dot
 
     def Dynamics_Parachute_3DOF(self, t, s, rocket, environment, M, main):
         x = s[0:3]
@@ -510,18 +515,19 @@ class Simulator3D:
             V0 = arg3
             Q0 = arg4
             W0 = arg5
-            S0 = np.array([X0, V0, Q0, W0]).transpose()
+            S0 = np.concatenate((X0,V0,Q0,W0), axis=0)
 
         else:
             print("ERROR: In flight simulator, function accepts either 3 or 6 arguments")
 
         def apogee(t, y):
-            return y[1]
+            return y[5]
 
         apogee.terminal = True
         apogee.direction = -1
 
-        self.integration_ivp = solve_ivp(self.Dynamics_6DOF, tspan, S0, event=apogee, rtol=10 ** (-6), atol=10 ** (-6))
+
+        self.integration_ivp = solve_ivp(self.Dynamics_6DOF, tspan, S0, events=apogee)
 
         T2 = self.integration_ivp.t
         S2 = self.integration_ivp.y
