@@ -19,6 +19,7 @@ from Functions.Models.barrowman_lift import barrowman_lift
 from Functions.Math.rot2quat import rot2quat
 from Functions.Models.stdAtmosUS import stdAtmosUS
 from Simulator3D import Simulator3D
+from Functions.Models.stdAtmos import stdAtmos
 
 if __name__ == "__main__":
 
@@ -132,10 +133,10 @@ if __name__ == "__main__":
     M3_body.add_fins(finDefData)
     M3_body.add_motor('Motors/%s.eng' % (Motor1[0]))
 
-    main_parachute_params = [bool(VAL_MP[4]), VAL_MP[5], VAL_MP[5]]
+    main_parachute_params = [True, 23.14, 100]
     M3_body.add_parachute(main_parachute_params)
 
-    drogue_parachute_params = [bool(VAL_DP[4]), VAL_DP[5], VAL_DP[5]]
+    drogue_parachute_params = [False, 1.75, VAL_DP[5]]
     M3_body.add_parachute(drogue_parachute_params)
 
     ab_data = [VAL_T[0]/2 + VAL_AB[4], 0, VAL_AB[3]]
@@ -147,7 +148,7 @@ if __name__ == "__main__":
     Matterhorn_III.add_stage(M3_body)
     Matterhorn_III.add_lugs([VAL_L[2], 5.7*10**(-4)]) # TODO: Add lug surface
 
-    Matterhorn_III.set_payload_mass(VAL_W[0])
+    Matterhorn_III.set_payload_mass(4)
     Matterhorn_III.add_cg_empty_rocket(2.14)
     Matterhorn_III.set_rocket_inertia(47)
 
@@ -170,18 +171,39 @@ if __name__ == "__main__":
     T2_1, S2_1, T2_1E, S2_1E, I2_1E = SimObj.FlightSim([T1[-1], SimObj.rocket.get_burn_time()], S1[1][-1])
     T2_2, S2_2, T2_2E, S2_2E, I2_2E = SimObj.FlightSim([T2_1[-1], 40], [S2_1[i][-1] for i in range(3)], [S2_1[i][-1] for i in range(3,6)], [S2_1[i][-1] for i in range(6,10)], [S2_1[i][-1] for i in range(10,13)])
 
-    plt.plot(T2_2, S2_2[2])
-    plt.xlabel("Time [s]");
-    plt.ylabel("Altitude [m]")
-    plt.title("Position(time), on rail")
-    plt.show()
-
     T2 = np.concatenate([T2_1, T2_2[1:]])
     S2 = []
     for i, s in enumerate(S2_2):
         S2.append(np.concatenate([S2_1[i], s[1:]]))
 
-    T_1_2 = np.concatenate([T1, T2])
-    # TODO : S1 ..........................
+    T_1_2 = np.concatenate([T1, T2[1:]])
+    S_1_2_1 = np.append(S1[0], S2[2][1:])
+    S_1_2_2 = np.append(S1[1], S2[5][1:])
+    S_1_2 = np.append([S_1_2_1], [S_1_2_2], axis = 0)
 
+    print("Apogée AGL : ", S2[2][-1])
+    print("Apogée AGL at t = ", T2[-1])
+    print("Max Speed : ", max(S_1_2[1]))
+    index = np.argmax(S_1_2[1])
+    print("Max Speed at t = ", T_1_2[index])
 
+    T, a, p, rho, Nu = stdAtmos(S_1_2[0][index], US_Atmos)
+    #Fd = 0.5*SimObj.SimAuxResults.Cd(index)*rho*pi*Rocket.dm^2/4*maxi^2
+
+    T3, S3, T3E, S3E, I3E = SimObj.DrogueParaSim(T2[-1], [S2[i][-1] for i in range(3)], [S2[i][-1] for i in range(3,6)])
+    T4, S4, T4E, S4E, I4E = SimObj.MainParaSim(T3[-1], [S3[i][-1] for i in range(3)],
+                                                 [S3[i][-1] for i in range(3, 6)])
+
+    T5, S5, T5E, S5E, I5E = SimObj.CrashSim(T2[-1], [S2[i][-1] for i in range(3)],
+                                               [S2[i][-1] for i in range(3, 6)])
+    print(S5)
+    plt.plot(T1, S1[0])
+    plt.plot(T2, S2[2])
+    plt.plot(T3, S3[2])
+    plt.plot(T4, S4[2])
+    plt.plot(T5, S5[2])
+    plt.xlabel("Time [s]");
+    plt.ylabel("Altitude [m]")
+    plt.title("x(t)")
+    plt.gca().legend(("Rail", "Ascent", "Drogue Descent", "Main Descent", "Ballistic Descent"))
+    plt.show()

@@ -159,6 +159,21 @@ class Stage:
     def get_motor_casing_mass(self):
         return self.motors[0].casing_mass
 
+    def get_para_main_event(self):
+        for parachute in self.parachutes:
+            if parachute.main:
+                return parachute.event
+
+    def get_para_main_SCD(self):
+        for parachute in self.parachutes:
+            if parachute.main:
+                return parachute.SCD
+
+    def get_para_drogue_SCD(self):
+        for parachute in self.parachutes:
+            if not parachute.main:
+                return parachute.SCD
+
     def __str__(self):
         return self.name
 

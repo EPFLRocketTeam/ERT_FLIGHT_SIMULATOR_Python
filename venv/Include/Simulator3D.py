@@ -192,7 +192,6 @@ class Simulator3D:
         ab_phi = -230  # TODO : find a way to deal with airbrakes, /!\ magic number
         if t > self.rocket.get_burn_time():
             cd = cd + drag_shuriken(self.rocket, ab_phi, alpha, v_mag, nu)
-        print(cd)
 
         # Drag force
         d = -0.5 * rho * Sm * cd * v_mag ** 2 * v_norm
@@ -236,47 +235,55 @@ class Simulator3D:
 
         return S_dot
 
-    def Dynamics_Parachute_3DOF(self, t, s, rocket, environment, M, main):
+    def Dynamics_Parachute_3DOF(self, t, s, rocket, main):
         x = s[0:3]
         v = s[3:6]
+
 
         rho = self.Environment.get_density(x[2] + self.Environment.ground_altitude)
 
         # Aerodynamic force
-        v_rel = -v + wind_model(t, self.Environment.get_turb(x[0] + self.Environment.ground_altitude),
-                                self.Environment.get_V_inf(), self.Environment.get_turb_model(), x[2])
+        v_rel = -v + wind_model(t, self.Environment.get_turb(x[2] + self.Environment.ground_altitude),
+                                self.Environment.get_V_inf()*self.Environment.V_dir, self.Environment.get_turb_model(), x[2])
+
+        M = self.rocket.get_empty_mass() - self.rocket.pl_mass
 
         if main:
-            SCD = rocket.para_main_SCD
+            SCD = self.rocket.get_para_main_SCD()
         else:
-            SCD = rocket.para_drogue_SCD
+            SCD = self.rocket.get_para_drogue_SCD()
 
         D = 0.5 * rho * SCD * np.linalg.norm(v_rel) * v_rel
 
         # Gravity force
-        g = 9.81 * np.array(0, 0, -1).transpose()
+        g = np.array([0, 0, -9.81])
         G = g * M
 
-        return [v, (D + G) / M]
+        dXdt = v
+        dVdt = (D+G)/M
 
-    def Dynamics_3DOF(self, t, s, Environment):
+        dsdt = np.concatenate((dXdt, dVdt))
+        return dsdt
+
+    def Dynamics_3DOF(self, t, s):
 
         X = s[0:3]
         V = s[3:6]
 
-        XE = np.array([1, 0, 0]).transpose()
-        YE = np.array([0, 1, 0]).transpose()
-        ZE = np.array([0, 0, 1]).transpose()
+        XE = np.array([1, 0, 0])
+        YE = np.array([0, 1, 0])
+        ZE = np.array([0, 0, 1])
 
         a = self.Environment.get_speed_of_sound(X[2] + self.Environment.ground_altitude)
         rho = self.Environment.get_density(X[2] + self.Environment.ground_altitude)
         nu = self.Environment.get_viscosity(X[2] + self.Environment.ground_altitude)
 
-        M = self.rocket.get_mass(t)
+
+        M = self.rocket.get_empty_mass()
 
         # TODO: Get V_...
-        V_rel = V - wind_model(t, self.Environment.get_turb(X[0] + self.Environment.ground_altitude),
-                               self.Environment.get_V_inf(),
+        V_rel = V - wind_model(t, self.Environment.get_turb(X[2] + self.Environment.ground_altitude),
+                               self.Environment.get_V_inf()*self.Environment.V_dir,
                                self.Environment.get_turb_model(), X[2])
 
         G = -9.81 * M * ZE
@@ -285,10 +292,13 @@ class Simulator3D:
 
         D = -0.5 * rho * self.rocket.get_max_cross_section_surface * CD * V_rel * np.linalg.norm(V_rel)
 
+
         X_dot = V
         V_dot = 1 / M * (D + G)
 
-        return X_dot, V_dot
+
+        S_dot = np.concatenate((X_dot, V_dot))
+        return S_dot
 
     def Nose_Dynamics_3DOF(self, t, s, Environment):
 
@@ -470,7 +480,7 @@ class Simulator3D:
 
     def RailSim(self):
 
-        def off_rail(t, y): return y[0] - 5
+        def off_rail(t, y): return y[0] - self.Environment.Rail_Length
 
         off_rail.terminal = True
         off_rail.direction = 1
@@ -540,22 +550,20 @@ class Simulator3D:
     def DrogueParaSim(self, T0, X0, V0):
 
         # Initial conditions
-        S0 = np.array([X0, V0]).transpose()
-
-        # empty mass
-        M = self.rocket.rocket_m - self.rocket.pl_mass
+        S0 = np.concatenate((X0, V0), axis=0)
 
         # time span
         tspan = np.array([T0, 500])
 
-        def MainEvent(t, y, rocket):  # todo : check
-            return y[0] > rocket.para_main_event - 0.5
+        def MainEvent(t, y, rocket, main):
+            return (y[2] > rocket.get_para_main_event()) - 0.5
 
         MainEvent.terminal = True
         MainEvent.direction = -1
 
+        print(self.rocket.get_para_main_event())
         # integration
-        self.integration_ivp = solve_ivp(self.Dynamics_Parachute_3DOF, tspan, S0, event=MainEvent)
+        self.integration_ivp = solve_ivp(self.Dynamics_Parachute_3DOF, tspan, S0, args=[self.rocket, 0], events=MainEvent)
 
         T3 = self.integration_ivp.t
         S3 = self.integration_ivp.y
@@ -567,22 +575,19 @@ class Simulator3D:
 
     def MainParaSim(self, T0, X0, V0):
         # Initial conditions
-        S0 = np.array([X0, V0]).transpose()
-
-        # empty mass
-        M = self.rocket.rocket_m - self.rocket.pl_mass
+        S0 = np.concatenate((X0, V0), axis=0)
 
         # time span
         tspan = np.array([T0, 500])
 
-        def CrashEvent(t, y):
-            return (y[0] > 0) - 0.5
+        def CrashEvent(t, y, rocket, main):
+            return (y[2] > 0) - 0.5
 
         CrashEvent.terminal = True
         CrashEvent.direction = -1
 
         # integration
-        self.integration_ivp = solve_ivp(self.Dynamics_Parachute_3DOF, tspan, S0, event=CrashEvent)
+        self.integration_ivp = solve_ivp(self.Dynamics_Parachute_3DOF, tspan, S0, args=[self.rocket, 1], events=CrashEvent)
 
         T4 = self.integration_ivp.t
         S4 = self.integration_ivp.y
@@ -595,19 +600,20 @@ class Simulator3D:
     def CrashSim(self, T0, X0, V0):
 
         # Initial conditions
-        S0 = np.array([X0, V0]).transpose()
+        S0 = np.concatenate((X0, V0), axis=0)
+        print(S0, T0)
 
         # time span
         tspan = np.array([T0, 100])
 
         def CrashEvent(t, y):
-            return (y[0] > 0) - 0.5
+            return (y[2] > 0) - 0.5
 
         CrashEvent.terminal = True
         CrashEvent.direction = -1
 
         # integration
-        self.integration_ivp = solve_ivp(self.Dynamics_Parachute_3DOF, tspan, S0, event=CrashEvent)
+        self.integration_ivp = solve_ivp(self.Dynamics_3DOF, tspan, S0, events=CrashEvent)
 
         T5 = self.integration_ivp.t
         S5 = self.integration_ivp.y

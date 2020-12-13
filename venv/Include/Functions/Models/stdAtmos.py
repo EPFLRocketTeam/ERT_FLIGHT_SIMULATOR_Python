@@ -35,4 +35,12 @@ def stdAtmos(alt, Env):
     g0 = 9.80665
 
     # TEMPERATURE MODEL
-    T = Env.Temperature_Ground + Env.dTdh * (alt - Env.Start_Altitude) / 1000 # en [K]
+    T = Env.ground_temperature + Env.dTdH * (alt - Env.ground_altitude) / 1000 # en [K]
+    p = p0 * (1 + Env.dTdH / 1000 * alt / T0) ** (-g0 / R / Env.dTdH * 1000)
+    x = Env.saturation_vapor_ratio * Env.ground_humidity
+    rho = p / R / T * (1 + x) / (1 + 1.609 * x)
+    a = sqrt(gamma * R * T)
+
+    Nu = Env.get_viscosity(alt)
+
+    return T, a, p, rho, Nu

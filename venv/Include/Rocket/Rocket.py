@@ -315,5 +315,23 @@ class Rocket:
     def set_hybrid(self, isHybrid):
         self.isHybrid = isHybrid
 
+    def get_para_main_event(self):
+        for stage in self.stages:
+            if len(stage.parachutes) > 0:
+                para_main_event = stage.get_para_main_event()
+                return para_main_event
+
+    def get_para_main_SCD(self):
+        for stage in self.stages:
+            if len(stage.parachutes) > 0:
+                para_main_scd = stage.get_para_main_SCD()
+                return para_main_scd
+
+    def get_para_drogue_SCD(self):
+        for stage in self.stages:
+            if len(stage.parachutes) > 0:
+                para_drogue_scd = stage.get_para_drogue_SCD()
+                return para_drogue_scd
+
     def __str__(self):
         return self.stages.__str__()
