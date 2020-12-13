@@ -167,6 +167,7 @@ def drag(Rocket, alpha, Uinf, nu, a):
 
     # 5.1.2 Compute body drag at angle of attack alpha
     # 5.1.2.1 x1 as defined by explanations of (eq 140, p 404)
+
     x1 = Rocket.diameters_position[np.where(np.diff(Rocket.diameters) == 0)[0][0]]
 
     # 5.1.2.2 x0 as in (eq 140, p404)

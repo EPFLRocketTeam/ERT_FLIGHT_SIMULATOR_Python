@@ -69,8 +69,10 @@ class Simulator3D:
         x = s[0]
         v = s[1]
 
+
         # Rocket inertia
         Mass, dMdt = Mass_Non_Lin(t, self.rocket)
+
 
         # Environment
         g = 9.81
@@ -93,6 +95,7 @@ class Simulator3D:
         v_dot = 1/Mass * (F_tot - v*dMdt)
 
         CD_AB = 0  # TODO: Insert reference to drag_shuriken or other
+
 
         return x_dot, v_dot
 
@@ -148,13 +151,13 @@ class Simulator3D:
 
         # Aerodynamic corrective forces
         # Compute center of mass angle of attack
-        v_cm = v - wind_model(t, self.Environment.get_turb(x[0] + self.Environment.ground_altitude),
+        v_cm = v - wind_model(t, self.Environment.get_turb(x[2] + self.Environment.ground_altitude),
                               self.Environment.get_V_inf()*self.Environment.V_dir, self.Environment.get_turb_model(), x[2]) # TODO : V_dir
         v_cm_mag = np.linalg.norm(v_cm)
         alpha_cm = math.atan2(np.linalg.norm(np.cross(ra, v_cm)), np.dot(ra, v_cm))
 
         # Mach number
-        Mach = np.linalg.norm(v_cm_mag) / a
+        Mach = v_cm_mag / a
 
         # Normal lift coefficient and center of pressure
         CNa, Xcp, CNa_bar, CP_bar = normal_lift(self.rocket, alpha_cm, 1.1, Mach, angle[2], 1)
@@ -281,7 +284,6 @@ class Simulator3D:
 
         M = self.rocket.get_empty_mass()
 
-        # TODO: Get V_...
         V_rel = V - wind_model(t, self.Environment.get_turb(X[2] + self.Environment.ground_altitude),
                                self.Environment.get_V_inf()*self.Environment.V_dir,
                                self.Environment.get_turb_model(), X[2])
@@ -486,13 +488,14 @@ class Simulator3D:
         off_rail.direction = 1
 
         # Initial Conditions
-        X0 = np.array([0, 0]).transpose()
+        X0 = np.array([0, 0])
 
         # Time span
         tspan = np.array([0, 5])
 
         # Options
 
+        print(tspan, X0)
         # intergration
         self.integration_ivp = solve_ivp(self.Dynamics_Rail_1DOF, tspan, X0, events=off_rail)
 

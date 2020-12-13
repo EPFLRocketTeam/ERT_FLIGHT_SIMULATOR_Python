@@ -10,11 +10,13 @@ import numpy as np
 import string
 import math
 from Simulator1D import Simulator1D
+from Simulator3D import Simulator3D
 from Functions.Models.stdAtmosUS import stdAtmosUS
 from Rocket.Body import Body
 from Rocket.Rocket import Rocket
 from Rocket.Stage import Stage
 import os
+import matplotlib.pyplot as plt
 
 a = np.array([1, 2, 3, 4])
 b = np.where(a>2)
@@ -916,6 +918,200 @@ def Get_Tube_CM():
     cm = (cmt*MASS[1]+cmf*MASS[2]+cmb*MASS[3])/mass + length/2
     return cm
 
+def Launch_Simulator3D():
+    NoseCone = open('Parameters/param_rocket/NoseCone.txt', 'r')  # Read text file
+    NoseCone1 = NoseCone.readlines()
+    VAL_N = []
+    for line in NoseCone1:  # taking each line
+        conv_float = float(line)
+        VAL_N.append(conv_float)
+
+    Tube = open('Parameters/param_rocket/Tube.txt', 'r')
+    Tube1 = Tube.readlines()
+    VAL_T = []
+    for line in Tube1:  # taking each line
+        conv_float = float(line)
+        VAL_T.append(conv_float)
+
+    Fins = open('Parameters/param_rocket/Fins.txt', 'r')
+    Fins1 = Fins.readlines()
+    VAL_F = []
+    for i, line in enumerate(Fins1):  # taking each line
+        if i == 0:
+            conv_int = int(float(line))
+            VAL_F.append(conv_int)
+        else:
+            conv_float = float(line)
+            VAL_F.append(conv_float)
+
+    BoatTail = open('Parameters/param_rocket/BoatTail.txt', 'r')
+    BoatTail1 = BoatTail.readlines()
+    VAL_BT = []
+    for line in BoatTail1:  # taking each line
+        conv_float = float(line)
+        VAL_BT.append(conv_float)
+
+    Motor = open('Parameters/param_motor/Motor.txt', 'r')
+    Motor1 = Motor.readlines()
+
+    Env = open('Parameters/param_env/Env.txt', 'r')
+    Env1 = Env.readlines()
+    VAL_E = []
+    for line in Env1:  # taking each line
+        conv_float = float(line)
+        VAL_E.append(conv_float)
+
+    Lugs = open('Parameters/param_rocket/LugsTube.txt', 'r')
+    Lugs1 = Lugs.readlines()
+    VAL_L = []
+    for line in Lugs1:  # taking each line
+        conv_float = float(line)
+        VAL_L.append(conv_float)
+
+    AB = open('Parameters/param_rocket/AirBrakesTube.txt', 'r')
+    AB1 = AB.readlines()
+    VAL_AB = []
+    for line in AB1:  # taking each line
+        conv_float = float(line)
+        VAL_AB.append(conv_float)
+
+    weight = open('Parameters/param_rocket/WeightTube.txt', 'r')
+    weight1 = weight.readlines()
+    VAL_W = []
+    for line in weight1:  # taking each line
+        conv_float = float(line)
+        VAL_W.append(conv_float)
+
+    MP = open('Parameters/param_rocket/ParachuteTubeMain.txt', 'r')
+    MP1 = MP.readlines()
+    VAL_MP = []
+    for line in MP1:  # taking each line
+        conv_float = float(line)
+        VAL_MP.append(conv_float)
+
+    DP = open('Parameters/param_rocket/ParachuteTubeDrogue.txt', 'r')
+    DP1 = DP.readlines()
+    VAL_DP = []
+    for line in DP1:  # taking each line
+        conv_float = float(line)
+        VAL_DP.append(conv_float)
+
+    weight = open('Parameters/param_rocket/WeightTube.txt', 'r')
+    weight1 = weight.readlines()
+    VAL_W = []
+    for line in weight1:  # taking each line
+        conv_float = float(line)
+        VAL_W.append(conv_float)
+
+    # Rocket definition
+    gland = Body('tangent ogive', [0, VAL_N[1]*10**(-3)], [0, VAL_N[0]*10**(-3)])
+
+    tubes_francais = Body("cylinder", [VAL_BT[1]*10**(-3),VAL_BT[2]*10**(-3)],
+                              [VAL_T[0], VAL_T[0]+VAL_BT[0]])
+
+    cone = Stage('Matterhorn III nosecone', gland, VAL_N[2]*10**(-3), VAL_N[0]/2*10**(-3), np.array([[VAL_N[2], VAL_N[3], VAL_N[4]],
+                                                                          [VAL_N[5], VAL_N[6], VAL_N[7]],
+                                                                          [VAL_N[8], VAL_N[9], VAL_N[10]]]))
+    body = Stage('Matterhorn III body', tubes_francais, MASS[1]*10**(-3)+MASS[3]*10**(-3), Get_Tube_CM()*10**(-3), np.array([[VAL_T[2], VAL_T[3], VAL_T[4]],
+                                                                                  [VAL_T[5], VAL_T[6], VAL_T[7]],
+                                                                                  [VAL_T[8], VAL_T[9], VAL_T[
+                                                                                      10]]]))
+    finDefData = {'number': VAL_F[0],
+                  'root_chord': VAL_F[1]*10**(-3),
+                  'tip_chord': VAL_F[2]*10**(-3),
+                  'span': VAL_F[3]*10**(-3),
+                  'sweep': VAL_F[4]*10**(-3),
+                  'thickness': VAL_F[5]*10**(-3),
+                  'phase': VAL_F[6],
+                  'body_top_offset': VAL_T[0]*10**(-3) + VAL_F[7]*10**(-3),
+                  'total_mass': VAL_F[8]*10**(-3)}
+
+    # ADD FINS
+    body.add_fins(finDefData)
+    body.add_motor('Motors/%s.eng' % (Motor1[0]))
+
+    # ADD PARACHUTES
+    main_parachute_params = [True, VAL_MP[0]*VAL_MP[1]*10**(-3), VAL_MP[-1]]
+    drogue_parachute_params = [False, VAL_DP[0]*VAL_DP[1]*10**(-3), VAL_MP[-1]]
+
+    body.add_parachute(main_parachute_params)
+    body.add_parachute(drogue_parachute_params)
+
+    # ADD AIR BRAKES
+    ab_data = [VAL_T[0] / 2 + VAL_AB[4], VAL_AB[2], VAL_AB[3]]
+    body.add_airbrakes(ab_data)
+
+    MyRocket = Rocket()
+
+    MyRocket.add_stage(cone)
+    MyRocket.add_stage(body)
+
+    MyRocket.add_lugs([VAL_L[2], 5.7 * 10 ** (-4)])  # TODO: Add lug surface
+
+    MyRocket.set_payload_mass(VAL_W[0]*10**(-3))
+    MyRocket.add_cg_empty_rocket(2.1) # TODO : MODIFY
+    MyRocket.set_rocket_inertia(47)
+
+    MyEnvironment = stdAtmosUS(VAL_E[0], VAL_E[1], VAL_E[2], VAL_E[3])
+
+    SimObj = Simulator3D(MyRocket, MyEnvironment)
+
+    # -----------------------------------
+    # Rail Sim
+    # -----------------------------------
+
+    T1, S1 = SimObj.RailSim()
+    print("Launch rail departure velocity: ", S1[1][-1])
+    print("Launch rail departure time: ", T1[-1])
+
+    # -----------------------------------
+    # Flight Sim
+    # -----------------------------------
+
+    T2_1, S2_1, T2_1E, S2_1E, I2_1E = SimObj.FlightSim([T1[-1], SimObj.rocket.get_burn_time()], S1[1][-1])
+    T2_2, S2_2, T2_2E, S2_2E, I2_2E = SimObj.FlightSim([T2_1[-1], 40], [S2_1[i][-1] for i in range(3)],
+                                                       [S2_1[i][-1] for i in range(3, 6)],
+                                                       [S2_1[i][-1] for i in range(6, 10)],
+                                                       [S2_1[i][-1] for i in range(10, 13)])
+
+    T2 = np.concatenate([T2_1, T2_2[1:]])
+    S2 = []
+    for i, s in enumerate(S2_2):
+        S2.append(np.concatenate([S2_1[i], s[1:]]))
+
+    T_1_2 = np.concatenate([T1, T2[1:]])
+    S_1_2_1 = np.append(S1[0], S2[2][1:])
+    S_1_2_2 = np.append(S1[1], S2[5][1:])
+    S_1_2 = np.append([S_1_2_1], [S_1_2_2], axis=0)
+
+    print("Apogée AGL : ", S2[2][-1])
+    print("Apogée AGL at t = ", T2[-1])
+    print("Max Speed : ", max(S_1_2[1]))
+    index = np.argmax(S_1_2[1])
+    print("Max Speed at t = ", T_1_2[index])
+
+    # T, a, p, rho, Nu = stdAtmos(S_1_2[0][index], US_Atmos)
+    # Fd = 0.5*SimObj.SimAuxResults.Cd(index)*rho*pi*Rocket.dm^2/4*maxi^2
+
+    T3, S3, T3E, S3E, I3E = SimObj.DrogueParaSim(T2[-1], [S2[i][-1] for i in range(3)],
+                                                 [S2[i][-1] for i in range(3, 6)])
+    T4, S4, T4E, S4E, I4E = SimObj.MainParaSim(T3[-1], [S3[i][-1] for i in range(3)],
+                                               [S3[i][-1] for i in range(3, 6)])
+
+    T5, S5, T5E, S5E, I5E = SimObj.CrashSim(T2[-1], [S2[i][-1] for i in range(3)],
+                                            [S2[i][-1] for i in range(3, 6)])
+    plt.plot(T1, S1[0])
+    plt.plot(T2, S2[2])
+    plt.plot(T3, S3[2])
+    plt.plot(T4, S4[2])
+    plt.plot(T5, S5[2])
+    plt.xlabel("Time [s]");
+    plt.ylabel("Altitude [m]")
+    plt.title("x(t)")
+    plt.gca().legend(("Rail", "Ascent", "Drogue Descent", "Main Descent", "Ballistic Descent"))
+    plt.show()
+
+
 ## Launch Simulator1D.py
 def Launch_Simulator1D():
     if __name__ == '__main__':
@@ -1411,7 +1607,7 @@ def DrawNose(VALUES_N, display=0):
     DispData()
 
 
-def OpenNoseParams(fenetre, values=[600, 155, 1000, 0,0,0,0,0,0,0,0,0,0], disp=1):
+def OpenNoseParams(fenetre, values=[600, 155, 3000, 0,0,0,0,0,0,0,0,0,0], disp=1):
     """ Function that open a new window containing the nosecone parameters and allows to customize them.
 
     Parameters:
@@ -1505,7 +1701,7 @@ def OpenNoseParams(fenetre, values=[600, 155, 1000, 0,0,0,0,0,0,0,0,0,0], disp=1
     MassEntry.grid(row=3, column=1, pady=10)
     MassEntry.insert(0, values[2])
     MassEntry.bind("<Return>", insertVal2)
-    MassScale = Scale(tab1, from_=0, to=2000, orient=HORIZONTAL, command=slide2, showvalue=0)
+    MassScale = Scale(tab1, from_=0, to=5000, orient=HORIZONTAL, command=slide2, showvalue=0)
     MassScale.grid(row=3, column=2)
     MassScale.set(values[2])
 
@@ -1613,7 +1809,7 @@ def DrawTube(VALUES_T, display=0):
     canvas2.grid(row=0, column=tmp)
     DispData()
 
-def OpenTubeParams(fenetre, values=[2038, 155, 1000, 0, 0,0,0,0,0,0,0,0,0], disp=1):
+def OpenTubeParams(fenetre, values=[2038, 155, 5000, 0, 0,0,0,0,0,0,0,0,0], disp=1):
     """ Function that open a new window containing the tube parameters and allows to customize them.
 
         Parameters:
@@ -1709,7 +1905,7 @@ def OpenTubeParams(fenetre, values=[2038, 155, 1000, 0, 0,0,0,0,0,0,0,0,0], disp
     MassEntry.grid(row=3, column=1)
     MassEntry.insert(0, values[2])
     MassEntry.bind("<Return>", insertVal2)
-    MassScale = Scale(tab1, from_=0, to=2000, orient=HORIZONTAL, command=slide2)
+    MassScale = Scale(tab1, from_=0, to=10000, orient=HORIZONTAL, command=slide2)
     MassScale.grid(row=3, column=2)
     MassScale.set(values[2])
 
@@ -1834,7 +2030,7 @@ def DrawFins(VALUES_F, display=0):
     canvas3.grid(row=0, column=tmp) # Plot fins
     DispData()
 
-def OpenFinsParams(fenetre, values=[3, 282, 123, 216, 115, 30, 0, 40, 300, 350, 155, 0], disp=1):
+def OpenFinsParams(fenetre, values=[3, 282, 123, 216, 115, 30, 0, 40, 1000, 350, 155, 0], disp=1):
     """ Function that open a new window containing the fins parameters and allows to customize them.
 
         Parameters:
@@ -2056,7 +2252,7 @@ def OpenFinsParams(fenetre, values=[3, 282, 123, 216, 115, 30, 0, 40, 300, 350, 
     MassEntry.grid(row=9, column=1)
     MassEntry.insert(0, values[8])
     MassEntry.bind("<Return>", insertValMass)
-    MassScale = Scale(tab1, from_=0, to=1000, orient=HORIZONTAL, command=slideMass)
+    MassScale = Scale(tab1, from_=0, to=3000, orient=HORIZONTAL, command=slideMass)
     MassScale.grid(row=9, column=2)
     MassScale.set(values[8])
 
@@ -2172,7 +2368,7 @@ def DrawBoatTail(VALUES_BT, display=0):
     canvas4.grid(row=0, column=tmp) # Display boat tail
     DispData()
 
-def OpenBoatTailParams(fenetre, values=[41, 155, 133, 300, 0], disp=1):
+def OpenBoatTailParams(fenetre, values=[41, 155, 133, 500, 0], disp=1):
     """ Function that open a new window containing the boat tail parameters and allows to customize them.
 
         Parameters:
@@ -2277,7 +2473,7 @@ def OpenBoatTailParams(fenetre, values=[41, 155, 133, 300, 0], disp=1):
     MassEntry.grid(row=4, column=1)
     MassEntry.insert(0, values[3])
     MassEntry.bind("<Return>", insertVal3)
-    MassScale = Scale(tab1, from_=0, to=300, orient=HORIZONTAL, command=slide3)
+    MassScale = Scale(tab1, from_=0, to=1000, orient=HORIZONTAL, command=slide3)
     MassScale.grid(row=4, column=2)
     MassScale.set(values[3])
 
@@ -2518,7 +2714,7 @@ def DrawParachute(VALUES_P, display=0, main=2):
 
 
 
-def OpenParachuteParams(fenetre, values=[350, 1, 0, 0, 1, 2500], disp=1, change=0):
+def OpenParachuteParams(fenetre, values=[350, 1, 0, 0, 1, 200], disp=1, change=0):
     """ Function that open a new window containing the parachute parameters and allows to customize them.
 
         Parameters:
@@ -4215,7 +4411,7 @@ canvas9 = Canvas(frame03)  # change scale
 
 # Launch simulation
 simu_button = Button(frameAD, text='Launch simulation', bg='red', fg='white', cursor='hand2',
-                     relief=RAISED, command=lambda: Launch_Simulator1D())
+                     relief=RAISED, command=lambda: Launch_Simulator3D())
 simu_button.grid(row=0, column=0, padx=10, pady=10, sticky='nswe')
 
 plotVar = StringVar()
