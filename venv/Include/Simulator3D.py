@@ -138,9 +138,9 @@ class Simulator3D:
 
         # Environment
         g = 9.81  # Gravity [m/s^2]
-        rho = self.Environment.get_density(x[0] + self.Environment.ground_altitude)
-        nu = self.Environment.get_viscosity(x[0] + self.Environment.ground_altitude)
-        a = self.Environment.get_speed_of_sound(x[0] + self.Environment.ground_altitude)
+        rho = self.Environment.get_density(x[2] + self.Environment.ground_altitude)
+        nu = self.Environment.get_viscosity(x[2] + self.Environment.ground_altitude)
+        a = self.Environment.get_speed_of_sound(x[2] + self.Environment.ground_altitude)
 
         # Thrust
         # Oriented along roll axis of rocket frame, expressed, in earth coordinates

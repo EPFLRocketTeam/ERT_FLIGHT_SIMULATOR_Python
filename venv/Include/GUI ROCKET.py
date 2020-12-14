@@ -1007,7 +1007,7 @@ def Launch_Simulator3D():
     gland = Body('tangent ogive', [0, VAL_N[1]*10**(-3)], [0, VAL_N[0]*10**(-3)])
 
     tubes_francais = Body("cylinder", [VAL_BT[1]*10**(-3),VAL_BT[2]*10**(-3)],
-                              [VAL_T[0], VAL_T[0]+VAL_BT[0]])
+                              [(VAL_T[0] + VAL_F[9])*10**(-3), (VAL_T[0] + VAL_F[9]+VAL_BT[0])*10**(-3)])
 
     cone = Stage('Matterhorn III nosecone', gland, VAL_N[2]*10**(-3), VAL_N[0]/2*10**(-3), np.array([[VAL_N[2], VAL_N[3], VAL_N[4]],
                                                                           [VAL_N[5], VAL_N[6], VAL_N[7]],
@@ -1016,6 +1016,12 @@ def Launch_Simulator3D():
                                                                                   [VAL_T[5], VAL_T[6], VAL_T[7]],
                                                                                   [VAL_T[8], VAL_T[9], VAL_T[
                                                                                       10]]]))
+
+    print("gland", [0, VAL_N[1]*10**(-3)], [0, VAL_N[0]*10**(-3)])
+    print("tube", [VAL_BT[1]*10**(-3),VAL_BT[2]*10**(-3)],
+                              [VAL_T[0] + VAL_F[9], VAL_T[0] + VAL_F[9]+VAL_BT[0]])
+
+
     finDefData = {'number': VAL_F[0],
                   'root_chord': VAL_F[1]*10**(-3),
                   'tip_chord': VAL_F[2]*10**(-3),
@@ -1239,14 +1245,12 @@ def OpenGenerelParams(close=False):
     notebook.add(tab2, text="...")
     notebook.pack(expand=1, fill="both")
 
-    print(MANUEL)
     def callback():
         """ Function to be called when the "Enter params manually" checkbox is checked
             Enables and disables the Entry boxes
         """
         global MANUEL
         if Var.get():
-            print(Var.get())
             MANUEL = True
             weightL.config(fg="black")
             weightE.configure(state=NORMAL)
@@ -1259,7 +1263,6 @@ def OpenGenerelParams(close=False):
             tree.focus(tree.parent(tree.focus()))
         else:
             MANUEL = False
-            print(Var.get())
             weightL.config(fg="grey")
             weightE.configure(state=DISABLED)
             CGL.configure(fg="grey")
@@ -1317,7 +1320,6 @@ def OpenGenerelParams(close=False):
     # Checkbox to enter rocket parameter manually
     Var = BooleanVar()
     Var.set(MANUEL)
-    print(Var.get())
     ManualCheckBox = Checkbutton(tab1, text=": Manually Enter Parameters", variable=Var, onvalue=True, offvalue=False,
                                  command=lambda:callback())
     ManualCheckBox.grid(row=0, column=0, sticky=W)
@@ -1331,7 +1333,6 @@ def OpenGenerelParams(close=False):
     OK.pack(anchor="e", padx=10, pady=5)
 
     if close:
-        print("Hello")
         OK.invoke()
 
 
@@ -1369,7 +1370,6 @@ def get_CM():
                     LENGTH[1] = VALUES[0]
                     DIAMETER[1] = VALUES[1]
                     CM = 0
-                    print("mass", Mass, "CM", CM)
 
                 elif subsubstage == 'f':
                     item = 2
@@ -1449,7 +1449,6 @@ def get_CM():
 
             MASS[item] = Mass
             MASS_CENTER[item] = CM
-            print(MASS, MASS_CENTER)
     len_rocket = sum(LENGTH)
     mass_rocket = sum(MASS)
     frac_n, frac_t, frac_f, frac_b = MASS[0]/mass_rocket, MASS[1]/mass_rocket, MASS[2]/mass_rocket, MASS[3]/mass_rocket
@@ -1475,9 +1474,7 @@ def draw_CG(CG, len_rocket):
         size += pieces[-(i+1)][-1]
         if len_rocket/2 - CG < size:
             piece = pieces[-(i+1)][0]
-            print(piece)
             break
-    print("here", tree.focus())
     Stg = int(tree.focus()[-1])  # index of canvas in CanvasGeometry
     stage = get_stage()
     # get index of canvas in list
@@ -1549,7 +1546,6 @@ def DrawN(VALUES_N, canvas):
     # Draw nosecone
     canvas.create_arc(2 / 3 * (1 - VALUES_N[1] / 3), 3.3 * VALUES_N[1] / 3, 4.1 * VALUES_N[1] / 3, -1, width=1,
                        outline=colors[int(VALUES_N[3])], style=ARC, start=90, extent=90)
-    print(VALUES_N[1]/3, 2 / 3 * (1 - VALUES_N[1] / 3), 4.1 * VALUES_N[1] / 3)
     canvas.create_arc(2 / 3 * (1 - VALUES_N[1] / 3), VALUES_N[1] / 3, 4.1 * VALUES_N[1] / 3,
                        -2.3 * VALUES_N[1] / 3, width=1, outline=colors[int(VALUES_N[3])], style=ARC, start=-90, extent=-90)
     canvas.create_line(7 / 5 * VALUES_N[1] / 3, 0, VALUES_N[0] / 3 - 1, 0, width=1, fill=colors[int(VALUES_N[3])])
@@ -2714,7 +2710,7 @@ def DrawParachute(VALUES_P, display=0, main=2):
 
 
 
-def OpenParachuteParams(fenetre, values=[350, 1, 0, 0, 1, 200], disp=1, change=0):
+def OpenParachuteParams(fenetre, values=[350, 1, 0, 0, 1, 100], disp=1, change=0):
     """ Function that open a new window containing the parachute parameters and allows to customize them.
 
         Parameters:
