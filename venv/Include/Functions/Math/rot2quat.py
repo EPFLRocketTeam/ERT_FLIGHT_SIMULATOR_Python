@@ -4,14 +4,19 @@
 
 import numpy as np
 
-"""
-ROT2QUAT computes the quaternion representation of the attitude based on
-the rotation matrix rotating the earth coordinate system to the rocket
-coordinate system.
-"""
-
 
 def rot2quat(C):
+    """
+
+    Parameters
+    ----------
+    C           : rotation matrix rotating the earth coordinate system to the rocket coordinate system
+
+    Returns
+    -------
+    A quaternion representation of the attitude based on C
+
+    """
     q = np.zeros(4).transpose()
     T = np.trace(C)
     qsq = np.array([1 + 2 * C[0][0] - T, 1 + 2 * C[1][1] - T, 1 + 2 * C[2][2] - T, 1 + T]) / 4

@@ -25,6 +25,9 @@ from Functions.Models.stdAtmos import stdAtmos
 
 if __name__ == "__main__":
 
+    """a = wind_model(1, 0, np.array([-8.6, 5, 0]), 'Gaussian', 750)
+    print(a)"""
+
     NoseCone = open('Parameters/param_rocket/NoseCone.txt', 'r')  # Read text file
     NoseCone1 = NoseCone.readlines()
     VAL_N = []
@@ -156,7 +159,7 @@ if __name__ == "__main__":
     Matterhorn_III.set_cg_empty_rocket(2.14)
     Matterhorn_III.set_rocket_inertia(47)
 
-    US_Atmos = stdAtmosUS(1567, 290.15, 84972.484, 0.51031)
+    US_Atmos = stdAtmosUS(1567.6, 290.15, 84972.484, 0.51031)
 
     SimObj = Simulator3D(Matterhorn_III, US_Atmos)
 
@@ -165,6 +168,7 @@ if __name__ == "__main__":
     # -----------------------------------
 
     T1, S1 = SimObj.RailSim()
+    print(Matterhorn_III.diameters_position)
     print("Launch rail departure velocity: ", S1[1][-1])
     print("Launch rail departure time: ", T1[-1])
 
@@ -192,7 +196,7 @@ if __name__ == "__main__":
     print("Max Speed at t = ", T_1_2[index])
 
     T, a, p, rho, Nu = stdAtmos(S_1_2[0][index], US_Atmos)
-    #Fd = 0.5*SimObj.SimAuxResults.Cd(index)*rho*pi*Rocket.dm^2/4*maxi^2
+    #Fd = 0.5*SimObj.simAuxResults.Cd(index)*rho*pi*Rocket.dm^2/4*maxi^2
 
     T3, S3, T3E, S3E, I3E = SimObj.DrogueParaSim(T2[-1], [S2[i][-1] for i in range(3)], [S2[i][-1] for i in range(3,6)])
     T4, S4, T4E, S4E, I4E = SimObj.MainParaSim(T3[-1], [S3[i][-1] for i in range(3)],
@@ -200,6 +204,7 @@ if __name__ == "__main__":
 
     T5, S5, T5E, S5E, I5E = SimObj.CrashSim(T2[-1], [S2[i][-1] for i in range(3)],
                                                [S2[i][-1] for i in range(3, 6)])
+
     print(S5)
 
     fig = plt.figure()
@@ -216,12 +221,65 @@ if __name__ == "__main__":
     plt.show()
 
     plt.plot(T1, S1[0])
+
+
+    print("T2 dim = " + str(np.size(T2)))
+    print("S2[2] dim = " + str(np.size(S2[2])))
+    print("Margin dim = " + str(np.size(SimObj.simAuxResults.Margin)))
+    """plt.plot(T1, S1[0])
+>>>>>>> cf08a58ce106f221f09a8773d140f08c0ca43337
     plt.plot(T2, S2[2])
     plt.plot(T3, S3[2])
     plt.plot(T4, S4[2])
     plt.plot(T5, S5[2])
-    plt.xlabel("Time [s]");
+    plt.xlabel("Time [s]")
     plt.ylabel("Altitude [m]")
     plt.title("x(t)")
     plt.gca().legend(("Rail", "Ascent", "Drogue Descent", "Main Descent", "Ballistic Descent"))
     plt.show()
+
+
+    plt.plot(np.sqrt(np.power(S3[0], 2) + np.power(S3[1], 2)), S3[2])
+    plt.plot(np.sqrt(np.power(S4[0], 2) + np.power(S4[1], 2)), S4[2])
+    plt.plot(np.sqrt(np.power(S5[0], 2) + np.power(S5[1], 2)), S5[2], 'o')
+    plt.xlabel("Drift [m]")
+    plt.ylabel("Altitude [m]")
+    plt.title("Altitude vs drift")
+    plt.gca().legend(("Drogue", "Main", "Crashsim"))
+    plt.show()"""
+
+
+    plt.figure()
+    plt.subplot(321)
+    plt.plot(T2, SimObj.simAuxResults.Margin)
+    plt.title("Margin")
+
+    plt.subplot(322)
+    plt.plot(T2, SimObj.simAuxResults.Xcp)
+    plt.tilte("Xcp")
+
+    plt.subplot(323)
+    plt.plot(T2, SimObj.simAuxResults.Alpha)
+    plt.title("Alpha")
+
+    plt.subplot(324)
+    plt.plot(T2, SimObj.simAuxResults.Cn_alpha)
+    plt.title("Cn_alpha")
+
+    plt.subplot(325)
+    plt.plot(T2, SimObj.simAuxResults.Cd*1.3)
+    plt.title("Scaled CD")
+
+    plt.subplot(326)
+    plt.plot(T2, SimObj.simAuxResults.Delta)
+    plt.title("Delta")
+
+    plt.show()
+
+    """print("S2 = " )
+    print(S2)
+    print("S2[6:10] = ")
+    print(S2[6:10])
+    plt.plot(T2, np.sqrt(np.sum(np.power(S2[6:10], 2), axis=2)))
+    plt.title("Norm of quaternion")
+    plt.show()"""

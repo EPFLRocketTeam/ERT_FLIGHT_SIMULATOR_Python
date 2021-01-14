@@ -1161,6 +1161,132 @@ def Launch_Simulator3D():
 
         plt.show()
 
+    tubes_francais = Body("cylinder", [VAL_BT[1]*10**(-3),VAL_BT[2]*10**(-3)],
+                              [(VAL_T[0] + VAL_F[9])*10**(-3), (VAL_T[0] + VAL_F[9]+VAL_BT[0])*10**(-3)])
+
+    cone = Stage('Matterhorn III nosecone', gland, VAL_N[2]*10**(-3), VAL_N[0]/2*10**(-3), np.array([[VAL_N[2], VAL_N[3], VAL_N[4]],
+                                                                          [VAL_N[5], VAL_N[6], VAL_N[7]],
+                                                                          [VAL_N[8], VAL_N[9], VAL_N[10]]]))
+    body = Stage('Matterhorn III body', tubes_francais, MASS[1]*10**(-3)+MASS[3]*10**(-3), Get_Tube_CM()*10**(-3), np.array([[VAL_T[2], VAL_T[3], VAL_T[4]],
+                                                                                  [VAL_T[5], VAL_T[6], VAL_T[7]],
+                                                                                  [VAL_T[8], VAL_T[9], VAL_T[
+                                                                                      10]]]))
+
+    print("gland", [0, VAL_N[1]*10**(-3)], [0, VAL_N[0]*10**(-3)])
+    print("tube", [VAL_BT[1]*10**(-3),VAL_BT[2]*10**(-3)],
+                              [VAL_T[0] + VAL_F[9], VAL_T[0] + VAL_F[9]+VAL_BT[0]])
+
+
+    finDefData = {'number': VAL_F[0],
+                  'root_chord': VAL_F[1]*10**(-3),
+                  'tip_chord': VAL_F[2]*10**(-3),
+                  'span': VAL_F[3]*10**(-3),
+                  'sweep': VAL_F[4]*10**(-3),
+                  'thickness': VAL_F[5]*10**(-3),
+                  'phase': VAL_F[6],
+                  'body_top_offset': VAL_T[0]*10**(-3) + VAL_F[7]*10**(-3),
+                  'total_mass': VAL_F[8]*10**(-3)}
+
+    # ADD FINS
+    body.add_fins(finDefData)
+    body.add_motor('Motors/%s.eng' % (Motor1[0]))
+
+    # ADD PARACHUTES
+    main_parachute_params = [True, VAL_MP[0]*VAL_MP[1]*10**(-3), VAL_MP[-1]]
+    drogue_parachute_params = [False, VAL_DP[0]*VAL_DP[1]*10**(-3), VAL_MP[-1]]
+
+    body.add_parachute(main_parachute_params)
+    body.add_parachute(drogue_parachute_params)
+
+    # ADD AIR BRAKES
+    ab_data = [VAL_T[0] / 2 + VAL_AB[4], VAL_AB[2], VAL_AB[3]]
+    body.add_airbrakes(ab_data)
+
+    MyRocket = Rocket()
+
+    MyRocket.add_stage(cone)
+    MyRocket.add_stage(body)
+
+    MyRocket.add_lugs([VAL_L[2], 5.7 * 10 ** (-4)])  # TODO: Add lug surface
+
+    MyRocket.set_payload_mass(VAL_W[0]*10**(-3))
+    MyRocket.add_cg_empty_rocket(2.1) # TODO : MODIFY
+    MyRocket.set_rocket_inertia(47)
+
+    MyEnvironment = stdAtmosUS(VAL_E[0], VAL_E[1], VAL_E[2], VAL_E[3])
+
+    SimObj = Simulator3D(MyRocket, MyEnvironment)
+
+    # -----------------------------------
+    # Rail Sim
+    # -----------------------------------
+
+    T1, S1 = SimObj.RailSim()
+    print("Launch rail departure velocity: ", S1[1][-1])
+    print("Launch rail departure time: ", T1[-1])
+
+    # -----------------------------------
+    # Flight Sim
+    # -----------------------------------
+
+    T2_1, S2_1, T2_1E, S2_1E, I2_1E = SimObj.FlightSim([T1[-1], SimObj.rocket.get_burn_time()], S1[1][-1])
+    T2_2, S2_2, T2_2E, S2_2E, I2_2E = SimObj.FlightSim([T2_1[-1], 40], [S2_1[i][-1] for i in range(3)],
+                                                       [S2_1[i][-1] for i in range(3, 6)],
+                                                       [S2_1[i][-1] for i in range(6, 10)],
+                                                       [S2_1[i][-1] for i in range(10, 13)])
+
+    T2 = np.concatenate([T2_1, T2_2[1:]])
+    S2 = []
+    for i, s in enumerate(S2_2):
+        S2.append(np.concatenate([S2_1[i], s[1:]]))
+
+    T_1_2 = np.concatenate([T1, T2[1:]])
+    S_1_2_1 = np.append(S1[0], S2[2][1:])
+    S_1_2_2 = np.append(S1[1], S2[5][1:])
+    S_1_2 = np.append([S_1_2_1], [S_1_2_2], axis=0)
+
+    print("Apogée AGL : ", S2[2][-1])
+    print("Apogée AGL at t = ", T2[-1])
+    print("Max Speed : ", max(S_1_2[1]))
+    index = np.argmax(S_1_2[1])
+    print("Max Speed at t = ", T_1_2[index])
+
+    # T, a, p, rho, Nu = stdAtmos(S_1_2[0][index], US_Atmos)
+    # Fd = 0.5*SimObj.SimAuxResults.Cd(index)*rho*pi*Rocket.dm^2/4*maxi^2
+
+    T3, S3, T3E, S3E, I3E = SimObj.DrogueParaSim(T2[-1], [S2[i][-1] for i in range(3)],
+                                                 [S2[i][-1] for i in range(3, 6)])
+    T4, S4, T4E, S4E, I4E = SimObj.MainParaSim(T3[-1], [S3[i][-1] for i in range(3)],
+                                               [S3[i][-1] for i in range(3, 6)])
+
+    T5, S5, T5E, S5E, I5E = SimObj.CrashSim(T2[-1], [S2[i][-1] for i in range(3)],
+                                            [S2[i][-1] for i in range(3, 6)])
+
+    # -----------------------------------
+    # Plots
+    # -----------------------------------
+
+    # Altitude vs time
+    plt.plot(T1, S1[0])
+    plt.plot(T2, S2[2])
+    plt.plot(T3, S3[2])
+    plt.plot(T4, S4[2])
+    plt.plot(T5, S5[2])
+    plt.xlabel("Time [s]");
+    plt.ylabel("Altitude [m]")
+    plt.title("x(t)")
+    plt.gca().legend(("Rail", "Ascent", "Drogue Descent", "Main Descent", "Ballistic Descent"))
+    plt.show()
+
+    # Altitude vs drift
+    plt.plot(np.sqrt(np.power(S3[0], 2) + np.power(S3[1], 2)), S3[2])
+    plt.plot(np.sqrt(np.power(S4[0], 2) + np.power(S4[1], 2)), S4[2])
+    plt.plot(np.sqrt(np.power(S5[0], 2) + np.power(S5[1], 2)), S5[2], 'o')
+    plt.xlabel("Drift [m]")
+    plt.ylabel("Altitude [m]")
+    plt.title("Altitude vs drift")
+    plt.gca().legend(("Drogue", "Main", "Crashsim"))
+    plt.show()
 
 
 
