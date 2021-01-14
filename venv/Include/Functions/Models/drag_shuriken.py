@@ -29,8 +29,8 @@ def drag_shuriken(Rocket, theta, alpha, Uinf, nu):
 
     CD0 = 1.17
     U = abs(Uinf * math.cos(alpha))
-    Rex = Rocket.ab_x * U / nu
-    delta = 0.37 * Rocket.ab_x / Rex ** 0.2
+    Rex = Rocket.get_ab_x() * U / nu
+    delta = 0.37 * Rocket.get_ab_x() / Rex ** 0.2
 
     # drag coefficient
     if h < delta:
@@ -38,6 +38,6 @@ def drag_shuriken(Rocket, theta, alpha, Uinf, nu):
     else:
         qr = 1 - 4 / 9 * delta / h + 1 / 8 * (delta / h) ** 2
 
-    CD = Rocket.ab_n * CD0 * qr * S / Rocket.get_max_cross_section_surface
+    CD = Rocket.get_ab_n() * CD0 * qr * S / Rocket.get_max_cross_section_surface
 
     return CD

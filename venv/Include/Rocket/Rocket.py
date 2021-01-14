@@ -62,10 +62,6 @@ class Rocket:
 
         # TODO: Implement or modify the expression of these parameters
         self.cone_mode = 'on'
-        self.ab_n = 3  # TODO: Create an airbrake section in Body or find another way to implement them
-        self.ab_x = 1.390
-        self.lug_n = 2
-        self.lug_S = 1.32e-4
         self.cp_fac = 1
         self.CNa_fac = 1
         self.CD_fac = 1
@@ -104,7 +100,7 @@ class Rocket:
         self.lug_n = lugs[0]
         self.lug_S = lugs[1]
 
-    def add_cg_empty_rocket(self, cg: float):
+    def set_cg_empty_rocket(self, cg: float):
         self.cg = cg
 
     # TODO : check method
@@ -134,8 +130,8 @@ class Rocket:
     def get_payload_mass(self):
         return self.pl_mass
 
-    def set_rocket_inertia(self, intertia):
-        self.rocket_I = intertia
+    def set_rocket_inertia(self, inertia):
+        self.rocket_I = inertia
 
     # TODO : update method
     def get_long_inertia(self, t: float):
@@ -308,6 +304,36 @@ class Rocket:
             if len(stage.motors) > 0:
                 casing_mass = stage.get_motor_casing_mass()
                 return casing_mass
+
+    def get_lug_n(self):
+        for stage in self.stages:
+            if len(stage.lugs) > 0:
+                lug_n = stage.get_lug_n()
+                return lug_n
+
+    def get_lug_S(self):
+        for stage in self.stages:
+            if len(stage.lugs) > 0:
+                lug_S = stage.get_lug_S()
+                return lug_S
+
+    def get_ab_x(self):
+        for stage in self.stages:
+            if len(stage.airbrakes) > 0:
+                ab_x = stage.get_ab_x()
+                return ab_x
+
+    def get_ab_n(self):
+        for stage in self.stages:
+            if len(stage.airbrakes) > 0:
+                ab_n = stage.get_ab_n()
+                return ab_n
+
+    def get_ab_phi(self):
+        for stage in self.stages:
+            if len(stage.airbrakes) > 0:
+                ab_phi = stage.get_ab_phi()
+                return ab_phi
 
     def get_burn_time(self):
         return sum([stage.get_burn_time for stage in self.stages])

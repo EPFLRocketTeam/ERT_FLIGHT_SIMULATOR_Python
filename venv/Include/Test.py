@@ -8,6 +8,8 @@ from Rocket.Fins import Fins
 from Rocket.Motor import Motor
 from Rocket.Rocket import Rocket
 from Rocket.Stage import Stage
+from Rocket.Airbrakes import Airbrakes
+from Rocket.Lugs import Lugs
 from Functions import Math
 from Functions.Math.quat2rotmat import quat2rotmat
 from Functions.Math.rot2anglemat import rot2anglemat
@@ -65,8 +67,8 @@ if __name__ == "__main__":
         conv_float = float(line)
         VAL_E.append(conv_float)
 
-    Lugs = open('Parameters/param_rocket/LugsTube.txt', 'r')
-    Lugs1 = Lugs.readlines()
+    Lugs_ = open('Parameters/param_rocket/LugsTube.txt', 'r')
+    Lugs1 = Lugs_.readlines()
     VAL_L = []
     for line in Lugs1:  # taking each line
         conv_float = float(line)
@@ -139,17 +141,19 @@ if __name__ == "__main__":
     drogue_parachute_params = [False, 1.75, VAL_DP[5]]
     M3_body.add_parachute(drogue_parachute_params)
 
-    ab_data = [VAL_T[0]/2 + VAL_AB[4], 0, VAL_AB[3]]
+    ab_data = Airbrakes(VAL_T[0]/2 + VAL_AB[4], 0, VAL_AB[3])
     M3_body.add_airbrakes(ab_data)
+    lug = Lugs(VAL_L[2], 5.7 * 10 ** (-4))
+    M3_body.add_lugs(lug)  # TODO: Add lug surface
 
     Matterhorn_III = Rocket()
 
     Matterhorn_III.add_stage(M3_cone)
     Matterhorn_III.add_stage(M3_body)
-    Matterhorn_III.add_lugs([VAL_L[2], 5.7*10**(-4)]) # TODO: Add lug surface
+
 
     Matterhorn_III.set_payload_mass(4)
-    Matterhorn_III.add_cg_empty_rocket(2.14)
+    Matterhorn_III.set_cg_empty_rocket(2.14)
     Matterhorn_III.set_rocket_inertia(47)
 
     US_Atmos = stdAtmosUS(1567, 290.15, 84972.484, 0.51031)
@@ -197,6 +201,20 @@ if __name__ == "__main__":
     T5, S5, T5E, S5E, I5E = SimObj.CrashSim(T2[-1], [S2[i][-1] for i in range(3)],
                                                [S2[i][-1] for i in range(3, 6)])
     print(S5)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot(S2[0], S2[1], S2[2])
+    ax.plot(S3[0], S3[1], S3[2])
+    ax.plot(S4[0], S4[1], S4[2])
+    ax.plot(S5[0], S5[1], S5[2])
+
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_zlabel('z')
+
+    plt.show()
+
     plt.plot(T1, S1[0])
     plt.plot(T2, S2[2])
     plt.plot(T3, S3[2])
