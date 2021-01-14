@@ -36,7 +36,7 @@ class Simulator3D:
 
     @dataclass
     class SimAuxResults:
-        Margin: np.array(0)
+        Margin: np.array
         Alpha: np.array
         Cn_alpha: np.array
         Xcp: np.array
@@ -52,14 +52,12 @@ class Simulator3D:
     global tmp_Margin, tmp_Alpha, tmp_Cn_alpha, tmp_Xcp, tmp_Cd, tmp_Mass, tmp_CM, tmp_Il, tmp_Ir, tmp_Delta
     global tmp_Nose_Alpha, tmp_Nose_Delta
 
-    global simAuxResults
-    simAuxResults = SimAuxResults(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-
     def __init__(self, rocket: Rocket, atmosphere: stdAtmosUS):
         self.x_0 = np.array([0, 0])
         self.t0 = 0
         self.state = [self.x_0]
         self.time = [self.t0]
+        self.simAuxResults = self.SimAuxResults(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
         self.rocket = rocket
         self.Environment = atmosphere
@@ -69,10 +67,8 @@ class Simulator3D:
         x = s[0]
         v = s[1]
 
-
         # Rocket inertia
         Mass, dMdt = Mass_Non_Lin(t, self.rocket)
-
 
         # Environment
         g = 9.81
@@ -81,21 +77,20 @@ class Simulator3D:
         nu = self.Environment.get_viscosity(s[0] + self.Environment.ground_altitude)
 
         # Gravity
-        G = -g*np.cos(self.Environment.Rail_Angle)*Mass
+        G = -g * np.cos(self.Environment.Rail_Angle) * Mass
 
         T = Thrust(t, self.rocket)
 
         # TODO: Add drag influences (done?)
         CD = drag(self.rocket, 0, v, nu, a)
-        D = -0.5*rho*self.rocket.get_max_cross_section_surface*CD*v**2
+        D = -0.5 * rho * self.rocket.get_max_cross_section_surface * CD * v ** 2
 
-        F_tot = G + T*self.rocket.get_motor_fac() + D
+        F_tot = G + T * self.rocket.get_motor_fac() + D
 
         x_dot = v
-        v_dot = 1/Mass * (F_tot - v*dMdt)
+        v_dot = 1 / Mass * (F_tot - v * dMdt)
 
         CD_AB = 0  # TODO: Insert reference to drag_shuriken or other
-
 
         return x_dot, v_dot
 
@@ -104,8 +99,6 @@ class Simulator3D:
         v = s[3:6]
         q = s[6:10]
         w = s[10:13]
-
-
 
         # Normalise quaternion
         q = normalize_vector(q)
@@ -133,8 +126,8 @@ class Simulator3D:
         I_R = mass_properties[6]
         Sm = self.rocket.get_max_cross_section_surface
         I = c.transpose().dot([[I_L, 0, 0],
-                              [0, I_L, 0],
-                              [0, 0, I_R]]).dot(c)
+                               [0, I_L, 0],
+                               [0, 0, I_R]]).dot(c)
 
         # Environment
         g = 9.81  # Gravity [m/s^2]
@@ -152,7 +145,8 @@ class Simulator3D:
         # Aerodynamic corrective forces
         # Compute center of mass angle of attack
         v_cm = v - wind_model(t, self.Environment.get_turb(x[2] + self.Environment.ground_altitude),
-                              self.Environment.get_V_inf()*self.Environment.V_dir, self.Environment.get_turb_model(), x[2]) # TODO : V_dir
+                              self.Environment.get_V_inf() * self.Environment.V_dir, self.Environment.get_turb_model(),
+                              x[2])
         v_cm_mag = np.linalg.norm(v_cm)
         alpha_cm = math.atan2(np.linalg.norm(np.cross(ra, v_cm)), np.dot(ra, v_cm))
 
@@ -170,7 +164,6 @@ class Simulator3D:
             w_norm = w / np.linalg.norm(w)
         else:
             w_norm = np.zeros((3, 1))
-
 
         v_rel = v_cm + margin * math.sin(math.acos(np.dot(ra, w_norm))) * np.cross(ra, w)
         v_mag = np.linalg.norm(v_rel)
@@ -191,7 +184,7 @@ class Simulator3D:
 
         # Drag
         # Drag coefficient
-        cd = drag(self.rocket, alpha, v_mag, nu, a)*self.rocket.CD_fac  # TODO : * cd_fac (always 1 ?)
+        cd = drag(self.rocket, alpha, v_mag, nu, a) * self.rocket.CD_fac  # TODO : * cd_fac (always 1 ?)
         ab_phi = -230  # TODO : find a way to deal with airbrakes, /!\ magic number
         if t > self.rocket.get_burn_time():
             cd = cd + drag_shuriken(self.rocket, ab_phi, alpha, v_mag, nu)
@@ -217,7 +210,7 @@ class Simulator3D:
 
         # Translational dynamics
         X_dot = v
-        V_dot = 1/m*(f_tot - v*dMdt)
+        V_dot = 1 / m * (f_tot - v * dMdt)
 
         # State derivatives
         q_dot = quat_evolve(q, w)
@@ -234,6 +227,31 @@ class Simulator3D:
         tmp_Ir = I_R
         tmp_Delta = delta
 
+        if self.simAuxResults.Margin:
+            np.append(self.simAuxResults.Margin, tmp_Margin)
+        if self.simAuxResults.Alpha:
+            np.append(self.simAuxResults.Alpha, tmp_Alpha)
+        if self.simAuxResults.Cn_alpha:
+            np.append(self.simAuxResults.Cn_alpha, tmp_Cn_alpha)
+        if self.simAuxResults.Xcp:
+            np.append(self.simAuxResults.Xcp, tmp_Xcp)
+        if self.simAuxResults.Cd:
+            np.append(self.simAuxResults.Cd, tmp_Cd)
+        if self.simAuxResults.Mass:
+            np.append(self.simAuxResults.Mass, tmp_Mass)
+        if self.simAuxResults.CM:
+            np.append(self.simAuxResults.CM, tmp_CM)
+        if self.simAuxResults.Il:
+            np.append(self.simAuxResults.Il, tmp_Il)
+        if self.simAuxResults.Ir:
+            np.append(self.simAuxResults.Ir, tmp_Ir)
+        if self.simAuxResults.Delta:
+            np.append(self.simAuxResults.Delta, tmp_Delta)
+        if self.simAuxResults.Nose_Alpha:
+            np.append(self.simAuxResults.Nose_Alpha, tmp_Nose_Alpha)
+        if self.simAuxResults.Nose_delta:
+            np.append(self.simAuxResults.Nose_delta, tmp_Nose_Delta)
+
         S_dot = np.concatenate((X_dot, V_dot, q_dot, w_dot))
 
         return S_dot
@@ -242,12 +260,12 @@ class Simulator3D:
         x = s[0:3]
         v = s[3:6]
 
-
         rho = self.Environment.get_density(x[2] + self.Environment.ground_altitude)
 
         # Aerodynamic force
         v_rel = -v + wind_model(t, self.Environment.get_turb(x[2] + self.Environment.ground_altitude),
-                                self.Environment.get_V_inf()*self.Environment.V_dir, self.Environment.get_turb_model(), x[2])
+                                self.Environment.get_V_inf() * self.Environment.V_dir,
+                                self.Environment.get_turb_model(), x[2])
 
         M = self.rocket.get_empty_mass() - self.rocket.pl_mass
 
@@ -263,7 +281,7 @@ class Simulator3D:
         G = g * M
 
         dXdt = v
-        dVdt = (D+G)/M
+        dVdt = (D + G) / M
 
         dsdt = np.concatenate((dXdt, dVdt))
         return dsdt
@@ -281,11 +299,10 @@ class Simulator3D:
         rho = self.Environment.get_density(X[2] + self.Environment.ground_altitude)
         nu = self.Environment.get_viscosity(X[2] + self.Environment.ground_altitude)
 
-
         M = self.rocket.get_empty_mass()
 
         V_rel = V - wind_model(t, self.Environment.get_turb(X[2] + self.Environment.ground_altitude),
-                               self.Environment.get_V_inf()*self.Environment.V_dir,
+                               self.Environment.get_V_inf() * self.Environment.V_dir,
                                self.Environment.get_turb_model(), X[2])
 
         G = -9.81 * M * ZE
@@ -294,10 +311,8 @@ class Simulator3D:
 
         D = -0.5 * rho * self.rocket.get_max_cross_section_surface * CD * V_rel * np.linalg.norm(V_rel)
 
-
         X_dot = V
         V_dot = 1 / M * (D + G)
-
 
         S_dot = np.concatenate((X_dot, V_dot))
         return S_dot
@@ -381,7 +396,7 @@ class Simulator3D:
 
         # Compute center of mass angle of attack
         Vcm = V - wind_model(t, self.Environment.get_turb(X[0] + self.Environment.ground_altitude),
-                             self.Environment.get_v_inf(),
+                             self.Environment.get_V_inf(),
                              self.Environment.get_turb_model(), X[2])
 
         Vcm_mag = np.linalg.norm(Vcm)
@@ -467,7 +482,7 @@ class Simulator3D:
         M = self.rocket.get_mass(t)
 
         V_rel = V - wind_model(t, self.Environment.get_turb(X[0] + self.Environment.ground_altitude),
-                               self.Environment.get_v_inf(),
+                               self.Environment.get_V_inf(),
                                self.Environment.get_turb_model(), X[2])
 
         G = -9.81 * M * ZE
@@ -496,7 +511,7 @@ class Simulator3D:
         # Options
 
         print(tspan, X0)
-        # intergration
+        # integration
         self.integration_ivp = solve_ivp(self.Dynamics_Rail_1DOF, tspan, X0, events=off_rail)
 
         T1 = self.integration_ivp.t
@@ -519,7 +534,7 @@ class Simulator3D:
             V0 = RV * V
             Q0 = rot2quat(C_rail.transpose())
             W0 = np.array([0, 0, 0]).transpose()
-            S0 = np.concatenate((X0,V0,Q0,W0), axis=0)
+            S0 = np.concatenate((X0, V0, Q0, W0), axis=0)
 
         elif arg3 is not None and arg4 is not None and arg5 is not None:
 
@@ -528,7 +543,7 @@ class Simulator3D:
             V0 = arg3
             Q0 = arg4
             W0 = arg5
-            S0 = np.concatenate((X0,V0,Q0,W0), axis=0)
+            S0 = np.concatenate((X0, V0, Q0, W0), axis=0)
 
         else:
             print("ERROR: In flight simulator, function accepts either 3 or 6 arguments")
@@ -539,6 +554,7 @@ class Simulator3D:
         apogee.terminal = True
         apogee.direction = -1
 
+        # Option = FlightOutPutFunc(self)
 
         self.integration_ivp = solve_ivp(self.Dynamics_6DOF, tspan, S0, events=apogee)
 
@@ -566,7 +582,8 @@ class Simulator3D:
 
         print(self.rocket.get_para_main_event())
         # integration
-        self.integration_ivp = solve_ivp(self.Dynamics_Parachute_3DOF, tspan, S0, args=[self.rocket, 0], events=MainEvent)
+        self.integration_ivp = solve_ivp(self.Dynamics_Parachute_3DOF, tspan, S0, args=[self.rocket, 0],
+                                         events=MainEvent)
 
         T3 = self.integration_ivp.t
         S3 = self.integration_ivp.y
@@ -590,7 +607,8 @@ class Simulator3D:
         CrashEvent.direction = -1
 
         # integration
-        self.integration_ivp = solve_ivp(self.Dynamics_Parachute_3DOF, tspan, S0, args=[self.rocket, 1], events=CrashEvent)
+        self.integration_ivp = solve_ivp(self.Dynamics_Parachute_3DOF, tspan, S0, args=[self.rocket, 1],
+                                         events=CrashEvent)
 
         T4 = self.integration_ivp.t
         S4 = self.integration_ivp.y
@@ -708,39 +726,37 @@ class Simulator3D:
     def FlightOutputFunc(self, T, S, flag):
         status = 0
 
-        if simAuxResults.Margin:
-            np.append(simAuxResults.Margin, tmp_Margin)
-        if simAuxResults.Alpha:
-            np.append(simAuxResults.Alpha, tmp_Alpha)
-        if simAuxResults.Cn_alpha:
-            np.append(simAuxResults.Cn_alpha, tmp_Cn_alpha)
-        if simAuxResults.Xcp:
-            np.append(simAuxResults.Xcp, tmp_Xcp)
-        if simAuxResults.Cd:
-            np.append(simAuxResults.Cd, tmp_Cd)
-        if simAuxResults.Mass:
-            np.append(simAuxResults.Mass, tmp_Mass)
-        if simAuxResults.CM:
-            np.append(simAuxResults.CM, tmp_CM)
-        if simAuxResults.Il:
-            np.append(simAuxResults.Il, tmp_Il)
-        if simAuxResults.Ir:
-            np.append(simAuxResults.Ir, tmp_Ir)
-        if simAuxResults.Delta:
-            np.append(simAuxResults.Delta, tmp_Delta)
-        if simAuxResults.Nose_Alpha:
-            np.append(simAuxResults.Nose_Alpha, tmp_Nose_Alpha)
-        if simAuxResults.Nose_delta:
-            np.append(simAuxResults.Nose_delta, tmp_Nose_Delta)
+        if self.simAuxResults.Margin:
+            np.append(self.simAuxResults.Margin, tmp_Margin)
+        if self.simAuxResults.Alpha:
+            np.append(self.simAuxResults.Alpha, tmp_Alpha)
+        if self.simAuxResults.Cn_alpha:
+            np.append(self.simAuxResults.Cn_alpha, tmp_Cn_alpha)
+        if self.simAuxResults.Xcp:
+            np.append(self.simAuxResults.Xcp, tmp_Xcp)
+        if self.simAuxResults.Cd:
+            np.append(self.simAuxResults.Cd, tmp_Cd)
+        if self.simAuxResults.Mass:
+            np.append(self.simAuxResults.Mass, tmp_Mass)
+        if self.simAuxResults.CM:
+            np.append(self.simAuxResults.CM, tmp_CM)
+        if self.simAuxResults.Il:
+            np.append(self.simAuxResults.Il, tmp_Il)
+        if self.simAuxResults.Ir:
+            np.append(self.simAuxResults.Ir, tmp_Ir)
+        if self.simAuxResults.Delta:
+            np.append(self.simAuxResults.Delta, tmp_Delta)
+        if self.simAuxResults.Nose_Alpha:
+            np.append(self.simAuxResults.Nose_Alpha, tmp_Nose_Alpha)
+        if self.simAuxResults.Nose_delta:
+            np.append(self.simAuxResults.Nose_delta, tmp_Nose_Delta)
         return status
 
     def CrashOutputFunc(self, T, S, flag):
         status = 0
 
-        if simAuxResults.Nose_Alpha:
-            np.append(simAuxResults.Nose_Alpha, tmp_Nose_Alpha)
-        if simAuxResults.Nose_delta:
-            np.append(simAuxResults.Nose_delta, tmp_Nose_Delta)
+        if self.simAuxResults.Nose_Alpha:
+            np.append(self.simAuxResults.Nose_Alpha, tmp_Nose_Alpha)
+        if self.simAuxResults.Nose_delta:
+            np.append(self.simAuxResults.Nose_delta, tmp_Nose_Delta)
         return status
-
-

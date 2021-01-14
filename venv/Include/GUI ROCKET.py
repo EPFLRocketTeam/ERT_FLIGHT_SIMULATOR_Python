@@ -1106,6 +1106,12 @@ def Launch_Simulator3D():
 
     T5, S5, T5E, S5E, I5E = SimObj.CrashSim(T2[-1], [S2[i][-1] for i in range(3)],
                                             [S2[i][-1] for i in range(3, 6)])
+
+    # -----------------------------------
+    # Plots
+    # -----------------------------------
+
+    # Altitude vs time
     plt.plot(T1, S1[0])
     plt.plot(T2, S2[2])
     plt.plot(T3, S3[2])
@@ -1116,6 +1122,18 @@ def Launch_Simulator3D():
     plt.title("x(t)")
     plt.gca().legend(("Rail", "Ascent", "Drogue Descent", "Main Descent", "Ballistic Descent"))
     plt.show()
+
+    # Altitude vs drift
+    plt.plot(np.sqrt(np.power(S3[0], 2) + np.power(S3[1], 2)), S3[2])
+    plt.plot(np.sqrt(np.power(S4[0], 2) + np.power(S4[1], 2)), S4[2])
+    plt.plot(np.sqrt(np.power(S5[0], 2) + np.power(S5[1], 2)), S5[2], 'o')
+    plt.xlabel("Drift [m]")
+    plt.ylabel("Altitude [m]")
+    plt.title("Altitude vs drift")
+    plt.gca().legend(("Drogue", "Main", "Crashsim"))
+    plt.show()
+
+
 
 
 ## Launch Simulator1D.py

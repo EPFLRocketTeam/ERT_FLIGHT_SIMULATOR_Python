@@ -6,20 +6,21 @@ import numpy as np
 
 
 def quat2rotmat(q):
-    """q1 = q[0,:]
-    q2 = q[1,:]
-    q3 = q[2,:]
-    q4 = q[3,:]
-    return np.reshape([1-2*q2**2-2*q3**2,
-    2*(q1*q2 + q3*q4),
-    2*(q1*q3 - q2*q4),
-    2*(q1*q2 - q3*q4),
-    1-2*q1**2-2*q3**2,
-    2*(q2*q3 + q1*q4),
-    2*(q1*q3 + q2*q4),
-    2*(q2*q3 - q1*q4),
-    1-2*q1**2 - 2*q2**2]
-    , 3, 3, [])"""
+    """
+
+    Parameters
+    ----------
+    q           : the quaternion representing the attitude of the vehicle in earth's cartesian coordinate system.
+
+    Returns
+    -------
+    A 3x3 matrix that rotates the coordinate system proper to the vehicle into earth's coordinate system
+
+    Notes
+    -----
+    https://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToMatrix/index.htm
+
+    """
 
     return np.reshape([
         1 - 2 * q[1] ** 2 - 2 * q[2] ** 2,

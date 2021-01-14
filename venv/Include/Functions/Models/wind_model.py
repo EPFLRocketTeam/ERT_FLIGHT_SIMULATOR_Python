@@ -7,6 +7,23 @@ from scipy import interpolate
 
 
 def wind_model(t, I, V_inf, Model, h_alt):
+    """
+
+    Parameters
+    ----------
+    t       : simulation time
+    I       : turbulent intensity
+    V_inf   : speed of wind
+    Model   : model of the wind, can be 'None' (constant), 'Gaussian' (Stochastic intensity based on Gaussian distri-
+              bution), 'VonKarman' (Stochastic intensity based on VonKarman spectral turbulence) or 'Logarithmic'
+    h_alt   : altitude of the rocket
+
+    Returns
+    -------
+    The wind, as a vector
+
+    """
+
     t_wind_ = []
     wind_ = []
 
@@ -22,8 +39,8 @@ def wind_model(t, I, V_inf, Model, h_alt):
             if t > t_wind_[-1]:
                 t_wind_.append(t)
                 turb_std = I * V_inf
-                U = np.random.normal(V_inf, turb_std)
-                wind_.append(U)
+                U = V_inf + turb_std * np.random.randn(3)
+                wind_.append(U)  # quite odd to append an ndarry to a list but seems to work
             else:
                 U = interpolate.interp1d(t_wind_, wind_, t, 'linear')
 
@@ -35,7 +52,7 @@ def wind_model(t, I, V_inf, Model, h_alt):
                 zi = 1000*z0**0.18
 
                 # TODO: complete model
-                wind_.append(U)
+                # wind_.append(U)
             else:
                 U = interpolate.interp1d(t_wind_, wind_, t, 'linear')
 

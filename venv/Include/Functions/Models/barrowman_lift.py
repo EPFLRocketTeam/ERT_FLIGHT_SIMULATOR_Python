@@ -8,6 +8,21 @@ import numpy as np
 
 
 def barrowman_lift(rocket: Rocket, alpha, m, theta):
+    """
+
+    Parameters
+    ----------
+    rocket          : Rocket object
+    alpha           : angle of attack [rad]
+    m               : Mach number
+    theta           : Roll angle [rad]
+
+    Returns
+    -------
+    Calpha          : Normal lift coefficient derivatives of rocket components according to barrowman theory [1/rad]
+    CP              : Center of pressure of rocket components according to barrowman theory [1/rad]
+
+    """
 
     a_ref = math.pi * rocket.diameters[1] ** 2 / 4
 
@@ -36,29 +51,6 @@ def barrowman_lift(rocket: Rocket, alpha, m, theta):
                                        1 - (rocket.diameters[i + 1] / rocket.diameters[i + 2]) ** 2)))
         else:
             CP_stage[i] = None
-    """if alpha == 0:
-        CNa_stage[0] = (rocket.diameters[3] ** 2 - rocket.diameters[2] ** 2) * math.pi / a_ref / 2
-        CNa_stage[1] = (rocket.diameters[4] ** 2 - rocket.diameters[3] ** 2) * math.pi / a_ref / 2
-    else:
-        CNa_stage[0] = ((rocket.diameters[3] ** 2 - rocket.diameters[2] ** 2)
-                        * math.pi / a_ref / 2 * math.sin(alpha) / alpha)
-        CNa_stage[1] = ((rocket.diameters[4] ** 2 - rocket.diameters[3] ** 2)
-                        * math.pi / a_ref / 2 * math.sin(alpha) / alpha)
-
-    if rocket.diameters[2] == rocket.diameters[3]:
-        CP_stage[0] = 0
-    else:
-        CP_stage[0] = (rocket.diameters_position[2] + 1 / 3 *
-                   (rocket.diameters_position[3] - rocket.diameters_position[2]) *
-                   (1 + (1 - rocket.diameters[2] / rocket.diameters[3]) / (
-                           1 - (rocket.diameters[2] / rocket.diameters[3]) ** 2)))
-    if rocket.diameters[3] == rocket.diameters[4]:
-        CP_stage[1] = 0
-    else:
-        CP_stage[1] = (rocket.diameters_position[3] + 1 / 3 *
-                   (rocket.diameters_position[4] - rocket.diameters_position[3]) *
-                   (1 + (1 - rocket.diameters[3] / rocket.diameters[4]) / (
-                           1 - (rocket.diameters[3] / rocket.diameters[4]) ** 2)))"""
 
     # Fins
     if m < 1:
