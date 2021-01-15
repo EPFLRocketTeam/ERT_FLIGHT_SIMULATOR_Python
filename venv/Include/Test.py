@@ -24,11 +24,6 @@ from Functions.Models.stdAtmos import stdAtmos
 
 if __name__ == "__main__":
 
-    """a = wind_model(1, 0, np.array([-8.6, 5, 0]), 'Gaussian', 750)
-    print(a)"""
-
-    jaj = datetime.now()
-
     NoseCone = open('Parameters/param_rocket/NoseCone.txt', 'r')  # Read text file
     NoseCone1 = NoseCone.readlines()
     VAL_N = []
@@ -208,16 +203,6 @@ if __name__ == "__main__":
     T5, S5, T5E, S5E, I5E = SimObj.CrashSim(T2[-1], [S2[i][-1] for i in range(3)],
                                             [S2[i][-1] for i in range(3, 6)])
 
-    jaj = datetime.now() - jaj
-
-    print(jaj)
-
-    print("T2 dim = " + str(np.size(T2)))
-    print("S2[2] dim = " + str(np.size(S2[2])))
-    print("T5 dim = " + str(np.size(T5)))
-    print("S5[2] dim = " + str(np.size(S5[2])))
-    print("Margin dim = " + str(np.size(SimObj.simAuxResults.Margin)))
-
     plt.plot(T1, S1[0])
     plt.plot(T2, S2[2])
     plt.plot(T3, S3[2])
@@ -237,38 +222,3 @@ if __name__ == "__main__":
     plt.title("Altitude vs drift")
     plt.gca().legend(("Drogue", "Main", "Crashsim"))
     plt.show()
-
-    """plt.figure()
-    plt.subplot(321)
-    plt.plot(T2, SimObj.simAuxResults.Margin)
-    plt.title("Margin")
-
-    plt.subplot(322)
-    plt.plot(T2, SimObj.simAuxResults.Xcp)
-    plt.tilte("Xcp")
-
-    plt.subplot(323)
-    plt.plot(T2, SimObj.simAuxResults.Alpha)
-    plt.title("Alpha")
-
-    plt.subplot(324)
-    plt.plot(T2, SimObj.simAuxResults.Cn_alpha)
-    plt.title("Cn_alpha")
-
-    plt.subplot(325)
-    plt.plot(T2, SimObj.simAuxResults.Cd*1.3)
-    plt.title("Scaled CD")
-
-    plt.subplot(326)
-    plt.plot(T2, SimObj.simAuxResults.Delta)
-    plt.title("Delta")
-
-    plt.show()"""
-
-    """print("S2 = " )
-    print(S2)
-    print("S2[6:10] = ")
-    print(S2[6:10])
-    plt.plot(T2, np.sqrt(np.sum(np.power(S2[6:10], 2), axis=2)))
-    plt.title("Norm of quaternion")
-    plt.show()"""
