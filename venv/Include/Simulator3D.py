@@ -214,7 +214,7 @@ class Simulator3D:
 
         # State derivatives
         q_dot = quat_evolve(q, w)
-        w_dot = np.linalg.lstsq(I, m_tot)[0]
+        w_dot = np.linalg.lstsq(I, m_tot, rcond=None)[0]
 
         tmp_Margin = margin / np.max(self.rocket.diameters)
         tmp_Alpha = alpha
@@ -510,9 +510,8 @@ class Simulator3D:
 
         # Options
 
-        print(tspan, X0)
         # integration
-        self.integration_ivp = solve_ivp(self.Dynamics_Rail_1DOF, tspan, X0, events=off_rail)
+        self.integration_ivp = solve_ivp(self.Dynamics_Rail_1DOF, tspan, X0, method='LSODA', events=off_rail)
 
         T1 = self.integration_ivp.t
         S1 = self.integration_ivp.y
@@ -556,7 +555,7 @@ class Simulator3D:
 
         # Option = FlightOutPutFunc(self)
 
-        self.integration_ivp = solve_ivp(self.Dynamics_6DOF, tspan, S0, events=apogee)
+        self.integration_ivp = solve_ivp(self.Dynamics_6DOF, tspan, S0, method='LSODA', events=apogee)
 
         T2 = self.integration_ivp.t
         S2 = self.integration_ivp.y
@@ -580,9 +579,8 @@ class Simulator3D:
         MainEvent.terminal = True
         MainEvent.direction = -1
 
-        print(self.rocket.get_para_main_event())
         # integration
-        self.integration_ivp = solve_ivp(self.Dynamics_Parachute_3DOF, tspan, S0, args=[self.rocket, 0],
+        self.integration_ivp = solve_ivp(self.Dynamics_Parachute_3DOF, tspan, S0, method='LSODA', args=[self.rocket, 0],
                                          events=MainEvent)
 
         T3 = self.integration_ivp.t
@@ -607,7 +605,7 @@ class Simulator3D:
         CrashEvent.direction = -1
 
         # integration
-        self.integration_ivp = solve_ivp(self.Dynamics_Parachute_3DOF, tspan, S0, args=[self.rocket, 1],
+        self.integration_ivp = solve_ivp(self.Dynamics_Parachute_3DOF, tspan, S0, method='LSODA', args=[self.rocket, 1],
                                          events=CrashEvent)
 
         T4 = self.integration_ivp.t
@@ -622,7 +620,6 @@ class Simulator3D:
 
         # Initial conditions
         S0 = np.concatenate((X0, V0), axis=0)
-        print(S0, T0)
 
         # time span
         tspan = np.array([T0, 100])
@@ -634,7 +631,7 @@ class Simulator3D:
         CrashEvent.direction = -1
 
         # integration
-        self.integration_ivp = solve_ivp(self.Dynamics_3DOF, tspan, S0, events=CrashEvent)
+        self.integration_ivp = solve_ivp(self.Dynamics_3DOF, tspan, S0, method='LSODA', events=CrashEvent)
 
         T5 = self.integration_ivp.t
         S5 = self.integration_ivp.y
@@ -658,7 +655,7 @@ class Simulator3D:
         CrashEvent.direction = -1
 
         # integration
-        self.integration_ivp = solve_ivp(self.Nose_Dynamics_3DOF, tspan, S0, event=CrashEvent)
+        self.integration_ivp = solve_ivp(self.Nose_Dynamics_3DOF, tspan, S0, method='LSODA', event=CrashEvent)
 
         T6 = self.integration_ivp.t
         S6 = self.integration_ivp.y
@@ -688,7 +685,7 @@ class Simulator3D:
         CrashEvent.terminal = True
         CrashEvent.direction = -1
 
-        self.integration_ivp = solve_ivp(self.Nose_Dynamics_6DOF, tspan, S0, event=CrashEvent)
+        self.integration_ivp = solve_ivp(self.Nose_Dynamics_6DOF, tspan, S0, method='LSODA', event=CrashEvent)
 
         T6 = self.integration_ivp.t
         S6 = self.integration_ivp.y
@@ -713,7 +710,7 @@ class Simulator3D:
         CrashEvent.direction = -1
 
         # integration
-        self.integration_ivp = solve_ivp(self.Payload_Dynamics_3DOF, tspan, S0, event=CrashEvent)
+        self.integration_ivp = solve_ivp(self.Payload_Dynamics_3DOF, tspan, S0, method='LSODA', event=CrashEvent)
 
         T7 = self.integration_ivp.t
         S7 = self.integration_ivp.y
