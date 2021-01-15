@@ -942,7 +942,7 @@ def verify_rocket():
 
 def Launch_Simulator3D():
 
-    if True:
+    if verify_rocket():
         NoseCone = open('Parameters/param_rocket/NoseCone.txt', 'r')  # Read text file
         NoseCone1 = NoseCone.readlines()
         VAL_N = []
@@ -1165,31 +1165,31 @@ def Launch_Simulator3D():
         plt.show()
 
 
-    # -----------------------------------
-    # Plots
-    # -----------------------------------
+        # -----------------------------------
+        # Plots
+        # -----------------------------------
 
-    # Altitude vs time
-    plt.plot(T1, S1[0])
-    plt.plot(T2, S2[2])
-    plt.plot(T3, S3[2])
-    plt.plot(T4, S4[2])
-    plt.plot(T5, S5[2])
-    plt.xlabel("Time [s]");
-    plt.ylabel("Altitude [m]")
-    plt.title("x(t)")
-    plt.gca().legend(("Rail", "Ascent", "Drogue Descent", "Main Descent", "Ballistic Descent"))
-    plt.show()
+        # Altitude vs time
+        plt.plot(T1, S1[0])
+        plt.plot(T2, S2[2])
+        plt.plot(T3, S3[2])
+        plt.plot(T4, S4[2])
+        plt.plot(T5, S5[2])
+        plt.xlabel("Time [s]");
+        plt.ylabel("Altitude [m]")
+        plt.title("x(t)")
+        plt.gca().legend(("Rail", "Ascent", "Drogue Descent", "Main Descent", "Ballistic Descent"))
+        plt.show()
 
-    # Altitude vs drift
-    plt.plot(np.sqrt(np.power(S3[0], 2) + np.power(S3[1], 2)), S3[2])
-    plt.plot(np.sqrt(np.power(S4[0], 2) + np.power(S4[1], 2)), S4[2])
-    plt.plot(np.sqrt(np.power(S5[0], 2) + np.power(S5[1], 2)), S5[2], 'o')
-    plt.xlabel("Drift [m]")
-    plt.ylabel("Altitude [m]")
-    plt.title("Altitude vs drift")
-    plt.gca().legend(("Drogue", "Main", "Crashsim"))
-    plt.show()
+        # Altitude vs drift
+        plt.plot(np.sqrt(np.power(S3[0], 2) + np.power(S3[1], 2)), S3[2])
+        plt.plot(np.sqrt(np.power(S4[0], 2) + np.power(S4[1], 2)), S4[2])
+        plt.plot(np.sqrt(np.power(S5[0], 2) + np.power(S5[1], 2)), S5[2], 'o')
+        plt.xlabel("Drift [m]")
+        plt.ylabel("Altitude [m]")
+        plt.title("Altitude vs drift")
+        plt.gca().legend(("Drogue", "Main", "Crashsim"))
+        plt.show()
 
 
 
@@ -3852,6 +3852,7 @@ def DrawFullPiece():
                     VALUES1.append(float(line))
                 DrawL(VALUES1, canvas)
 
+    UpdateButtonState()
 
 
 def Build_Rocket(values):
@@ -4102,6 +4103,11 @@ def SearchEnvInFolder():
     return
 
 def UpdateButtonState():
+    if verify_rocket():
+        simu_button.config(bg="green")
+    else:
+        simu_button.config(bg="red")
+
     selection = tree.focus()
     if selection[1] == 'd':
         MoveUp.config(fg="black", state=NORMAL)
