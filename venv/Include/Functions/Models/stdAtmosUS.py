@@ -115,15 +115,6 @@ class stdAtmosUS:
     T0 = 288.15
     A0 = 340.294
     G0 = 9.80665
-    Turb_model = 'None'
-    V_inf = 10
-    Rail_Angle = 0
-    Rail_Length = 7
-    V_Azimuth = 150
-    Rail_Azimuth = 181
-    V_dir = np.array([np.cos(V_Azimuth*np.pi/180), np.sin(V_Azimuth*np.pi/180), 0.0])
-
-
 
     VISCOSITY = ([200, 7.5400e-06],
                  [250, 1.1370e-05],
@@ -143,7 +134,8 @@ class stdAtmosUS:
     # --------------------
 
     def __init__(self, ground_altitude: float, ground_temperature: float, ground_pressure: float,
-                 ground_humidity: float):
+                 ground_humidity: float, Turb_model = 'None', V_inf = 10, Rail_Angle = 0, Rail_Length = 7, V_Azimuth =
+                 150, Rail_Azimuth = 181):
         self.ground_altitude = ground_altitude
         self.ground_temperature = ground_temperature
         self.ground_pressure = ground_pressure
@@ -158,6 +150,16 @@ class stdAtmosUS:
         self.p_ws = exp(77.345 + 0.0057 * self.ground_temperature \
                         - 7235 / self.ground_temperature) / self.ground_temperature ** 8.2
         self.saturation_vapor_ratio = 0.62198 * self.p_ws / (self.ground_pressure - self.p_ws)
+
+        self.Turb_model = Turb_model
+        self.V_inf = V_inf
+        self.Rail_Angle = Rail_Angle
+        self.Rail_Length = Rail_Length
+        self.V_Azimuth = V_Azimuth
+        self.Rail_Azimuth = Rail_Azimuth
+        self.V_dir  = np.array([np.cos(self.V_Azimuth*np.pi/180), np.sin(self.V_Azimuth*np.pi/180), 0.0])
+
+
 
     # --------------------
     # METHODS

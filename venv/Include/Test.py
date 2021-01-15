@@ -227,7 +227,6 @@ if __name__ == "__main__":
     print("S2[2] dim = " + str(np.size(S2[2])))
     print("Margin dim = " + str(np.size(SimObj.simAuxResults.Margin)))
     """plt.plot(T1, S1[0])
->>>>>>> cf08a58ce106f221f09a8773d140f08c0ca43337
     plt.plot(T2, S2[2])
     plt.plot(T3, S3[2])
     plt.plot(T4, S4[2])
