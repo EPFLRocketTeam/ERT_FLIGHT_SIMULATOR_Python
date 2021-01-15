@@ -142,7 +142,7 @@ def drag(Rocket, alpha, Uinf, nu, a):
     # 4.4 Launch lug drag mounted on body (eq 119 p 390)
     # TODO consider launch lugs mounted near fins with a different drag
     # coefficient.
-    CD_l = Rocket.get_lug_n() * 5.75 * Rocket.get_lug_S() / Sm
+    CD_l = Rocket.lug_n * 5.75 * Rocket.lug_S / Sm
 
     # 4.5 Fin and Body drag at 0 AoA (eq 158, p 430) plus launch lug drag
     CD0_FB = CD0_B + CD0_F + CD_l

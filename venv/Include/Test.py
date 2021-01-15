@@ -3,13 +3,12 @@ import math
 from scipy.integrate import ode
 import matplotlib.pyplot as plt
 
+from datetime import datetime
 from Rocket.Body import Body
 from Rocket.Fins import Fins
 from Rocket.Motor import Motor
 from Rocket.Rocket import Rocket
 from Rocket.Stage import Stage
-from Rocket.Airbrakes import Airbrakes
-from Rocket.Lugs import Lugs
 from Functions import Math
 from Functions.Math.quat2rotmat import quat2rotmat
 from Functions.Math.rot2anglemat import rot2anglemat
@@ -27,6 +26,8 @@ if __name__ == "__main__":
 
     """a = wind_model(1, 0, np.array([-8.6, 5, 0]), 'Gaussian', 750)
     print(a)"""
+
+    jaj = datetime.now()
 
     NoseCone = open('Parameters/param_rocket/NoseCone.txt', 'r')  # Read text file
     NoseCone1 = NoseCone.readlines()
@@ -70,8 +71,8 @@ if __name__ == "__main__":
         conv_float = float(line)
         VAL_E.append(conv_float)
 
-    Lugs_ = open('Parameters/param_rocket/LugsTube.txt', 'r')
-    Lugs1 = Lugs_.readlines()
+    Lugs = open('Parameters/param_rocket/LugsTube.txt', 'r')
+    Lugs1 = Lugs.readlines()
     VAL_L = []
     for line in Lugs1:  # taking each line
         conv_float = float(line)
@@ -116,21 +117,22 @@ if __name__ == "__main__":
     gland = Body('tangent ogive', [0, 0.156], [0, 0.242])
 
     tubes_francais = Body("cylinder", [0.156, 0.135],
-                          [4.11-0.242, 4.16-0.242])
+                          [4.11 - 0.242, 4.16 - 0.242])
 
     # TODO: Add Mass and CM to stage
     M3_cone = Stage('Matterhorn III nosecone', gland, 5, 0.338, np.array([[VAL_N[2], VAL_N[3], VAL_N[4]],
-                                                                             [VAL_N[5], VAL_N[6], VAL_N[7]],
-                                                                             [VAL_N[8], VAL_N[9], VAL_N[10]]]))
+                                                                          [VAL_N[5], VAL_N[6], VAL_N[7]],
+                                                                          [VAL_N[8], VAL_N[9], VAL_N[10]]]))
     M3_body = Stage('Matterhorn III body', tubes_francais, 29.3, 0.930, np.array([[VAL_T[2], VAL_T[3], VAL_T[4]],
-                                                                                 [VAL_T[5], VAL_T[6], VAL_T[7]],
-                                                                                 [VAL_T[8], VAL_T[9], VAL_T[10]]])) # TODO: Change empty mass and empty CG mass without fins
+                                                                                  [VAL_T[5], VAL_T[6], VAL_T[7]],
+                                                                                  [VAL_T[8], VAL_T[9], VAL_T[
+                                                                                      10]]]))  # TODO: Change empty mass and empty CG mass without fins
     finDefData = {'number': 3,
                   'root_chord': 0.28,
                   'tip_chord': 0.125,
                   'span': 0.2,
                   'sweep': 0.107,
-                  'thickness':  0.004,
+                  'thickness': 0.004,
                   'phase': VAL_F[6],
                   'body_top_offset': 3.83,
                   'total_mass': 0.5}
@@ -144,19 +146,17 @@ if __name__ == "__main__":
     drogue_parachute_params = [False, 1.75, VAL_DP[5]]
     M3_body.add_parachute(drogue_parachute_params)
 
-    ab_data = Airbrakes(VAL_T[0]/2 + VAL_AB[4], 0, VAL_AB[3])
+    ab_data = [VAL_T[0] / 2 + VAL_AB[4], 0, VAL_AB[3]]
     M3_body.add_airbrakes(ab_data)
-    lug = Lugs(VAL_L[2], 5.7 * 10 ** (-4))
-    M3_body.add_lugs(lug)  # TODO: Add lug surface
 
     Matterhorn_III = Rocket()
 
     Matterhorn_III.add_stage(M3_cone)
     Matterhorn_III.add_stage(M3_body)
-
+    Matterhorn_III.add_lugs([VAL_L[2], 5.7 * 10 ** (-4)])  # TODO: Add lug surface
 
     Matterhorn_III.set_payload_mass(4)
-    Matterhorn_III.set_cg_empty_rocket(2.14)
+    Matterhorn_III.add_cg_empty_rocket(2.14)
     Matterhorn_III.set_rocket_inertia(47)
 
     US_Atmos = stdAtmosUS(1567.6, 290.15, 84972.484, 0.51031)
@@ -168,7 +168,6 @@ if __name__ == "__main__":
     # -----------------------------------
 
     T1, S1 = SimObj.RailSim()
-    print(Matterhorn_III.diameters_position)
     print("Launch rail departure velocity: ", S1[1][-1])
     print("Launch rail departure time: ", T1[-1])
 
@@ -177,7 +176,10 @@ if __name__ == "__main__":
     # -----------------------------------
 
     T2_1, S2_1, T2_1E, S2_1E, I2_1E = SimObj.FlightSim([T1[-1], SimObj.rocket.get_burn_time()], S1[1][-1])
-    T2_2, S2_2, T2_2E, S2_2E, I2_2E = SimObj.FlightSim([T2_1[-1], 40], [S2_1[i][-1] for i in range(3)], [S2_1[i][-1] for i in range(3,6)], [S2_1[i][-1] for i in range(6,10)], [S2_1[i][-1] for i in range(10,13)])
+    T2_2, S2_2, T2_2E, S2_2E, I2_2E = SimObj.FlightSim([T2_1[-1], 40], [S2_1[i][-1] for i in range(3)],
+                                                       [S2_1[i][-1] for i in range(3, 6)],
+                                                       [S2_1[i][-1] for i in range(6, 10)],
+                                                       [S2_1[i][-1] for i in range(10, 13)])
 
     T2 = np.concatenate([T2_1, T2_2[1:]])
     S2 = []
@@ -187,7 +189,7 @@ if __name__ == "__main__":
     T_1_2 = np.concatenate([T1, T2[1:]])
     S_1_2_1 = np.append(S1[0], S2[2][1:])
     S_1_2_2 = np.append(S1[1], S2[5][1:])
-    S_1_2 = np.append([S_1_2_1], [S_1_2_2], axis = 0)
+    S_1_2 = np.append([S_1_2_1], [S_1_2_2], axis=0)
 
     print("Apogée AGL : ", S2[2][-1])
     print("Apogée AGL at t = ", T2[-1])
@@ -196,59 +198,47 @@ if __name__ == "__main__":
     print("Max Speed at t = ", T_1_2[index])
 
     T, a, p, rho, Nu = stdAtmos(S_1_2[0][index], US_Atmos)
-    #Fd = 0.5*SimObj.simAuxResults.Cd(index)*rho*pi*Rocket.dm^2/4*maxi^2
+    # Fd = 0.5*SimObj.simAuxResults.Cd(index)*rho*pi*Rocket.dm^2/4*maxi^2
 
-    T3, S3, T3E, S3E, I3E = SimObj.DrogueParaSim(T2[-1], [S2[i][-1] for i in range(3)], [S2[i][-1] for i in range(3,6)])
+    T3, S3, T3E, S3E, I3E = SimObj.DrogueParaSim(T2[-1], [S2[i][-1] for i in range(3)],
+                                                 [S2[i][-1] for i in range(3, 6)])
     T4, S4, T4E, S4E, I4E = SimObj.MainParaSim(T3[-1], [S3[i][-1] for i in range(3)],
-                                                 [S3[i][-1] for i in range(3, 6)])
+                                               [S3[i][-1] for i in range(3, 6)])
 
     T5, S5, T5E, S5E, I5E = SimObj.CrashSim(T2[-1], [S2[i][-1] for i in range(3)],
-                                               [S2[i][-1] for i in range(3, 6)])
+                                            [S2[i][-1] for i in range(3, 6)])
 
-    print(S5)
+    jaj = datetime.now() - jaj
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.plot(S2[0], S2[1], S2[2])
-    ax.plot(S3[0], S3[1], S3[2])
-    ax.plot(S4[0], S4[1], S4[2])
-    ax.plot(S5[0], S5[1], S5[2])
-
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
-    ax.set_zlabel('z')
-
-    plt.show()
-
-    plt.plot(T1, S1[0])
-
+    print(jaj)
 
     print("T2 dim = " + str(np.size(T2)))
     print("S2[2] dim = " + str(np.size(S2[2])))
+    print("T5 dim = " + str(np.size(T5)))
+    print("S5[2] dim = " + str(np.size(S5[2])))
     print("Margin dim = " + str(np.size(SimObj.simAuxResults.Margin)))
-    """plt.plot(T1, S1[0])
+
+    plt.plot(T1, S1[0])
     plt.plot(T2, S2[2])
     plt.plot(T3, S3[2])
     plt.plot(T4, S4[2])
     plt.plot(T5, S5[2])
     plt.xlabel("Time [s]")
     plt.ylabel("Altitude [m]")
-    plt.title("x(t)")
+    plt.title("Python altitude vs time")
     plt.gca().legend(("Rail", "Ascent", "Drogue Descent", "Main Descent", "Ballistic Descent"))
     plt.show()
 
-
     plt.plot(np.sqrt(np.power(S3[0], 2) + np.power(S3[1], 2)), S3[2])
     plt.plot(np.sqrt(np.power(S4[0], 2) + np.power(S4[1], 2)), S4[2])
-    plt.plot(np.sqrt(np.power(S5[0], 2) + np.power(S5[1], 2)), S5[2], 'o')
+    plt.plot(np.sqrt(np.power(S5[0], 2) + np.power(S5[1], 2)), S5[2])
     plt.xlabel("Drift [m]")
     plt.ylabel("Altitude [m]")
     plt.title("Altitude vs drift")
     plt.gca().legend(("Drogue", "Main", "Crashsim"))
-    plt.show()"""
+    plt.show()
 
-
-    plt.figure()
+    """plt.figure()
     plt.subplot(321)
     plt.plot(T2, SimObj.simAuxResults.Margin)
     plt.title("Margin")
@@ -273,7 +263,7 @@ if __name__ == "__main__":
     plt.plot(T2, SimObj.simAuxResults.Delta)
     plt.title("Delta")
 
-    plt.show()
+    plt.show()"""
 
     """print("S2 = " )
     print(S2)

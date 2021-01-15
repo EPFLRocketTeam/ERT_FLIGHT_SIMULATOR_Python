@@ -7,8 +7,6 @@ from Rocket.Body import Body
 from Rocket.Fins import Fins
 from Rocket.Motor import Motor
 from Rocket.Parachute import Parachute
-from Rocket.Lugs import Lugs
-from Rocket.Airbrakes import Airbrakes
 
 
 class Stage:
@@ -72,8 +70,6 @@ class Stage:
         self.motor_paths = []
         self.motors = []
         self.parachutes = []
-        self.airbrakes = []
-        self.lugs = []
 
 
         # self.diameters = self.body.diameters
@@ -105,37 +101,21 @@ class Stage:
     def add_parachute(self, parachute_parameters: list):
         self.parachutes.append(Parachute(parachute_parameters[0], parachute_parameters[1], parachute_parameters[2]))
 
-    def add_lugs(self, lug : Lugs):
-        self.lugs.append(lug)
-
 
     def set_motor_fac(self, motor_fac: float):
         for motor in self.motors:
             motor.set_motor_fac(motor_fac)
 
-    def add_airbrakes(self, ab : Airbrakes):
-        self.airbrakes.append(ab)
+    def add_airbrakes(self, ab_data:list):
+        self.ab_x = ab_data[0]
+        self.ab_n = ab_data[1]
+        self.ab_phi = ab_data[2]
 
     def get_empty_mass(self):
         tmp_mass = 0
         if self.fins is not []:
             tmp_mass += sum([fin_set.total_mass for fin_set in self.fins])
         return self.empty_mass + tmp_mass
-
-    def get_lug_n(self):
-        return self.lugs[0].lug_n
-
-    def get_lug_S(self):
-        return self.lugs[0].lug_S
-
-    def get_ab_x(self):
-        return self.airbrakes[0].ab_x
-
-    def get_ab_n(self):
-        return self.airbrakes[0].ab_n
-
-    def get_ab_phi(self):
-        return self.airbrakes[0].ab_phi
 
     def get_mass(self, t: float):
         tmp_mass = 0
